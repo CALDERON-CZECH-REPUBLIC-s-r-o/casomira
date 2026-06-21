@@ -29,6 +29,8 @@ export const zavodnik = pgTable(
     pohlavi: pohlaviEnum("pohlavi"),
     startovniCislo: integer("startovni_cislo"),
     oddil: text("oddil"),
+    // Bydliště/město. Vzory „Oddíl“ fakticky plní městem → držíme zvlášť.
+    mesto: text("mesto"),
     kategorieId: uuid("kategorie_id").references(() => kategorie.id, {
       onDelete: "set null",
     }),

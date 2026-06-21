@@ -13,7 +13,8 @@ async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL není nastavená");
 
-  const client = postgres(url, { max: 1 });
+  // onnotice ztlumí neškodné NOTICE (např. „… already exists, skipping“).
+  const client = postgres(url, { max: 1, onnotice: () => {} });
   const db = drizzle(client);
 
   try {

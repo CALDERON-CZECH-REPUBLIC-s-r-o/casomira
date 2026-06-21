@@ -15,6 +15,13 @@
       "when": 1782069286340,
       "tag": "0001_condemned_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782072518546,
+      "tag": "0002_silky_carlie_cooper",
+      "breakpoints": true
     }
   ]
 }

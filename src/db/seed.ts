@@ -32,25 +32,19 @@ async function main() {
     })
     .returning();
 
-  console.log("[seed] vytvářím kategorie…");
+  console.log("[seed] vytvářím kategorie (věkové, dle vzoru)…");
   const kategorie = await db
     .insert(schema.kategorie)
     .values([
-      { akceId: akce.id, nazev: "Muži", pohlavi: "M", poradi: 1 },
-      { akceId: akce.id, nazev: "Ženy", pohlavi: "Z", poradi: 2 },
-      {
-        akceId: akce.id,
-        nazev: "Žáci (2012–2015)",
-        pohlavi: "M",
-        rokNarozeniOd: 2012,
-        rokNarozeniDo: 2015,
-        poradi: 3,
-      },
+      { akceId: akce.id, nazev: "Muži do 40 let", kod: "M40", pohlavi: "M", vekDo: 40, poradi: 1 },
+      { akceId: akce.id, nazev: "Muži do 95 let", kod: "M95", pohlavi: "M", vekOd: 41, vekDo: 95, poradi: 2 },
+      { akceId: akce.id, nazev: "Ženy do 40 let", kod: "Z40", pohlavi: "Z", vekDo: 40, poradi: 3 },
+      { akceId: akce.id, nazev: "Ženy do 95 let", kod: "Z95", pohlavi: "Z", vekOd: 41, vekDo: 95, poradi: 4 },
     ])
     .returning();
 
-  const muzi = kategorie.find((k) => k.nazev === "Muži")!;
-  const zeny = kategorie.find((k) => k.nazev === "Ženy")!;
+  const muzi = kategorie.find((k) => k.kod === "M40")!;
+  const zeny = kategorie.find((k) => k.kod === "Z40")!;
 
   console.log("[seed] vytvářím závodníky…");
   await db.insert(schema.zavodnik).values([
@@ -61,18 +55,18 @@ async function main() {
       rokNarozeni: 1990,
       pohlavi: "M",
       startovniCislo: 1,
-      oddil: "SK Ústí",
+      mesto: "Litoměřice",
       kategorieId: muzi.id,
     },
     {
       akceId: akce.id,
       jmeno: "Petr",
       prijmeni: "Svoboda",
-      rokNarozeni: 1985,
+      rokNarozeni: 1978,
       pohlavi: "M",
       startovniCislo: 2,
-      oddil: "AC Děčín",
-      kategorieId: muzi.id,
+      mesto: "Děčín",
+      kategorieId: kategorie.find((k) => k.kod === "M95")!.id,
     },
     {
       akceId: akce.id,
@@ -81,7 +75,7 @@ async function main() {
       rokNarozeni: 1995,
       pohlavi: "Z",
       startovniCislo: 3,
-      oddil: "SK Ústí",
+      mesto: "Ústí nad Labem",
       kategorieId: zeny.id,
     },
   ]);
