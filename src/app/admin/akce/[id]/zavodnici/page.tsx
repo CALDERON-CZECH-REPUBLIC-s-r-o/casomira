@@ -5,10 +5,16 @@ import { db } from "@/db/client";
 import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { vekVRoce } from "@/domain/zarazeni";
+import { nastavitStavZavodnika } from "@/server/opravy";
 
 export const dynamic = "force-dynamic";
 
 const POHLAVI_LABEL: Record<string, string> = { M: "M", Z: "Ž" };
+const ZAV_STAV_LABEL: Record<string, string> = {
+  prihlasen: "",
+  nenastoupil_DNS: "DNS",
+  diskvalifikovan_DSQ: "DSQ",
+};
 
 export default async function ZavodniciPage({
   params,
@@ -76,6 +82,7 @@ export default async function ZavodniciPage({
               <th>Pohl.</th>
               <th>Oddíl / Město</th>
               <th>Kategorie</th>
+              <th>Stav</th>
             </tr>
           </thead>
           <tbody>
@@ -98,11 +105,46 @@ export default async function ZavodniciPage({
                 <td className={z.kategorie ? "" : "text-amber-600"}>
                   {z.kategorie?.kod ?? z.kategorie?.nazev ?? "— bez kategorie"}
                 </td>
+                <td className="text-xs">
+                  <div className="flex items-center gap-2">
+                    {z.stav !== "prihlasen" && (
+                      <span className="rounded bg-gray-200 px-1.5 py-0.5 font-medium">
+                        {ZAV_STAV_LABEL[z.stav]}
+                      </span>
+                    )}
+                    {z.stav === "prihlasen" ? (
+                      <>
+                        <StavZav zavodnikId={z.id} akceId={id} stav="nenastoupil_DNS" label="DNS" />
+                        <StavZav zavodnikId={z.id} akceId={id} stav="diskvalifikovan_DSQ" label="DSQ" />
+                      </>
+                    ) : (
+                      <StavZav zavodnikId={z.id} akceId={id} stav="prihlasen" label="zrušit" />
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
     </main>
+  );
+}
+
+function StavZav({
+  zavodnikId,
+  akceId,
+  stav,
+  label,
+}: {
+  zavodnikId: string;
+  akceId: string;
+  stav: "prihlasen" | "nenastoupil_DNS" | "diskvalifikovan_DSQ";
+  label: string;
+}) {
+  return (
+    <form action={nastavitStavZavodnika.bind(null, zavodnikId, akceId, stav)}>
+      <button className="text-gray-500 underline">{label}</button>
+    </form>
   );
 }

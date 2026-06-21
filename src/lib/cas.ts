@@ -49,3 +49,35 @@ export function ztrata(ms: number | null): string {
   if (ms === null || ms <= 0) return "—";
   return "+" + cistyCas(ms);
 }
+
+/** Čas dne pro editační input: "HH:mm:ss.SSS" (lokální). */
+export function casNaInput(d: Date | string): string {
+  const dt = typeof d === "string" ? DateTime.fromISO(d) : DateTime.fromJSDate(d);
+  return dt.toFormat("HH:mm:ss.SSS");
+}
+
+/**
+ * Sestaví nové razítko z editovaného času dne ("HH:mm:ss(.SSS)"), zachová datum
+ * původního razítka (lokální zóna). null = neplatný formát.
+ */
+export function inputNaCas(
+  original: Date | string,
+  hhmmss: string,
+): Date | null {
+  const m = hhmmss.trim().match(/^(\d{1,2}):(\d{2}):(\d{2})(?:[.,](\d{1,3}))?$/);
+  if (!m) return null;
+  const [, h, min, s, frac] = m;
+  const ms = frac ? Number((frac + "000").slice(0, 3)) : 0;
+  if (Number(h) > 23 || Number(min) > 59 || Number(s) > 59) return null;
+  const base =
+    typeof original === "string"
+      ? DateTime.fromISO(original)
+      : DateTime.fromJSDate(original);
+  const novy = base.set({
+    hour: Number(h),
+    minute: Number(min),
+    second: Number(s),
+    millisecond: ms,
+  });
+  return novy.isValid ? novy.toJSDate() : null;
+}
