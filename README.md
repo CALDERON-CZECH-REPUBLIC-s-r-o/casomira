@@ -91,7 +91,7 @@ Fázování dle `SPEC.md`, sekce 8. Hotovo / probíhá:
 - [x] **M0** — scaffold, infra, Auth.js (org login), veřejná home + admin rozcestník
 - [x] **M1** — datový model (Drizzle) + migrace + seed
 - [x] **M2** — správa akcí + kategorie (CRUD, přepočet zařazení), výpis závodníků
-- [ ] **M3** — import z Excelu (mapování sloupců, normalizace pohlaví, validace)
+- [x] **M3** — import z Excelu (.xls/.xlsx, mapování sloupců, slité jméno, normalizace + heuristika pohlaví, náhled/validace, šablona)
 - [ ] **M4** — měřicí obrazovka (offline outbox, Wake Lock, fronta „K doplnění")
 - [ ] **M5** — editace a opravy průchodů (DNF/DNS/DSQ, log změn)
 - [ ] **M6** — startovní a výsledkové listiny (PDF/tisk + XLSX) — dle vzorů ve `vzory/`
