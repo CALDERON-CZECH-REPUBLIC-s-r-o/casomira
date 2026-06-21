@@ -4,3 +4,4 @@ export * from "./akce";
 export * from "./kategorie";
 export * from "./zavodnik";
 export * from "./cilovy-zaznam";
+export * from "./relations";

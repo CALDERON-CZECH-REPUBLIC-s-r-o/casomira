@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { signOut } from "@/auth/nextauth";
+import { vyzadujPrihlaseni } from "@/auth/guard";
 import { db } from "@/db/client";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Rozcestník administrace. Zatím jen seznam akcí — jednotlivé sekce
- * (kategorie, import, měření, listiny) přibudou v dalších milnících.
+ * Rozcestník administrace — seznam akcí + založení nové.
  */
 export default async function AdminPage() {
+  await vyzadujPrihlaseni();
   const akce = await db.query.akce.findMany({
     orderBy: (a, { desc }) => [desc(a.datum)],
   });
@@ -28,17 +29,31 @@ export default async function AdminPage() {
       </div>
 
       <section>
-        <h2 className="mb-3 text-lg font-medium">Akce</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-medium">Akce</h2>
+          <Link
+            href="/admin/akce/nova"
+            className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white"
+          >
+            + Nová akce
+          </Link>
+        </div>
         {akce.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Zatím žádné akce. (Správa akcí přibude v dalším milníku.)
-          </p>
+          <p className="text-sm text-gray-500">Zatím žádné akce.</p>
         ) : (
           <ul className="divide-y rounded-md border">
             {akce.map((a) => (
-              <li key={a.id} className="flex items-center justify-between p-3">
+              <li
+                key={a.id}
+                className="flex items-center justify-between p-3"
+              >
                 <div>
-                  <div className="font-medium">{a.nazev}</div>
+                  <Link
+                    href={`/admin/akce/${a.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {a.nazev}
+                  </Link>
                   <div className="text-sm text-gray-500">
                     {a.datum} · {a.misto ?? "—"}
                   </div>
@@ -46,8 +61,9 @@ export default async function AdminPage() {
                 <Link
                   href={`/${a.slug}`}
                   className="text-sm text-blue-600 underline"
+                  target="_blank"
                 >
-                  veřejná stránka
+                  veřejná stránka ↗
                 </Link>
               </li>
             ))}
