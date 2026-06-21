@@ -1,0 +1,32 @@
+import type { NextAuthConfig } from "next-auth";
+
+/**
+ * Edge-safe základ auth konfigurace. NEOBSAHUJE Credentials provider ani
+ * žádný nativní/DB modul (argon2, postgres) — middleware běží na Edge runtime
+ * a takové importy by spadly. Plný config s providerem žije v `nextauth.ts`.
+ *
+ * `authorized` callback zajišťuje ochranu /admin přímo v middleware.
+ */
+export const authConfig = {
+  session: { strategy: "jwt" },
+  trustHost: true,
+  pages: {
+    signIn: "/prihlaseni",
+  },
+  providers: [],
+  callbacks: {
+    authorized({ request, auth }) {
+      const isAdmin = request.nextUrl.pathname.startsWith("/admin");
+      if (isAdmin) return !!auth?.user;
+      return true;
+    },
+    async jwt({ token, user }) {
+      if (user) token.sub = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) session.user.id = token.sub;
+      return session;
+    },
+  },
+} satisfies NextAuthConfig;

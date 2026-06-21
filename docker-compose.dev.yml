@@ -1,0 +1,21 @@
+# Lokální dev databáze. `npm run db:up` nastartuje Postgres na localhost:5432.
+# Aplikace běží na hostu (`npm run dev`), DB v kontejneru.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: casomira
+      POSTGRES_PASSWORD: casomira
+      POSTGRES_DB: casomira
+    ports:
+      - "5432:5432"
+    volumes:
+      - casomira-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casomira -d casomira"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  casomira-db-data:
