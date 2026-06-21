@@ -95,8 +95,10 @@ Fázování dle `SPEC.md`, sekce 8. Hotovo / probíhá:
 - [x] **M4** — měřicí obrazovka (offline IndexedDB outbox, idempotentní sync dle client_id, Wake Lock, hromadný start, fronta „K doplnění", inline číslo, DNF/smazání)
 - [x] **M5** — opravy průchodů: ruční úprava času, ruční vložení vynechaného, doplnění/změna čísla, DNF/DNS/DSQ, mazání/obnovení, audit log (historie změn)
 - [x] **M6** — listiny: odvozovací vrstva (ties, DNF/DNS/DSQ, ztráta), tisková HTML (A4), generovaný PDF (@react-pdf + Noto font), XLSX (exceljs); celková i po kategoriích
-- [ ] **M7** — veřejný web s živými výsledky
+- [x] **M7** — veřejný web `/{slug}` (bez přihlášení): startovky + živé výsledky (polling à 5 s), taby celkově/po kategoriích, mobilní, sdílitelná URL
 - [ ] **M8** — sync na cloud + zálohy
+
+**MVP (Fáze 1) hotové** kromě cloud syncu (M8) — měření i publikace fungují lokálně.
 
 Vzory výstupů (startovní/výsledková listina, ukázkový Excel) patří do složky `vzory/` —
 podle nich se 1:1 řídí layout generovaných listin a výchozí mapování importu.
