@@ -6,7 +6,12 @@ const nextConfig: NextConfig = {
   // Coolify spouští `node server.js` ze stejného image.
   output: "standalone",
   // Nativní / server-only moduly se nesmí bundlovat do server komponent.
-  serverExternalPackages: ["@node-rs/argon2", "postgres"],
+  serverExternalPackages: [
+    "@node-rs/argon2",
+    "postgres",
+    "@react-pdf/renderer",
+    "exceljs",
+  ],
 };
 
 export default nextConfig;

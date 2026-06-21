@@ -1,0 +1,87 @@
+import { notFound } from "next/navigation";
+import { vyzadujPrihlaseni } from "@/auth/guard";
+import { nactiDataAkce } from "@/lib/listiny-data";
+import { startovniRadky } from "@/domain/vysledky";
+import { TiskToolbar } from "../_components/tisk-toolbar";
+import {
+  ListinaHlavicka,
+  StartovniTabulka,
+  SekceHlavicka,
+  TiskStyl,
+} from "../_components/listina-ui";
+
+export const dynamic = "force-dynamic";
+
+export default async function StartovniListinaPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ rozsah?: string; sort?: string }>;
+}) {
+  await vyzadujPrihlaseni();
+  const { id } = await params;
+  const sp = await searchParams;
+  const rozsah = sp.rozsah === "kategorie" ? "kategorie" : "celkova";
+  const sort = sp.sort === "abeceda" ? "abeceda" : "cislo";
+
+  const data = await nactiDataAkce(id);
+  if (!data) notFound();
+
+  const kategorieKod = new Map(
+    data.kategorie.map((k) => [k.id, k.kod ?? k.nazev]),
+  );
+  const kategorieSerazene = [...data.kategorie].sort(
+    (a, b) => a.poradi - b.poradi,
+  );
+
+  return (
+    <main className="mx-auto max-w-4xl p-6 print:max-w-none print:p-0">
+      <TiskStyl />
+      <TiskToolbar
+        zpetHref={`/admin/akce/${id}/listiny`}
+        titulek="Listiny"
+      />
+
+      <ListinaHlavicka
+        nazev={data.akce.nazev}
+        datum={data.akce.datum}
+        misto={data.akce.misto}
+        typ="Startovní listina"
+        podtitul={`${data.zavodnici.length} přihlášených · řazeno ${sort === "abeceda" ? "abecedně" : "dle čísla"}`}
+      />
+
+      {rozsah === "celkova" ? (
+        <StartovniTabulka
+          zavodnici={startovniRadky(data.zavodnici, sort)}
+          kategorieKod={kategorieKod}
+        />
+      ) : (
+        <>
+          {kategorieSerazene.map((kat) => {
+            const vKat = data.zavodnici.filter((z) => z.kategorieId === kat.id);
+            if (vKat.length === 0) return null;
+            return (
+              <section key={kat.id}>
+                <SekceHlavicka kategorie={kat} />
+                <StartovniTabulka zavodnici={startovniRadky(vKat, sort)} />
+              </section>
+            );
+          })}
+          {(() => {
+            const bezKat = data.zavodnici.filter((z) => z.kategorieId === null);
+            if (bezKat.length === 0) return null;
+            return (
+              <section>
+                <h3 className="mb-1 mt-4 border-b border-gray-400 pb-0.5 text-base font-semibold text-amber-700">
+                  Bez kategorie ({bezKat.length})
+                </h3>
+                <StartovniTabulka zavodnici={startovniRadky(bezKat, sort)} />
+              </section>
+            );
+          })()}
+        </>
+      )}
+    </main>
+  );
+}

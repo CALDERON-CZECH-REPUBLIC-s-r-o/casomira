@@ -61,6 +61,11 @@ export default async function AkceDetailPage({
           titul="Měření"
           popis="cílová obrazovka"
         />
+        <SekceKarta
+          href={`/admin/akce/${id}/listiny`}
+          titul="Listiny"
+          popis="startovní · výsledková · PDF/XLSX"
+        />
       </nav>
 
       <section className="mb-8">

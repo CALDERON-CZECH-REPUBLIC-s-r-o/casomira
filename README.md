@@ -93,8 +93,8 @@ Fázování dle `SPEC.md`, sekce 8. Hotovo / probíhá:
 - [x] **M2** — správa akcí + kategorie (CRUD, přepočet zařazení), výpis závodníků
 - [x] **M3** — import z Excelu (.xls/.xlsx, mapování sloupců, slité jméno, normalizace + heuristika pohlaví, náhled/validace, šablona)
 - [x] **M4** — měřicí obrazovka (offline IndexedDB outbox, idempotentní sync dle client_id, Wake Lock, hromadný start, fronta „K doplnění", inline číslo, DNF/smazání)
-- [ ] **M5** — editace a opravy průchodů (DNF/DNS/DSQ, log změn)
-- [ ] **M6** — startovní a výsledkové listiny (PDF/tisk + XLSX) — dle vzorů ve `vzory/`
+- [~] **M5** — opravy průchodů: doplnění/změna čísla, DNF, smazání, neměnné razítko (hotovo v M4); zbývá ruční úprava času + ruční vložení + historie změn
+- [x] **M6** — listiny: odvozovací vrstva (ties, DNF/DNS/DSQ, ztráta), tisková HTML (A4), generovaný PDF (@react-pdf + Noto font), XLSX (exceljs); celková i po kategoriích
 - [ ] **M7** — veřejný web s živými výsledky
 - [ ] **M8** — sync na cloud + zálohy
 
