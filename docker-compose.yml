@@ -1,0 +1,62 @@
+# Produkční Docker Compose pro Coolify — CLOUDOVÉ (read-only) zrcadlo.
+# Služby: db (PostgreSQL) → migrate (jednorázová migrace) → web.
+# Veřejný web (/{slug}) + ingest (/api/sync). Měření běží LOKÁLNĚ na notebooku.
+#
+# POVINNÉ proměnné (Coolify → Environment Variables):
+#   AUTH_SECRET  – openssl rand -base64 32
+#   SYNC_TOKEN   – stejný token jako na lokální instanci (autorizace pushe)
+# Volitelné: POSTGRES_* (jinak default casomira/casomira).
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment: &app-env
+    NODE_ENV: production
+    DATABASE_URL: ${DATABASE_URL:-postgres://casomira:casomira@db:5432/casomira}
+    AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET musí být nastaven (openssl rand -base64 32)}
+    SYNC_TOKEN: ${SYNC_TOKEN:?SYNC_TOKEN musí být nastaven (autorizace pushe z lokální instance)}
+    APP_BASE_URL: ${APP_BASE_URL:-https://casomira.example.cz}
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-casomira}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-casomira}
+      POSTGRES_DB: ${POSTGRES_DB:-casomira}
+    volumes:
+      - casomira-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-casomira} -d ${POSTGRES_DB:-casomira}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ["npm", "run", "db:migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    <<: *app
+    command: ["npm", "run", "start"]
+    environment:
+      <<: *app-env
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  casomira-db:

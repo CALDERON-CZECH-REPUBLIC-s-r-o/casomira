@@ -71,6 +71,11 @@ export default async function AkceDetailPage({
           titul="Opravy"
           popis="editace průchodů · historie"
         />
+        <SekceKarta
+          href={`/admin/akce/${id}/publikovat`}
+          titul="Publikování"
+          popis="push na cloud · záloha JSON"
+        />
       </nav>
 
       <section className="mb-8">

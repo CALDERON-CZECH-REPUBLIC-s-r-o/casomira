@@ -96,9 +96,19 @@ Fázování dle `SPEC.md`, sekce 8. Hotovo / probíhá:
 - [x] **M5** — opravy průchodů: ruční úprava času, ruční vložení vynechaného, doplnění/změna čísla, DNF/DNS/DSQ, mazání/obnovení, audit log (historie změn)
 - [x] **M6** — listiny: odvozovací vrstva (ties, DNF/DNS/DSQ, ztráta), tisková HTML (A4), generovaný PDF (@react-pdf + Noto font), XLSX (exceljs); celková i po kategoriích
 - [x] **M7** — veřejný web `/{slug}` (bez přihlášení): startovky + živé výsledky (polling à 5 s), taby celkově/po kategoriích, mobilní, sdílitelná URL
-- [ ] **M8** — sync na cloud + zálohy
+- [x] **M8** — jednosměrný sync na cloud (snapshot push přes `/api/sync` + token, „Publikovat" + auto), zálohy akce (export/obnova JSON), Dockerfile + prod compose
 
-**MVP (Fáze 1) hotové** kromě cloud syncu (M8) — měření i publikace fungují lokálně.
+**MVP (Fáze 1) hotové.** Měření běží lokálně (offline-first), výsledky se jednosměrně publikují na cloud pro veřejný web.
+
+## Nasazení cloudového zrcadla (Coolify)
+
+Stejný kód běží lokálně (autoritativní měření) i na cloudu (read-only veřejný web).
+Cloud instance přijímá push přes `/api/sync`. Deploy přes `docker-compose.yml`:
+
+- **POVINNÉ env:** `AUTH_SECRET` (`openssl rand -base64 32`), `SYNC_TOKEN` (stejný na obou instancích).
+- Na **lokální** instanci nastav `CLOUD_SYNC_URL` na adresu cloudu + stejný `SYNC_TOKEN`;
+  pak v akci → Publikování → „Publikovat teď" / „Auto-publikovat".
+- Záloha: akce → Publikování → „Stáhnout zálohu" (JSON snapshot); obnova nahráním souboru.
 
 Vzory výstupů (startovní/výsledková listina, ukázkový Excel) patří do složky `vzory/` —
 podle nich se 1:1 řídí layout generovaných listin a výchozí mapování importu.
