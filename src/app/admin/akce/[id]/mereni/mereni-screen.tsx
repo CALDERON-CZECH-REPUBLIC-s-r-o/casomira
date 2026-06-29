@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { casDne, uplynulyCas } from "@/lib/cas";
+import { casDne, casDneKratky, uplynulyCas } from "@/lib/cas";
 import { useWakeLock } from "@/lib/wake-lock";
 import {
   ulozPruchod,
@@ -32,6 +32,8 @@ export function MereniScreen({
 }) {
   const [zaznamy, setZaznamy] = useState<OutboxPruchod[]>(pocatecniZaznamy);
   const [inlineCislo, setInlineCislo] = useState("");
+  const [rezim, setRezim] = useState<"tlacitko" | "ciselnik">("tlacitko");
+  const [filtr, setFiltr] = useState("");
   const [casStartu, setCasStartu] = useState<string | null>(casStartuProp);
   const [online, setOnline] = useState(true);
   const poradiRef = useRef(
@@ -128,32 +130,38 @@ export function MereniScreen({
   }, [sync]);
 
   // --- zaznamenání průchodu (kritická cesta: stav → IndexedDB → server) ---
+  // Jádro sdílené velkým tlačítkem i číselníkem. Razítko vzniká v okamžiku volání.
+  const pridejPruchod = useCallback(
+    async (platneCislo: number | null) => {
+      const cas = new Date(); // wall-clock, ms (NIKDY performance.now)
+      poradiRef.current += 1;
+      const p: OutboxPruchod = {
+        clientId: crypto.randomUUID(),
+        akceId,
+        casCile: cas.toISOString(),
+        startovniCislo: platneCislo,
+        stav: platneCislo !== null ? "platny" : "neprirazeno",
+        poradiDoteku: poradiRef.current,
+        dirty: true,
+      };
+      setZaznamy((prev) => [p, ...prev]); // optimisticky, okamžitě
+      try {
+        await ulozPruchod(p); // pojistka dřív než server
+      } catch {
+        /* i bez IndexedDB pokračujeme – záznam je ve stavu a půjde na server */
+      }
+      sync();
+    },
+    [akceId, sync],
+  );
+
   const zaznamenat = useCallback(async () => {
-    const cas = new Date(); // wall-clock, ms (NIKDY performance.now)
-    poradiRef.current += 1;
     const cisloStr = inlineCislo.trim();
     const cislo = cisloStr ? parseInt(cisloStr.replace(/\D/g, ""), 10) : null;
     const platneCislo = cislo !== null && Number.isFinite(cislo) ? cislo : null;
-
-    const p: OutboxPruchod = {
-      clientId: crypto.randomUUID(),
-      akceId,
-      casCile: cas.toISOString(),
-      startovniCislo: platneCislo,
-      stav: platneCislo !== null ? "platny" : "neprirazeno",
-      poradiDoteku: poradiRef.current,
-      dirty: true,
-    };
-
-    setZaznamy((prev) => [p, ...prev]); // optimisticky, okamžitě
     setInlineCislo("");
-    try {
-      await ulozPruchod(p); // pojistka dřív než server
-    } catch {
-      /* i bez IndexedDB pokračujeme – záznam je ve stavu a půjde na server */
-    }
-    sync();
-  }, [akceId, inlineCislo, sync]);
+    await pridejPruchod(platneCislo);
+  }, [inlineCislo, pridejPruchod]);
 
   const upravZaznam = useCallback(
     async (clientId: string, zmena: Partial<OutboxPruchod>) => {
@@ -201,16 +209,32 @@ export function MereniScreen({
   const dirtyPocet = zaznamy.filter((z) => z.dirty).length;
   const startMs = casStartu ? new Date(casStartu).getTime() : null;
 
-  // Použitá čísla (pro detekci konfliktů ve frontě).
-  const pouzitaCisla = useMemo(() => {
-    const m = new Map<number, number>();
+  // Použitá čísla (pro detekci konfliktů ve frontě) + info pro číselník
+  // (počet průchodů a čas posledního) podle čísla.
+  const cislaInfo = useMemo(() => {
+    const m = new Map<number, { pocet: number; posledniMs: number }>();
     for (const z of zaznamy) {
-      if (z.stav !== "smazany" && z.startovniCislo !== null) {
-        m.set(z.startovniCislo, (m.get(z.startovniCislo) ?? 0) + 1);
+      if (z.stav === "smazany" || z.startovniCislo === null) continue;
+      const cas = new Date(z.casCile).getTime();
+      const ex = m.get(z.startovniCislo);
+      if (ex) {
+        ex.pocet += 1;
+        ex.posledniMs = Math.max(ex.posledniMs, cas);
+      } else {
+        m.set(z.startovniCislo, { pocet: 1, posledniMs: cas });
       }
     }
     return m;
   }, [zaznamy]);
+
+  // Seznam startovních čísel pro číselník (vzestupně), volitelně filtrovaný.
+  const cislaZavodniku = useMemo(() => {
+    const f = filtr.trim();
+    return zavodnici
+      .filter((z) => z.startovniCislo !== null)
+      .filter((z) => (f ? String(z.startovniCislo).startsWith(f) : true))
+      .sort((a, b) => (a.startovniCislo ?? 0) - (b.startovniCislo ?? 0));
+  }, [zavodnici, filtr]);
 
   async function start() {
     const iso = new Date().toISOString();
@@ -264,40 +288,61 @@ export function MereniScreen({
         )}
       </div>
 
-      {/* Záznam průchodu */}
-      <div className="mb-2 grid grid-cols-[1fr_auto] gap-3">
-        <button
-          onClick={zaznamenat}
-          className="rounded-xl bg-black py-10 text-3xl font-extrabold text-white active:bg-gray-700"
-        >
-          ZAZNAMENAT PRŮCHOD
-        </button>
-        <div className="flex w-40 flex-col justify-center gap-1">
-          <label className="text-xs text-gray-500">Předvyplnit číslo</label>
-          <input
-            value={inlineCislo}
-            onChange={(e) => setInlineCislo(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") zaznamenat();
-            }}
-            inputMode="numeric"
-            placeholder="—"
-            className="rounded-lg border-2 border-gray-300 px-3 py-3 text-center text-2xl tabular-nums"
-          />
-          {inlineCislo && (
-            <span className="text-center text-xs text-gray-500">
-              {zavodniciMap.get(Number(inlineCislo))
-                ? `${zavodniciMap.get(Number(inlineCislo))!.prijmeni} ${zavodniciMap.get(Number(inlineCislo))!.jmeno}`
-                : "neznámé číslo"}
-            </span>
-          )}
-        </div>
+      {/* Přepínač režimu měření */}
+      <div className="mb-3 flex gap-2 text-sm">
+        <RezimBtn aktivni={rezim === "tlacitko"} onClick={() => setRezim("tlacitko")}>
+          Velké tlačítko
+        </RezimBtn>
+        <RezimBtn aktivni={rezim === "ciselnik"} onClick={() => setRezim("ciselnik")}>
+          Číselník
+        </RezimBtn>
       </div>
 
-      <p className="mb-4 text-sm text-gray-500">
-        Čas se uloží v okamžiku kliknutí. Bez čísla → fronta „K doplnění" (
-        {kDoplneni}).
-      </p>
+      {rezim === "tlacitko" ? (
+        <>
+          {/* Záznam průchodu */}
+          <div className="mb-2 grid grid-cols-[1fr_auto] gap-3">
+            <button
+              onClick={zaznamenat}
+              className="rounded-xl bg-black py-10 text-3xl font-extrabold text-white active:bg-gray-700"
+            >
+              ZAZNAMENAT PRŮCHOD
+            </button>
+            <div className="flex w-40 flex-col justify-center gap-1">
+              <label className="text-xs text-gray-500">Předvyplnit číslo</label>
+              <input
+                value={inlineCislo}
+                onChange={(e) => setInlineCislo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") zaznamenat();
+                }}
+                inputMode="numeric"
+                placeholder="—"
+                className="rounded-lg border-2 border-gray-300 px-3 py-3 text-center text-2xl tabular-nums"
+              />
+              {inlineCislo && (
+                <span className="text-center text-xs text-gray-500">
+                  {zavodniciMap.get(Number(inlineCislo))
+                    ? `${zavodniciMap.get(Number(inlineCislo))!.prijmeni} ${zavodniciMap.get(Number(inlineCislo))!.jmeno}`
+                    : "neznámé číslo"}
+                </span>
+              )}
+            </div>
+          </div>
+          <p className="mb-4 text-sm text-gray-500">
+            Čas se uloží v okamžiku kliknutí. Bez čísla → fronta „K doplnění" (
+            {kDoplneni}).
+          </p>
+        </>
+      ) : (
+        <Ciselnik
+          cisla={cislaZavodniku}
+          info={cislaInfo}
+          filtr={filtr}
+          setFiltr={setFiltr}
+          onTap={(c) => pridejPruchod(c)}
+        />
+      )}
 
       {/* Fronta */}
       <div className="overflow-x-auto">
@@ -323,7 +368,7 @@ export function MereniScreen({
                 z.startovniCislo !== null && !zav;
               const konflikt =
                 z.startovniCislo !== null &&
-                (pouzitaCisla.get(z.startovniCislo) ?? 0) > 1;
+                (cislaInfo.get(z.startovniCislo)?.pocet ?? 0) > 1;
               const cas = new Date(z.casCile).getTime();
               return (
                 <tr
@@ -475,5 +520,100 @@ function StavZnacka({
     <span className={ok ? "text-green-600" : "text-red-600"}>
       {ok ? okText : chybaText}
     </span>
+  );
+}
+
+function RezimBtn({
+  aktivni,
+  onClick,
+  children,
+}: {
+  aktivni: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full px-4 py-1.5 font-medium ${
+        aktivni ? "bg-black text-white" : "bg-gray-100 text-gray-600"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Číselník — mřížka všech startovních čísel. „Domačkávání": ťuknutím na číslo
+ * se zaznamená průchod daného běžce (razítko teď). Doběhlí zezelenají, ukáže se
+ * čas a u opakování počet (×N) pro kontrolu.
+ */
+function Ciselnik({
+  cisla,
+  info,
+  filtr,
+  setFiltr,
+  onTap,
+}: {
+  cisla: ZavodnikInfo[];
+  info: Map<number, { pocet: number; posledniMs: number }>;
+  filtr: string;
+  setFiltr: (v: string) => void;
+  onTap: (cislo: number) => void;
+}) {
+  const dobehlo = cisla.filter((z) => info.has(z.startovniCislo!)).length;
+  return (
+    <div className="mb-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <input
+          value={filtr}
+          onChange={(e) => setFiltr(e.target.value)}
+          inputMode="numeric"
+          placeholder="filtr čísla…"
+          className="w-32 rounded-md border border-gray-300 px-2 py-1.5 text-sm tabular-nums"
+        />
+        <span className="text-xs text-gray-500">
+          {dobehlo}/{cisla.length} doběhlo
+        </span>
+      </div>
+      {cisla.length === 0 ? (
+        <p className="py-6 text-center text-sm text-gray-400">
+          Žádná startovní čísla (naimportuj závodníky).
+        </p>
+      ) : (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-2">
+          {cisla.map((z) => {
+            const i = info.get(z.startovniCislo!);
+            const dobehl = !!i;
+            return (
+              <button
+                key={z.startovniCislo}
+                onClick={() => onTap(z.startovniCislo!)}
+                className={`flex flex-col items-center rounded-lg border-2 px-1 py-2 active:scale-95 ${
+                  dobehl
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-300 bg-white"
+                }`}
+                title={`${z.prijmeni} ${z.jmeno}`}
+              >
+                <span className="text-2xl font-bold tabular-nums leading-none">
+                  {z.startovniCislo}
+                </span>
+                <span className="mt-0.5 max-w-full truncate text-[10px] text-gray-500">
+                  {z.prijmeni}
+                </span>
+                {dobehl && (
+                  <span className="mt-0.5 text-[10px] tabular-nums text-green-700">
+                    {casDneKratky(new Date(i!.posledniMs))}
+                    {i!.pocet > 1 ? ` ×${i!.pocet}` : ""}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
