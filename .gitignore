@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Vzory obsahuji realna osobni data (jmena, telefony) – jen lokalne
+vzory/
