@@ -10,8 +10,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useWakeLock(aktivni: boolean) {
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
   const [drzi, setDrzi] = useState(false);
-  const podporovano =
-    typeof navigator !== "undefined" && "wakeLock" in navigator;
+  // Zjišťujeme až po mountu — jinak by se SSR (navigator chybí) lišil od klienta
+  // a způsobil hydration mismatch. Výchozí false je shodný na serveru i klientu.
+  const [podporovano, setPodporovano] = useState(false);
+
+  useEffect(() => {
+    setPodporovano("wakeLock" in navigator);
+  }, []);
 
   const ziskat = useCallback(async () => {
     if (!podporovano || !aktivni) return;
