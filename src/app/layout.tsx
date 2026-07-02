@@ -32,6 +32,18 @@ const now = localFont({
   ],
 });
 
+// Now Alt — alternativní glyfy jen pro brand momenty (hero/tisk/veřejné titulky).
+const nowAlt = localFont({
+  variable: "--font-nowalt",
+  display: "swap",
+  src: [
+    { path: "../fonts/NowAlt-Regular.otf", weight: "400", style: "normal" },
+    { path: "../fonts/NowAlt-Medium.otf", weight: "500", style: "normal" },
+    { path: "../fonts/NowAlt-Bold.otf", weight: "600 700", style: "normal" },
+    { path: "../fonts/NowAlt-Black.otf", weight: "800 900", style: "normal" },
+  ],
+});
+
 export const metadata: Metadata = {
   title: "Časomíra — výsledky závodů",
   description: "Organizace a měření závodů, startovní a výsledkové listiny online.",
@@ -45,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="cs"
-      className={`${geistSans.variable} ${geistMono.variable} ${now.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${now.variable} ${nowAlt.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

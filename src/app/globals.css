@@ -64,18 +64,26 @@ body {
   --warning: #d8941a;
   --error: #d8534a;
   --error-bg: #fbe7e5;
+  --info: #2f7fbf;
+  --info-bg: #e5f0f9;
+  --sand-bg: #f6f0e6;
 
   --cal-font-sans: var(--font-now), system-ui, -apple-system, sans-serif;
   --cal-font-mono: var(--font-jb), ui-monospace, "SF Mono", Menlo, monospace;
 
+  --radius-xs: 4px;
+  --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 22px;
+  --radius-2xl: 30px;
   --radius-pill: 999px;
 
   --shadow-xs: 0 1px 2px rgba(15, 31, 26, 0.06);
   --shadow-sm: 0 1px 3px rgba(15, 31, 26, 0.07), 0 1px 2px rgba(15, 31, 26, 0.05);
   --shadow-md: 0 4px 12px rgba(15, 31, 26, 0.08), 0 2px 4px rgba(15, 31, 26, 0.05);
+  --shadow-lg: 0 12px 28px rgba(15, 31, 26, 0.1), 0 4px 10px rgba(15, 31, 26, 0.06);
+  --shadow-xl: 0 24px 56px rgba(15, 31, 26, 0.14), 0 8px 18px rgba(15, 31, 26, 0.07);
   --shadow-primary: 0 8px 22px rgba(80, 176, 144, 0.3);
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -147,8 +155,14 @@ body {
   --color-success-bg: var(--success-bg);
   --color-error: var(--error);
   --color-error-bg: var(--error-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-sand-bg: var(--sand-bg);
 
+  /* font-brand = Now (výchozí UI písmo administrace); font-display = Now Alt
+     jen pro brand momenty (hero / tisk / veřejné titulky). */
   --font-brand: var(--font-now), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-nowalt), var(--font-now), sans-serif;
   --font-technical: var(--font-jb), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
@@ -172,4 +186,64 @@ body {
   .cal-eyebrow {
     @apply font-technical text-[10.5px] font-medium uppercase tracking-[.12em] text-ink-400;
   }
+}
+
+/* ============================================================
+   Calderon signatura — dot-grid textura, teal glow, sync animace.
+   Textura patří JEN za hero/hlavičky, nikdy nad tabulky/formuláře.
+   ============================================================ */
+.cal-dots {
+  background-image: radial-gradient(var(--ink-200) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+/* Tmavé plochy (login, veřejný hero, tabule, 404/500). */
+.cal-dots-dark {
+  background-image: radial-gradient(
+    rgba(132, 201, 175, 0.1) 1.3px,
+    transparent 1.3px
+  );
+  background-size: 22px 22px;
+}
+/* Teal záře shora — na tmavém hero. Vrství se přes dot-grid. */
+.cal-glow-top {
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    rgba(80, 176, 144, 0.2),
+    transparent 70%
+  );
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cal-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+/* Skeleton — jemný ink podklad s přejíždějícím leskem. */
+.cal-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink-150);
+  border-radius: var(--radius-sm);
+}
+.cal-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  animation: shimmer 1.4s var(--ease-inout) infinite;
 }
