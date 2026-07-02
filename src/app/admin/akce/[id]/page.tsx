@@ -6,6 +6,7 @@ import { akce as akceT, kategorie as katT, zavodnik as zavT } from "@/db/schema"
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { upravitAkci, smazatAkci } from "@/server/akce";
 import { AkceFormFields } from "../../_components/akce-form";
+import { Btn, Card, PageHeader } from "../../_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -28,19 +29,32 @@ export default async function AkceDetailPage({
   );
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <Link href="/admin" className="text-sm text-gray-500 hover:underline">
-        ← Administrace
-      </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">{akce.nazev}</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        Veřejná URL:{" "}
-        <Link href={`/${akce.slug}`} target="_blank" className="text-blue-600 underline">
-          /{akce.slug} ↗
-        </Link>
-      </p>
+    <main className="mx-auto max-w-3xl p-6">
+      <PageHeader
+        back={{ href: "/admin", label: "Administrace" }}
+        eyebrow="Akce"
+        title={akce.nazev}
+        desc={
+          <>
+            Veřejná URL:{" "}
+            <Link
+              href={`/${akce.slug}`}
+              target="_blank"
+              className="font-medium text-teal-600 hover:text-teal-700"
+            >
+              /{akce.slug} ↗
+            </Link>
+          </>
+        }
+      />
 
-      <nav className="mb-8 grid grid-cols-2 gap-3">
+      <nav className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <SekceKarta
+          href={`/admin/akce/${id}/mereni`}
+          titul="Měření"
+          popis="cílová obrazovka"
+          zvyraznit
+        />
         <SekceKarta
           href={`/admin/akce/${id}/kategorie`}
           titul="Kategorie"
@@ -55,11 +69,6 @@ export default async function AkceDetailPage({
           href={`/admin/akce/${id}/import`}
           titul="Import z Excelu"
           popis="přihlášky .xls/.xlsx"
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/mereni`}
-          titul="Měření"
-          popis="cílová obrazovka"
         />
         <SekceKarta
           href={`/admin/akce/${id}/listiny`}
@@ -79,21 +88,20 @@ export default async function AkceDetailPage({
       </nav>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-lg font-medium">Úprava akce</h2>
-        <form action={upravitAkci.bind(null, id)} className="flex flex-col gap-6">
-          <AkceFormFields akce={akce} />
-          <button
-            type="submit"
-            className="self-start rounded-md bg-black px-4 py-2 font-medium text-white"
-          >
-            Uložit změny
-          </button>
-        </form>
+        <div className="cal-eyebrow mb-3">Úprava akce</div>
+        <Card className="p-5">
+          <form action={upravitAkci.bind(null, id)} className="flex flex-col gap-6">
+            <AkceFormFields akce={akce} />
+            <Btn type="submit" className="self-start">
+              Uložit změny
+            </Btn>
+          </form>
+        </Card>
       </section>
 
-      <section className="border-t pt-6">
+      <section className="border-t border-ink-200 pt-6">
         <form action={smazatAkci.bind(null, id)}>
-          <button className="text-sm text-red-600 underline">
+          <button className="text-sm font-medium text-error hover:underline">
             Smazat akci (včetně kategorií, závodníků a záznamů)
           </button>
         </form>
@@ -106,18 +114,26 @@ function SekceKarta({
   href,
   titul,
   popis,
+  zvyraznit = false,
 }: {
   href: string;
   titul: string;
   popis: string;
+  zvyraznit?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="rounded-md border p-4 transition-colors hover:bg-gray-50"
+      className={`group cal-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] ${
+        zvyraznit ? "border-teal-200 bg-teal-50" : ""
+      }`}
     >
-      <div className="font-medium">{titul}</div>
-      <div className="text-sm text-gray-500">{popis}</div>
+      <div
+        className={`font-semibold ${zvyraznit ? "text-teal-700" : "text-ink-900 group-hover:text-teal-700"}`}
+      >
+        {titul}
+      </div>
+      <div className="mt-0.5 text-[13px] text-ink-500">{popis}</div>
     </Link>
   );
 }

@@ -43,6 +43,7 @@ export default async function StartovniListinaPage({
         titulek="Listiny"
       />
 
+      <div className="cal-card p-8 shadow-[var(--shadow-sm)] print:border-0 print:p-0 print:shadow-none">
       <ListinaHlavicka
         nazev={data.akce.nazev}
         datum={data.akce.datum}
@@ -73,7 +74,7 @@ export default async function StartovniListinaPage({
             if (bezKat.length === 0) return null;
             return (
               <section>
-                <h3 className="mb-1 mt-4 border-b border-gray-400 pb-0.5 text-base font-semibold text-amber-700">
+                <h3 className="mb-1.5 mt-6 border-b border-ink-200 pb-1 text-base font-semibold text-warning">
                   Bez kategorie ({bezKat.length})
                 </h3>
                 <StartovniTabulka zavodnici={startovniRadky(bezKat, sort)} />
@@ -82,6 +83,7 @@ export default async function StartovniListinaPage({
           })()}
         </>
       )}
+      </div>
     </main>
   );
 }

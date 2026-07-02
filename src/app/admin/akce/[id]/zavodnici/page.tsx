@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -6,6 +5,7 @@ import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { vekVRoce } from "@/domain/zarazeni";
 import { nastavitStavZavodnika } from "@/server/opravy";
+import { BtnLink, Card, PageHeader } from "../../../_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -38,29 +38,22 @@ export default async function ZavodniciPage({
 
   return (
     <main className="mx-auto max-w-4xl p-6">
-      <Link
-        href={`/admin/akce/${id}`}
-        className="text-sm text-gray-500 hover:underline"
-      >
-        ← {akce.nazev}
-      </Link>
-      <div className="mb-4 mt-2 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">
-          Závodníci{" "}
-          <span className="text-base font-normal text-gray-500">
-            ({zavodnici.length})
+      <PageHeader
+        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
+        eyebrow="Závodníci"
+        title="Závodníci"
+        desc={
+          <span className="font-technical tabular-nums">
+            {zavodnici.length} přihlášených
           </span>
-        </h1>
-        <Link
-          href={`/admin/akce/${id}/import`}
-          className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white"
-        >
-          + Import z Excelu
-        </Link>
-      </div>
+        }
+        actions={
+          <BtnLink href={`/admin/akce/${id}/import`}>+ Import z Excelu</BtnLink>
+        }
+      />
 
       {(bezKategorie > 0 || bezPohlavi > 0) && (
-        <p className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="mb-4 rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
           K řešení:{" "}
           {bezPohlavi > 0 && <>{bezPohlavi} bez pohlaví; </>}
           {bezKategorie > 0 && <>{bezKategorie} bez kategorie </>}
@@ -69,63 +62,67 @@ export default async function ZavodniciPage({
       )}
 
       {zavodnici.length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ink-500">
           Zatím žádní závodníci. Naimportuj přihlášky z Excelu.
         </p>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="border-b text-left text-gray-500">
-            <tr>
-              <th className="py-2">Č.</th>
-              <th>Příjmení a jméno</th>
-              <th>Ročník</th>
-              <th>Pohl.</th>
-              <th>Oddíl / Město</th>
-              <th>Kategorie</th>
-              <th>Stav</th>
-            </tr>
-          </thead>
-          <tbody>
-            {zavodnici.map((z) => (
-              <tr key={z.id} className="border-b last:border-0">
-                <td className="py-1.5">{z.startovniCislo ?? "—"}</td>
-                <td>
-                  {z.prijmeni} {z.jmeno}
-                </td>
-                <td>
-                  {z.rokNarozeni ?? "—"}
-                  {z.rokNarozeni
-                    ? ` (${vekVRoce(akce.rok, z.rokNarozeni)} let)`
-                    : ""}
-                </td>
-                <td className={z.pohlavi ? "" : "text-red-500"}>
-                  {z.pohlavi ? POHLAVI_LABEL[z.pohlavi] : "?"}
-                </td>
-                <td>{z.oddil ?? z.mesto ?? "—"}</td>
-                <td className={z.kategorie ? "" : "text-amber-600"}>
-                  {z.kategorie?.kod ?? z.kategorie?.nazev ?? "— bez kategorie"}
-                </td>
-                <td className="text-xs">
-                  <div className="flex items-center gap-2">
-                    {z.stav !== "prihlasen" && (
-                      <span className="rounded bg-gray-200 px-1.5 py-0.5 font-medium">
-                        {ZAV_STAV_LABEL[z.stav]}
-                      </span>
-                    )}
-                    {z.stav === "prihlasen" ? (
-                      <>
-                        <StavZav zavodnikId={z.id} akceId={id} stav="nenastoupil_DNS" label="DNS" />
-                        <StavZav zavodnikId={z.id} akceId={id} stav="diskvalifikovan_DSQ" label="DSQ" />
-                      </>
-                    ) : (
-                      <StavZav zavodnikId={z.id} akceId={id} stav="prihlasen" label="zrušit" />
-                    )}
-                  </div>
-                </td>
+        <Card className="overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="border-b border-ink-150 text-left text-[12px] font-medium uppercase text-ink-500">
+              <tr>
+                <th className="p-3">Č.</th>
+                <th className="p-3">Příjmení a jméno</th>
+                <th className="p-3">Ročník</th>
+                <th className="p-3">Pohl.</th>
+                <th className="p-3">Oddíl / Město</th>
+                <th className="p-3">Kategorie</th>
+                <th className="p-3">Stav</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-ink-150">
+              {zavodnici.map((z) => (
+                <tr key={z.id} className="hover:bg-ink-50">
+                  <td className="p-3 font-technical tabular-nums text-ink-700">
+                    {z.startovniCislo ?? "—"}
+                  </td>
+                  <td className="p-3 text-ink-900">
+                    {z.prijmeni} {z.jmeno}
+                  </td>
+                  <td className="p-3 font-technical tabular-nums text-ink-700">
+                    {z.rokNarozeni ?? "—"}
+                    {z.rokNarozeni
+                      ? ` (${vekVRoce(akce.rok, z.rokNarozeni)} let)`
+                      : ""}
+                  </td>
+                  <td className={`p-3 ${z.pohlavi ? "text-ink-700" : "text-error"}`}>
+                    {z.pohlavi ? POHLAVI_LABEL[z.pohlavi] : "?"}
+                  </td>
+                  <td className="p-3 text-ink-700">{z.oddil ?? z.mesto ?? "—"}</td>
+                  <td className={`p-3 ${z.kategorie ? "text-ink-700" : "text-amber-500"}`}>
+                    {z.kategorie?.kod ?? z.kategorie?.nazev ?? "— bez kategorie"}
+                  </td>
+                  <td className="p-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      {z.stav !== "prihlasen" && (
+                        <span className="rounded-full bg-error-bg px-2 py-0.5 text-[11px] font-technical text-error">
+                          {ZAV_STAV_LABEL[z.stav]}
+                        </span>
+                      )}
+                      {z.stav === "prihlasen" ? (
+                        <>
+                          <StavZav zavodnikId={z.id} akceId={id} stav="nenastoupil_DNS" label="DNS" />
+                          <StavZav zavodnikId={z.id} akceId={id} stav="diskvalifikovan_DSQ" label="DSQ" />
+                        </>
+                      ) : (
+                        <StavZav zavodnikId={z.id} akceId={id} stav="prihlasen" label="zrušit" />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       )}
     </main>
   );
@@ -144,7 +141,9 @@ function StavZav({
 }) {
   return (
     <form action={nastavitStavZavodnika.bind(null, zavodnikId, akceId, stav)}>
-      <button className="text-gray-500 underline">{label}</button>
+      <button className="text-ink-500 underline transition-colors hover:text-teal-700">
+        {label}
+      </button>
     </form>
   );
 }

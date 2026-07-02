@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { casDneKratky } from "@/lib/cas";
 import { publikovat, obnovitZeZalohy } from "@/server/publikovat";
+import { Btn } from "../../../_components/ui";
 
 export function PublishPanel({
   akceId,
@@ -47,33 +48,44 @@ export function PublishPanel({
     return () => clearInterval(i);
   }, [auto, nakonfigurovano, akceId]);
 
+  const chipClass = chyba
+    ? "bg-error-bg text-error"
+    : stav
+      ? "bg-success-bg text-success"
+      : "bg-warning-bg text-warning";
+  const chipLabel = chyba ? "Chyba" : stav ? "Publikováno" : "Nepublikováno";
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={publikuj}
-          disabled={!nakonfigurovano || pending}
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-        >
+        <Btn onClick={publikuj} disabled={!nakonfigurovano || pending}>
           {pending ? "Publikuji…" : "Publikovat teď"}
-        </button>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={auto}
-            disabled={!nakonfigurovano}
-            onChange={(e) => setAuto(e.target.checked)}
-          />
-          Auto-publikovat (à 20 s)
-        </label>
+        </Btn>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-technical uppercase ${chipClass}`}
+        >
+          {chipLabel}
+        </span>
         {posledni && (
-          <span className="text-xs text-gray-500">
+          <span className="font-technical text-xs text-ink-500">
             naposledy {casDneKratky(posledni)}
           </span>
         )}
       </div>
-      {stav && !chyba && <p className="text-sm text-green-700">{stav}</p>}
-      {chyba && <p className="text-sm text-red-600">{chyba}</p>}
+
+      <label className="flex items-center gap-2.5 text-sm text-ink-700">
+        <input
+          type="checkbox"
+          checked={auto}
+          disabled={!nakonfigurovano}
+          onChange={(e) => setAuto(e.target.checked)}
+          className="h-4 w-4 accent-teal-500"
+        />
+        Auto-publikovat (à 20 s)
+      </label>
+
+      {stav && !chyba && <p className="text-sm text-success">{stav}</p>}
+      {chyba && <p className="text-sm text-error">{chyba}</p>}
     </div>
   );
 }
@@ -99,15 +111,14 @@ export function ObnovaForm({ akceId }: { akceId: string }) {
         name="zaloha"
         accept="application/json,.json"
         required
-        className="text-sm"
+        className="cal-input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-ink-100 file:px-3 file:py-1 file:text-sm file:font-medium file:text-ink-700"
       />
-      <button
-        disabled={pending}
-        className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-40"
-      >
+      <Btn variant="ghost" disabled={pending}>
         {pending ? "Obnovuji…" : "Obnovit ze zálohy"}
-      </button>
-      {vysledek && <span className="text-sm text-gray-600">{vysledek}</span>}
+      </Btn>
+      {vysledek && (
+        <span className="font-technical text-sm text-ink-600">{vysledek}</span>
+      )}
     </form>
   );
 }

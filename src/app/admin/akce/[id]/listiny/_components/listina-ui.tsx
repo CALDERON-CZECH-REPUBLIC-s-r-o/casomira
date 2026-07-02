@@ -23,15 +23,19 @@ export function ListinaHlavicka({
   const d = new Date(datum + "T00:00:00");
   const datumCz = `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
   return (
-    <header className="mb-4">
-      <h1 className="text-xl font-bold">{nazev}</h1>
-      <p className="text-sm text-gray-600">
-        {datumCz}
-        {misto ? ` · ${misto}` : ""}
-      </p>
-      <h2 className="mt-1 text-lg font-semibold">
-        {typ}
-        {podtitul ? <span className="font-normal"> — {podtitul}</span> : null}
+    <header className="mb-5 border-b-2 border-ink-800 pb-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <h1 className="text-2xl font-bold tracking-tight text-ink-900">{nazev}</h1>
+        <span className="flex-none font-technical text-[12px] tabular-nums text-ink-500">
+          {datumCz}
+          {misto ? ` · ${misto}` : ""}
+        </span>
+      </div>
+      <h2 className="mt-1.5 flex items-baseline gap-2">
+        <span className="text-lg font-semibold text-teal-700">{typ}</span>
+        {podtitul ? (
+          <span className="font-technical text-[12px] text-ink-500">— {podtitul}</span>
+        ) : null}
       </h2>
     </header>
   );
@@ -54,27 +58,46 @@ export function StartovniTabulka({
   return (
     <table className="mb-6 w-full border-collapse text-sm">
       <thead>
-        <tr className="border-b-2 border-gray-700 text-left">
-          <th className="py-1 pr-2">Číslo</th>
-          <th className="pr-2">Příjmení</th>
-          <th className="pr-2">Jméno</th>
-          <th className="pr-2">Roč.</th>
-          <th className="pr-2">Oddíl / Město</th>
-          {kategorieKod && <th className="pr-2">Kat.</th>}
+        <tr className="border-b-2 border-ink-800 text-left">
+          <th className="py-1.5 pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Číslo
+          </th>
+          <th className="pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Příjmení
+          </th>
+          <th className="pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Jméno
+          </th>
+          <th className="pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Roč.
+          </th>
+          <th className="pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Oddíl / Město
+          </th>
+          {kategorieKod && (
+            <th className="pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+              Kat.
+            </th>
+          )}
         </tr>
       </thead>
       <tbody>
         {zavodnici.map((z, i) => (
-          <tr key={z.id} className={i % 2 ? "bg-gray-50 print:bg-gray-100" : ""}>
-            <td className="py-0.5 pr-2 tabular-nums">
+          <tr
+            key={z.id}
+            className={`border-b border-ink-100 ${i % 2 ? "bg-ink-50 print:bg-ink-100" : ""}`}
+          >
+            <td className="py-1 pr-3 font-technical tabular-nums text-ink-700">
               {z.startovniCislo ?? "—"}
             </td>
-            <td className="pr-2 font-medium">{z.prijmeni}</td>
-            <td className="pr-2">{z.jmeno}</td>
-            <td className="pr-2 tabular-nums">{z.rokNarozeni ?? "—"}</td>
-            <td className="pr-2">{oddilNeboMesto(z) || "—"}</td>
+            <td className="pr-3 font-semibold text-ink-900">{z.prijmeni}</td>
+            <td className="pr-3 text-ink-700">{z.jmeno}</td>
+            <td className="pr-3 font-technical tabular-nums text-ink-600">
+              {z.rokNarozeni ?? "—"}
+            </td>
+            <td className="pr-3 text-ink-600">{oddilNeboMesto(z) || "—"}</td>
             {kategorieKod && (
-              <td className="pr-2">
+              <td className="pr-3 font-technical text-ink-600">
                 {z.kategorieId ? kategorieKod.get(z.kategorieId) ?? "—" : "—"}
               </td>
             )}
@@ -95,16 +118,28 @@ export function VysledkovaTabulka({
   return (
     <table className="mb-6 w-full border-collapse text-sm">
       <thead>
-        <tr className="border-b-2 border-gray-700 text-left">
-          <th className="py-1 pr-2">Poř.</th>
-          <th className="pr-2">Číslo</th>
-          <th className="pr-2">Příjmení</th>
-          <th className="pr-2">Jméno</th>
-          <th className="pr-2">Roč.</th>
-          <th className="pr-2">Oddíl / Město</th>
-          {kategorieKod && <th className="pr-2">Kat.</th>}
-          <th className="pr-2 text-right">Čas</th>
-          <th className="pr-2 text-right">Ztráta</th>
+        <tr className="border-b-2 border-ink-800 text-left">
+          {["Poř.", "Číslo", "Příjmení", "Jméno", "Roč.", "Oddíl / Město"].map(
+            (h) => (
+              <th
+                key={h}
+                className="py-1.5 pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500"
+              >
+                {h}
+              </th>
+            ),
+          )}
+          {kategorieKod && (
+            <th className="pr-3 text-[11px] font-medium uppercase tracking-wider text-ink-500">
+              Kat.
+            </th>
+          )}
+          <th className="pr-3 text-right text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Čas
+          </th>
+          <th className="pr-3 text-right text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            Ztráta
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -114,25 +149,43 @@ export function VysledkovaTabulka({
           return (
             <tr
               key={z.id}
-              className={`${i % 2 ? "bg-gray-50 print:bg-gray-100" : ""} ${nedobehl ? "text-gray-500" : ""}`}
+              className={`border-b border-ink-100 ${i % 2 ? "bg-ink-50 print:bg-ink-100" : ""} ${nedobehl ? "text-ink-400" : ""}`}
             >
-              <td className="py-0.5 pr-2 tabular-nums">{r.poradi ?? ""}</td>
-              <td className="pr-2 tabular-nums">{z.startovniCislo ?? "—"}</td>
-              <td className="pr-2 font-medium">{z.prijmeni}</td>
-              <td className="pr-2">{z.jmeno}</td>
-              <td className="pr-2 tabular-nums">{z.rokNarozeni ?? "—"}</td>
-              <td className="pr-2">{oddilNeboMesto(z) || "—"}</td>
+              <td
+                className={`py-1 pr-3 font-technical tabular-nums ${nedobehl ? "" : "font-semibold text-teal-700"}`}
+              >
+                {r.poradi ?? ""}
+              </td>
+              <td className="pr-3 font-technical tabular-nums text-ink-700">
+                {z.startovniCislo ?? "—"}
+              </td>
+              <td
+                className={`pr-3 font-semibold ${nedobehl ? "" : "text-ink-900"}`}
+              >
+                {z.prijmeni}
+              </td>
+              <td className={`pr-3 ${nedobehl ? "" : "text-ink-700"}`}>
+                {z.jmeno}
+              </td>
+              <td className="pr-3 font-technical tabular-nums text-ink-600">
+                {z.rokNarozeni ?? "—"}
+              </td>
+              <td className={`pr-3 ${nedobehl ? "" : "text-ink-600"}`}>
+                {oddilNeboMesto(z) || "—"}
+              </td>
               {kategorieKod && (
-                <td className="pr-2">
+                <td className="pr-3 font-technical text-ink-600">
                   {z.kategorieId ? kategorieKod.get(z.kategorieId) ?? "—" : "—"}
                 </td>
               )}
-              <td className="pr-2 text-right tabular-nums">
+              <td
+                className={`pr-3 text-right font-technical tabular-nums ${nedobehl ? "text-ink-400" : "font-semibold text-ink-900"}`}
+              >
                 {r.stav === "klasifikovan" && r.cistyCasMs !== null
                   ? cistyCas(r.cistyCasMs)
                   : STAV_LABEL[r.stav] ?? "—"}
               </td>
-              <td className="pr-2 text-right tabular-nums">
+              <td className="pr-3 text-right font-technical tabular-nums text-ink-500">
                 {r.stav === "klasifikovan" ? ztrata(r.ztrataMs) : ""}
               </td>
             </tr>
@@ -152,11 +205,15 @@ export function SekceHlavicka({
   souhrn?: { klasifikovano: number; dnf: number; dns: number; dsq: number };
 }) {
   return (
-    <h3 className="mb-1 mt-4 border-b border-gray-400 pb-0.5 text-base font-semibold">
-      {kategorie.kod ? `${kategorie.kod} — ` : ""}
-      {kategorie.nazev}
+    <h3 className="mb-1.5 mt-6 flex items-baseline gap-2 border-b border-ink-200 pb-1 text-base">
+      {kategorie.kod && (
+        <span className="font-technical font-medium text-teal-600">
+          {kategorie.kod}
+        </span>
+      )}
+      <span className="font-semibold text-ink-900">{kategorie.nazev}</span>
       {souhrn && (
-        <span className="ml-2 text-xs font-normal text-gray-500">
+        <span className="ml-auto font-technical text-[11px] font-normal text-ink-500">
           {souhrn.klasifikovano} klasifikováno
           {souhrn.dnf ? ` · ${souhrn.dnf} DNF` : ""}
           {souhrn.dns ? ` · ${souhrn.dns} DNS` : ""}
@@ -173,7 +230,11 @@ export function TiskStyl() {
     <style>{`
       @page { size: A4; margin: 12mm; }
       @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body {
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         h3 { break-after: avoid; }
         tr { break-inside: avoid; }
       }

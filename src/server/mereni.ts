@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { akce as akceT, cilovyZaznam, zavodnik as zavT } from "@/db/schema";

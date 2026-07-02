@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
+import { BtnLink, Card, PageHeader } from "../../../_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -23,25 +23,28 @@ export default async function ListinyHubPage({
   const exp = (q: string) => `${base}/export?${q}`;
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <Link
-        href={`/admin/akce/${id}`}
-        className="text-sm text-gray-500 hover:underline"
-      >
-        ← {akce.nazev}
-      </Link>
-      <h1 className="mb-6 mt-2 text-2xl font-semibold">Listiny</h1>
+    <main className="mx-auto max-w-3xl p-6">
+      <PageHeader
+        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
+        eyebrow="Listiny"
+        title="Startovní a výsledkové listiny"
+        desc={
+          <>
+            <span className="font-technical">{pocet}</span> závodníků
+          </>
+        }
+      />
 
       {pocet === 0 && (
-        <p className="mb-4 rounded bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="mb-6 rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
           Akce nemá závodníky — naimportuj přihlášky.
         </p>
       )}
 
       {/* Startovní */}
-      <section className="mb-6 rounded-lg border p-4">
-        <h2 className="mb-3 text-lg font-medium">Startovní listina</h2>
-        <div className="mb-3 flex flex-col gap-2 text-sm">
+      <section className="mb-8">
+        <div className="cal-eyebrow mb-3">Startovní listina</div>
+        <Card className="flex flex-col gap-4 p-5">
           <Radek popis="Náhled / tisk">
             <Tlac href={`${base}/startovni?rozsah=celkova&sort=cislo`}>
               celková (dle čísla)
@@ -59,13 +62,13 @@ export default async function ListinyHubPage({
             </Tlac>
             <Tlac href={exp("typ=startovni&format=xlsx&sort=cislo")}>XLSX</Tlac>
           </Radek>
-        </div>
+        </Card>
       </section>
 
       {/* Výsledková */}
-      <section className="rounded-lg border p-4">
-        <h2 className="mb-3 text-lg font-medium">Výsledková listina</h2>
-        <div className="flex flex-col gap-2 text-sm">
+      <section>
+        <div className="cal-eyebrow mb-3">Výsledková listina</div>
+        <Card className="flex flex-col gap-4 p-5">
           <Radek popis="Náhled / tisk">
             <Tlac href={`${base}/vysledkova?rozsah=kategorie`}>
               po kategoriích
@@ -80,7 +83,7 @@ export default async function ListinyHubPage({
               XLSX
             </Tlac>
           </Radek>
-        </div>
+        </Card>
       </section>
     </main>
   );
@@ -95,7 +98,7 @@ function Radek({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="w-24 shrink-0 text-gray-500">{popis}:</span>
+      <span className="w-24 shrink-0 text-sm text-ink-500">{popis}:</span>
       {children}
     </div>
   );
@@ -103,12 +106,8 @@ function Radek({
 
 function Tlac({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      target="_blank"
-      className="rounded-md border px-3 py-1.5 hover:bg-gray-50"
-    >
+    <BtnLink href={href} target="_blank" variant="ghost">
       {children}
-    </Link>
+    </BtnLink>
   );
 }

@@ -3,33 +3,33 @@ import type { Kategorie } from "@/db/schema";
 /** Sdílená pole formuláře kategorie (vytvoření i úprava). */
 export function KategorieFormFields({ kat }: { kat?: Kategorie }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="grid grid-cols-[1fr_6rem_8rem] gap-3">
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Název *
           <input
             name="nazev"
             required
             defaultValue={kat?.nazev}
             placeholder="Muži do 40 let"
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Kód
           <input
             name="kod"
             defaultValue={kat?.kod ?? ""}
             placeholder="M40"
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input font-technical"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Pohlaví *
           <select
             name="pohlavi"
             defaultValue={kat?.pohlavi ?? "M"}
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input"
           >
             <option value="M">Muži</option>
             <option value="Z">Ženy</option>
@@ -38,55 +38,55 @@ export function KategorieFormFields({ kat }: { kat?: Kategorie }) {
         </label>
       </div>
 
-      <fieldset className="grid grid-cols-2 gap-3 rounded-md border border-gray-200 p-3">
-        <legend className="px-1 text-xs text-gray-500">
+      <fieldset className="grid grid-cols-2 gap-3 rounded-[10px] border border-ink-200 bg-ink-50 p-3">
+        <legend className="cal-eyebrow px-1 text-ink-500">
           Omezení věkem (proti referenčnímu roku akce) — vyplň buď věk, nebo ročník
         </legend>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Věk od
           <input
             name="vekOd"
             type="number"
             defaultValue={kat?.vekOd ?? ""}
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input font-technical tabular-nums"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Věk do
           <input
             name="vekDo"
             type="number"
             defaultValue={kat?.vekDo ?? ""}
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input font-technical tabular-nums"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Ročník od
           <input
             name="rokNarozeniOd"
             type="number"
             defaultValue={kat?.rokNarozeniOd ?? ""}
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input font-technical tabular-nums"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Ročník do
           <input
             name="rokNarozeniDo"
             type="number"
             defaultValue={kat?.rokNarozeniDo ?? ""}
-            className="rounded-md border border-gray-300 px-2 py-1.5"
+            className="cal-input font-technical tabular-nums"
           />
         </label>
       </fieldset>
 
-      <label className="flex w-32 flex-col gap-1 text-sm">
+      <label className="cal-label w-32">
         Pořadí ve výstupech
         <input
           name="poradi"
           type="number"
           defaultValue={kat?.poradi ?? 0}
-          className="rounded-md border border-gray-300 px-2 py-1.5"
+          className="cal-input font-technical tabular-nums"
         />
       </label>
     </div>

@@ -43,3 +43,7 @@ next-env.d.ts
 
 # Vzory obsahuji realna osobni data (jmena, telefony) – jen lokalne
 vzory/
+
+# Lokalni referencni materialy (design handoff, export repa) – nepatri do repa
+/Casomira repository.zip
+design_handoff_mereni/

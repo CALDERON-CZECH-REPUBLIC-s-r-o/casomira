@@ -4,52 +4,43 @@ import type { Akce } from "@/db/schema";
 export function AkceFormFields({ akce }: { akce?: Akce }) {
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="cal-label">
         Název akce *
-        <input
-          name="nazev"
-          required
-          defaultValue={akce?.nazev}
-          className="rounded-md border border-gray-300 px-3 py-2"
-        />
+        <input name="nazev" required defaultValue={akce?.nazev} className="cal-input" />
       </label>
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Datum *
           <input
             name="datum"
             type="date"
             required
             defaultValue={akce?.datum}
-            className="rounded-md border border-gray-300 px-3 py-2"
+            className="cal-input"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="cal-label">
           Referenční rok (pro věk)
           <input
             name="rok"
             type="number"
             placeholder="dle data"
             defaultValue={akce?.rok}
-            className="rounded-md border border-gray-300 px-3 py-2"
+            className="cal-input"
           />
         </label>
       </div>
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="cal-label">
         Místo
-        <input
-          name="misto"
-          defaultValue={akce?.misto ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-2"
-        />
+        <input name="misto" defaultValue={akce?.misto ?? ""} className="cal-input" />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="cal-label">
         Poznámka
         <textarea
           name="poznamka"
           rows={2}
           defaultValue={akce?.poznamka ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="cal-input"
         />
       </label>
     </div>

@@ -1,6 +1,8 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, signIn } from "@/auth/nextauth";
+import { Btn } from "../admin/_components/ui";
 
 /**
  * Přihlášení organizátora (Credentials). Po úspěchu redirect na callbackUrl nebo /admin.
@@ -33,42 +35,61 @@ export default async function PrihlaseniPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Přihlášení organizátora</h1>
-      {sp.chyba && (
-        <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          Nesprávný e-mail nebo heslo.
-        </p>
-      )}
-      <form action={prihlasit} className="flex flex-col gap-4">
-        <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/admin"} />
-        <label className="flex flex-col gap-1 text-sm">
-          E-mail
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="username"
-            className="rounded-md border border-gray-300 px-3 py-2"
+    <main className="font-brand flex flex-1 flex-col items-center justify-center bg-ink-50 p-6 text-ink-900">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <Image
+            src="/calderon-logo.png"
+            alt="Calderon"
+            width={140}
+            height={26}
+            style={{ height: 26, width: "auto" }}
+            priority
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Heslo
-          <input
-            name="heslo"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="rounded-md border border-gray-300 px-3 py-2"
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded-md bg-black px-4 py-2 font-medium text-white"
-        >
-          Přihlásit se
-        </button>
-      </form>
+          <div className="cal-eyebrow text-teal-600">Administrace závodů</div>
+        </div>
+
+        <div className="cal-card p-6 shadow-[var(--shadow-md)]">
+          <h1 className="mb-5 text-lg font-bold text-ink-900">
+            Přihlášení organizátora
+          </h1>
+          {sp.chyba && (
+            <p className="mb-4 rounded-[10px] bg-error-bg p-3 text-sm font-medium text-error">
+              Nesprávný e-mail nebo heslo.
+            </p>
+          )}
+          <form action={prihlasit} className="flex flex-col gap-4">
+            <input
+              type="hidden"
+              name="callbackUrl"
+              value={sp.callbackUrl ?? "/admin"}
+            />
+            <label className="cal-label">
+              E-mail
+              <input
+                name="email"
+                type="email"
+                required
+                autoComplete="username"
+                className="cal-input"
+              />
+            </label>
+            <label className="cal-label">
+              Heslo
+              <input
+                name="heslo"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="cal-input"
+              />
+            </label>
+            <Btn type="submit" className="mt-1 w-full">
+              Přihlásit se
+            </Btn>
+          </form>
+        </div>
+      </div>
     </main>
   );
 }

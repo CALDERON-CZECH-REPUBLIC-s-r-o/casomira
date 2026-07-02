@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { BackLink, Btn } from "../../../../_components/ui";
 
 /** Lišta nad listinou — skrytá při tisku. Tlačítko vyvolá tiskový dialog. */
 export function TiskToolbar({
@@ -11,16 +11,11 @@ export function TiskToolbar({
   titulek: string;
 }) {
   return (
-    <div className="mb-4 flex items-center justify-between print:hidden">
-      <Link href={zpetHref} className="text-sm text-gray-500 hover:underline">
-        ← {titulek}
-      </Link>
-      <button
-        onClick={() => window.print()}
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
-      >
+    <div className="mb-5 flex items-center justify-between print:hidden">
+      <BackLink href={zpetHref}>{titulek}</BackLink>
+      <Btn variant="dark" onClick={() => window.print()}>
         🖨 Tisk / uložit PDF
-      </button>
+      </Btn>
     </div>
   );
 }

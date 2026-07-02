@@ -24,3 +24,152 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ============================================================
+   CALDERON design tokens — scoped to the měřicí (finish-line) screen.
+   Defined as plain custom properties so they don't override the app's
+   default Tailwind palette; consumed via var() in mereni-screen.tsx.
+   ============================================================ */
+:root {
+  --teal-50: #edf7f3;
+  --teal-100: #d6ede4;
+  --teal-200: #afddcb;
+  --teal-300: #84c9af;
+  --teal-400: #67bc9e;
+  --teal-500: #50b090;
+  --teal-600: #3c9277;
+  --teal-700: #2e7059;
+
+  --ink-950: #0f1f1a;
+  --ink-900: #14201c;
+  --ink-800: #1e2d28;
+  --ink-700: #2c3a35;
+  --ink-600: #41514b;
+  --ink-500: #5a6b64;
+  --ink-400: #808e88;
+  --ink-300: #b6c1bc;
+  --ink-250: #cdd6d1;
+  --ink-200: #e1e7e4;
+  --ink-150: #ecf0ee;
+  --ink-100: #f2f5f3;
+  --ink-50: #f8faf9;
+
+  --amber-500: #e9a23c;
+  --amber-100: #fbefd7;
+  --warning-bg: #fbefd7;
+  --queue-border: #f0dcb0;
+
+  --success: #1f9d5b;
+  --success-bg: #e4f5ec;
+  --warning: #d8941a;
+  --error: #d8534a;
+  --error-bg: #fbe7e5;
+
+  --cal-font-sans: var(--font-now), system-ui, -apple-system, sans-serif;
+  --cal-font-mono: var(--font-jb), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(15, 31, 26, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 31, 26, 0.07), 0 1px 2px rgba(15, 31, 26, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 31, 26, 0.08), 0 2px 4px rgba(15, 31, 26, 0.05);
+  --shadow-primary: 0 8px 22px rgba(80, 176, 144, 0.3);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Live status / clock dot — slow opacity pulse (handoff: livePulse). */
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.cal-livedot {
+  animation: livePulse 1.8s var(--ease-inout) infinite;
+}
+
+/* Bib tile / button press feedback. */
+.cal-tile {
+  transition: transform var(--ease-out) 120ms, background 120ms var(--ease-out),
+    border-color 120ms var(--ease-out);
+}
+.cal-tile:active {
+  transform: scale(0.94);
+}
+.cal-press {
+  transition: transform 120ms var(--ease-out), background 120ms var(--ease-out);
+}
+.cal-press:active {
+  transform: scale(0.985);
+}
+
+/* ============================================================
+   Calderon paleta jako Tailwind utility (bg-/text-/border-teal-500,
+   text-ink-600, …) + brand fonty. Odkazuje na raw tokeny výše, takže
+   zůstává jediný zdroj pravdy. Používá administrace i další screeny.
+   ============================================================ */
+@theme inline {
+  --color-teal-50: var(--teal-50);
+  --color-teal-100: var(--teal-100);
+  --color-teal-200: var(--teal-200);
+  --color-teal-300: var(--teal-300);
+  --color-teal-400: var(--teal-400);
+  --color-teal-500: var(--teal-500);
+  --color-teal-600: var(--teal-600);
+  --color-teal-700: var(--teal-700);
+
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-ink-300: var(--ink-300);
+  --color-ink-250: var(--ink-250);
+  --color-ink-200: var(--ink-200);
+  --color-ink-150: var(--ink-150);
+  --color-ink-100: var(--ink-100);
+  --color-ink-50: var(--ink-50);
+
+  --color-amber-500: var(--amber-500);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+
+  --font-brand: var(--font-now), system-ui, -apple-system, sans-serif;
+  --font-technical: var(--font-jb), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Sdílené prvky administrace (formuláře, karty). */
+@layer components {
+  .cal-card {
+    @apply rounded-[14px] border border-ink-200 bg-white;
+  }
+  .cal-label {
+    @apply flex flex-col gap-1.5 text-[13px] font-medium text-ink-600;
+  }
+  .cal-input {
+    @apply w-full rounded-[10px] border border-ink-200 bg-white px-3 py-2 text-sm
+      font-medium text-ink-900 outline-none transition-colors placeholder:text-ink-400;
+  }
+  .cal-input:focus {
+    @apply border-teal-400;
+    box-shadow: 0 0 0 3px var(--teal-100);
+  }
+  /* Technický „eyebrow" nadpis — mono, prostrkaný, verzálky. */
+  .cal-eyebrow {
+    @apply font-technical text-[10.5px] font-medium uppercase tracking-[.12em] text-ink-400;
+  }
+}

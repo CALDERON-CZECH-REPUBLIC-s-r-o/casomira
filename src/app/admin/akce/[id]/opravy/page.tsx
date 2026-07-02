@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -15,6 +14,7 @@ import {
   upravitCisloZaznamu,
   zmenitStavZaznamu,
 } from "@/server/opravy";
+import { Btn, Card, PageHeader } from "../../../_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +23,15 @@ const STAV_LABEL: Record<string, string> = {
   neprirazeno: "k doplnění",
   smazany: "smazaný",
   DNF: "DNF",
+};
+
+const STAV_PILL: Record<string, string> = {
+  platny: "bg-teal-50 text-teal-700",
+  neprirazeno: "bg-warning-bg text-warning",
+  DNF: "bg-warning-bg text-warning",
+  DNS: "bg-warning-bg text-warning",
+  DSQ: "bg-error-bg text-error",
+  smazany: "bg-ink-100 text-ink-400 line-through",
 };
 
 export default async function OpravyPage({
@@ -53,186 +62,189 @@ export default async function OpravyPage({
 
   return (
     <main className="mx-auto max-w-4xl p-6">
-      <Link
-        href={`/admin/akce/${id}`}
-        className="text-sm text-gray-500 hover:underline"
-      >
-        ← {akce.nazev}
-      </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Opravy průchodů</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        Ruční úprava času (oprava překlepu), doplnění čísla, vložení vynechaného
-        průchodu, DNF a mazání. Razítko měň jen při opravě překlepu.
-      </p>
+      <PageHeader
+        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
+        eyebrow="Opravy"
+        title="Opravy průchodů"
+        desc="Ruční úprava času (oprava překlepu), doplnění čísla, vložení vynechaného průchodu, DNF a mazání. Razítko měň jen při opravě překlepu."
+      />
 
       {sp.chyba && (
-        <p className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <p className="mb-4 rounded-[10px] bg-error-bg p-3 text-sm text-error">
           {sp.chyba}
         </p>
       )}
 
       {/* Ruční vložení */}
-      <section className="mb-6 rounded-lg border border-dashed p-4">
-        <h2 className="mb-3 text-sm font-medium">
-          Vložit vynechaný průchod
-        </h2>
-        <form
-          action={vlozitRucniPruchod.bind(null, id)}
-          className="flex flex-wrap items-end gap-3"
-        >
-          <input type="hidden" name="datum" value={akce.datum} />
-          <label className="flex flex-col gap-1 text-sm">
-            Čas (HH:mm:ss.SSS)
-            <input
-              name="cas"
-              required
-              placeholder="14:03:27.480"
-              className="w-40 rounded-md border border-gray-300 px-2 py-1.5 tabular-nums"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Číslo (volitelně)
-            <input
-              name="cislo"
-              inputMode="numeric"
-              className="w-24 rounded-md border border-gray-300 px-2 py-1.5 tabular-nums"
-            />
-          </label>
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
-            Vložit
-          </button>
-        </form>
+      <section className="mb-6">
+        <div className="cal-eyebrow mb-3">Vložit vynechaný průchod</div>
+        <Card className="p-5">
+          <form
+            action={vlozitRucniPruchod.bind(null, id)}
+            className="flex flex-wrap items-end gap-4"
+          >
+            <input type="hidden" name="datum" value={akce.datum} />
+            <label className="cal-label">
+              Čas (HH:mm:ss.SSS)
+              <input
+                name="cas"
+                required
+                placeholder="14:03:27.480"
+                className="cal-input w-44 font-technical tabular-nums"
+              />
+            </label>
+            <label className="cal-label">
+              Číslo (volitelně)
+              <input
+                name="cislo"
+                inputMode="numeric"
+                className="cal-input w-28 font-technical tabular-nums"
+              />
+            </label>
+            <Btn type="submit">Vložit</Btn>
+          </form>
+        </Card>
       </section>
 
       {/* Tabulka průchodů */}
       <section className="mb-8">
-        <h2 className="mb-3 text-lg font-medium">
-          Průchody ({zaznamy.length})
-        </h2>
+        <div className="cal-eyebrow mb-3">Průchody ({zaznamy.length})</div>
         {zaznamy.length === 0 ? (
-          <p className="text-sm text-gray-500">Zatím žádné průchody.</p>
+          <Card className="p-5">
+            <p className="text-sm text-ink-500">Zatím žádné průchody.</p>
+          </Card>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b text-left text-gray-500">
-              <tr>
-                <th className="py-2">#</th>
-                <th>Čas (editovatelný)</th>
-                <th>Číslo</th>
-                <th>Jméno</th>
-                <th>Stav</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {zaznamy.map((z) => {
-                const smazany = z.stav === "smazany";
-                return (
-                  <tr
-                    key={z.id}
-                    className={`border-b last:border-0 ${smazany ? "text-gray-400 line-through" : ""}`}
-                  >
-                    <td className="py-1.5 tabular-nums text-gray-400">
-                      {z.poradiDoteku}
-                    </td>
-                    <td>
-                      <form
-                        action={upravitCasZaznamu.bind(null, z.id, id)}
-                        className="flex items-center gap-1"
-                      >
-                        <input
-                          name="cas"
-                          defaultValue={casNaInput(z.casCile)}
-                          className="w-32 rounded border border-gray-200 px-1.5 py-0.5 tabular-nums"
-                        />
-                        <button className="text-xs text-blue-600 underline">
-                          ulož
-                        </button>
-                      </form>
-                    </td>
-                    <td>
-                      <form
-                        action={upravitCisloZaznamu.bind(null, z.id, id)}
-                        className="flex items-center gap-1"
-                      >
-                        <input
-                          name="cislo"
-                          defaultValue={z.startovniCislo ?? ""}
-                          inputMode="numeric"
-                          className="w-16 rounded border border-gray-200 px-1.5 py-0.5 tabular-nums"
-                        />
-                        <button className="text-xs text-blue-600 underline">
-                          ulož
-                        </button>
-                      </form>
-                    </td>
-                    <td>
-                      {z.zavodnik
-                        ? `${z.zavodnik.prijmeni} ${z.zavodnik.jmeno}`
-                        : z.startovniCislo === null
-                          ? "—"
-                          : "neznámé číslo"}
-                    </td>
-                    <td className="text-xs">{STAV_LABEL[z.stav] ?? z.stav}</td>
-                    <td className="text-right">
-                      <div className="flex justify-end gap-2 text-xs">
-                        {z.stav !== "DNF" ? (
-                          <StavButton
-                            zaznamId={z.id}
-                            akceId={id}
-                            stav="DNF"
-                            label="DNF"
+          <Card className="overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-ink-200 text-left text-[12px] font-medium uppercase text-ink-500">
+                  <th className="px-4 py-2.5 font-medium">#</th>
+                  <th className="px-2 py-2.5 font-medium">Čas (editovatelný)</th>
+                  <th className="px-2 py-2.5 font-medium">Číslo</th>
+                  <th className="px-2 py-2.5 font-medium">Jméno</th>
+                  <th className="px-2 py-2.5 font-medium">Stav</th>
+                  <th className="px-4 py-2.5"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-150">
+                {zaznamy.map((z) => {
+                  const smazany = z.stav === "smazany";
+                  return (
+                    <tr
+                      key={z.id}
+                      className={`hover:bg-ink-50 ${smazany ? "text-ink-400 line-through" : "text-ink-900"}`}
+                    >
+                      <td className="px-4 py-1.5 font-technical tabular-nums text-ink-400">
+                        {z.poradiDoteku}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <form
+                          action={upravitCasZaznamu.bind(null, z.id, id)}
+                          className="flex items-center gap-1.5"
+                        >
+                          <input
+                            name="cas"
+                            defaultValue={casNaInput(z.casCile)}
+                            className="cal-input w-32 px-2 py-1 font-technical tabular-nums"
                           />
-                        ) : (
-                          <StavButton
-                            zaznamId={z.id}
-                            akceId={id}
-                            stav={z.startovniCislo !== null ? "platny" : "neprirazeno"}
-                            label="zrušit DNF"
+                          <button className="text-xs font-medium text-teal-600 hover:text-teal-700">
+                            ulož
+                          </button>
+                        </form>
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <form
+                          action={upravitCisloZaznamu.bind(null, z.id, id)}
+                          className="flex items-center gap-1.5"
+                        >
+                          <input
+                            name="cislo"
+                            defaultValue={z.startovniCislo ?? ""}
+                            inputMode="numeric"
+                            className="cal-input w-16 px-2 py-1 font-technical tabular-nums"
                           />
-                        )}
-                        {smazany ? (
-                          <StavButton
-                            zaznamId={z.id}
-                            akceId={id}
-                            stav={z.startovniCislo !== null ? "platny" : "neprirazeno"}
-                            label="obnovit"
-                          />
-                        ) : (
-                          <StavButton
-                            zaznamId={z.id}
-                            akceId={id}
-                            stav="smazany"
-                            label="smazat"
-                            cervena
-                          />
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          <button className="text-xs font-medium text-teal-600 hover:text-teal-700">
+                            ulož
+                          </button>
+                        </form>
+                      </td>
+                      <td className="px-2 py-1.5">
+                        {z.zavodnik
+                          ? `${z.zavodnik.prijmeni} ${z.zavodnik.jmeno}`
+                          : z.startovniCislo === null
+                            ? "—"
+                            : "neznámé číslo"}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${STAV_PILL[z.stav] ?? "bg-ink-100 text-ink-500"}`}
+                        >
+                          {STAV_LABEL[z.stav] ?? z.stav}
+                        </span>
+                      </td>
+                      <td className="px-4 py-1.5 text-right">
+                        <div className="flex justify-end gap-1 text-xs">
+                          {z.stav !== "DNF" ? (
+                            <StavButton
+                              zaznamId={z.id}
+                              akceId={id}
+                              stav="DNF"
+                              label="DNF"
+                            />
+                          ) : (
+                            <StavButton
+                              zaznamId={z.id}
+                              akceId={id}
+                              stav={z.startovniCislo !== null ? "platny" : "neprirazeno"}
+                              label="zrušit DNF"
+                            />
+                          )}
+                          {smazany ? (
+                            <StavButton
+                              zaznamId={z.id}
+                              akceId={id}
+                              stav={z.startovniCislo !== null ? "platny" : "neprirazeno"}
+                              label="obnovit"
+                            />
+                          ) : (
+                            <StavButton
+                              zaznamId={z.id}
+                              akceId={id}
+                              stav="smazany"
+                              label="smazat"
+                              cervena
+                            />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Card>
         )}
       </section>
 
       {/* Historie změn */}
       <section>
-        <h2 className="mb-3 text-lg font-medium">Historie změn</h2>
-        {log.length === 0 ? (
-          <p className="text-sm text-gray-500">Zatím žádné úpravy.</p>
-        ) : (
-          <ul className="flex flex-col gap-1 text-sm">
-            {log.map((l) => (
-              <li key={l.id} className="flex gap-3">
-                <span className="shrink-0 tabular-nums text-gray-400">
-                  {casDneKratky(l.kdy)}
-                </span>
-                <span>{l.popis}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="cal-eyebrow mb-3">Historie změn</div>
+        <Card className="p-5">
+          {log.length === 0 ? (
+            <p className="text-sm text-ink-500">Zatím žádné úpravy.</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5 font-technical text-[12px] text-ink-500">
+              {log.map((l) => (
+                <li key={l.id} className="flex gap-3">
+                  <span className="shrink-0 tabular-nums text-ink-400">
+                    {casDneKratky(l.kdy)}
+                  </span>
+                  <span>{l.popis}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </section>
     </main>
   );
@@ -253,7 +265,9 @@ function StavButton({
 }) {
   return (
     <form action={zmenitStavZaznamu.bind(null, zaznamId, akceId, stav)}>
-      <button className={`underline ${cervena ? "text-red-600" : "text-gray-500"}`}>
+      <button
+        className={`rounded-md px-2 py-1 font-medium transition-colors ${cervena ? "text-error hover:bg-error-bg" : "text-ink-500 hover:bg-ink-100 hover:text-ink-700"}`}
+      >
         {label}
       </button>
     </form>

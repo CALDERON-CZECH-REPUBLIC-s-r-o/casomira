@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -30,15 +29,10 @@ export default async function MereniPage({
   });
 
   return (
-    <main className="mx-auto max-w-5xl p-4">
-      <Link
-        href={`/admin/akce/${id}`}
-        className="text-sm text-gray-500 hover:underline"
-      >
-        ← {akce.nazev}
-      </Link>
+    <main className="mx-auto w-full max-w-[1240px] p-3 sm:p-4">
       <MereniScreen
         akceId={id}
+        nazev={akce.nazev}
         casStartu={akce.casStartu ? akce.casStartu.toISOString() : null}
         zavodnici={zavodnici.map((z) => ({
           startovniCislo: z.startovniCislo,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { signOut } from "@/auth/nextauth";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { db } from "@/db/client";
+import { BtnLink, Card, PageHeader } from "./_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -16,58 +17,58 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Administrace</h1>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/prihlaseni" });
-          }}
-        >
-          <button className="text-sm text-gray-500 underline">Odhlásit</button>
-        </form>
-      </div>
+      <PageHeader
+        eyebrow="Časomíra"
+        title="Administrace"
+        actions={
+          <>
+            <BtnLink href="/admin/akce/nova">+ Nová akce</BtnLink>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/prihlaseni" });
+              }}
+            >
+              <button className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800">
+                Odhlásit
+              </button>
+            </form>
+          </>
+        }
+      />
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Akce</h2>
-          <Link
-            href="/admin/akce/nova"
-            className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white"
-          >
-            + Nová akce
-          </Link>
-        </div>
+        <div className="cal-eyebrow mb-3">Akce</div>
         {akce.length === 0 ? (
-          <p className="text-sm text-gray-500">Zatím žádné akce.</p>
+          <Card className="p-6 text-sm text-ink-500">Zatím žádné akce.</Card>
         ) : (
-          <ul className="divide-y rounded-md border">
+          <Card className="divide-y divide-ink-150 overflow-hidden">
             {akce.map((a) => (
-              <li
+              <div
                 key={a.id}
-                className="flex items-center justify-between p-3"
+                className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-ink-50"
               >
-                <div>
+                <div className="min-w-0">
                   <Link
                     href={`/admin/akce/${a.id}`}
-                    className="font-medium hover:underline"
+                    className="font-semibold text-ink-900 hover:text-teal-700"
                   >
                     {a.nazev}
                   </Link>
-                  <div className="text-sm text-gray-500">
+                  <div className="mt-0.5 font-technical text-[12px] text-ink-500">
                     {a.datum} · {a.misto ?? "—"}
                   </div>
                 </div>
                 <Link
                   href={`/${a.slug}`}
-                  className="text-sm text-blue-600 underline"
+                  className="flex-none text-[13px] font-medium text-teal-600 hover:text-teal-700"
                   target="_blank"
                 >
                   veřejná stránka ↗
                 </Link>
-              </li>
+              </div>
             ))}
-          </ul>
+          </Card>
         )}
       </section>
     </main>

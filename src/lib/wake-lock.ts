@@ -1,6 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+
+// Podpora Wake Locku je statická vlastnost prohlížeče — čteme ji přes
+// useSyncExternalStore (serverový snapshot `false`), takže nevzniká hydration
+// mismatch ani setState v effectu. Prázdný subscribe = hodnota se nemění.
+const prazdnySubscribe = () => () => {};
+const jeWakeLockPodporovan = () => "wakeLock" in navigator;
+const naServeru = () => false;
 
 /**
  * Drží obrazovku vzhůru po dobu měření (Wake Lock API). Po přepnutí tabu se
@@ -10,13 +23,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useWakeLock(aktivni: boolean) {
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
   const [drzi, setDrzi] = useState(false);
-  // Zjišťujeme až po mountu — jinak by se SSR (navigator chybí) lišil od klienta
-  // a způsobil hydration mismatch. Výchozí false je shodný na serveru i klientu.
-  const [podporovano, setPodporovano] = useState(false);
-
-  useEffect(() => {
-    setPodporovano("wakeLock" in navigator);
-  }, []);
+  const podporovano = useSyncExternalStore(
+    prazdnySubscribe,
+    jeWakeLockPodporovan,
+    naServeru,
+  );
 
   const ziskat = useCallback(async () => {
     if (!podporovano || !aktivni) return;
@@ -32,6 +43,9 @@ export function useWakeLock(aktivni: boolean) {
 
   useEffect(() => {
     if (!aktivni) return;
+    // Imperativní akvizice zámku; `ziskat` je async a `setDrzi` volá až po awaitu
+    // (ne synchronně) → žádné kaskádové renderování.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     ziskat();
 
     const naViditelnost = () => {

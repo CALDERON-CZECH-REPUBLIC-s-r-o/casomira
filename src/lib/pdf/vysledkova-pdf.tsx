@@ -26,32 +26,43 @@ const STAV_LABEL: Record<string, string> = {
   bez_casu: "—",
 };
 
+// Calderon paleta (viz globals.css) — PDF drží stejný vizuál jako UI listiny.
 const s = StyleSheet.create({
-  page: { fontFamily: "Noto", fontSize: 9, padding: 28, color: "#111" },
-  nazev: { fontSize: 15, fontWeight: "bold" },
-  meta: { fontSize: 9, color: "#555", marginBottom: 2 },
-  typ: { fontSize: 12, fontWeight: "bold", marginBottom: 8 },
+  page: { fontFamily: "Noto", fontSize: 9, padding: 28, color: "#14201c" },
+  nazev: { fontSize: 16, fontWeight: "bold", color: "#14201c" },
+  meta: { fontSize: 9, color: "#5a6b64", marginBottom: 2 },
+  typ: { fontSize: 12, fontWeight: "bold", color: "#2e7059", marginBottom: 10 },
   sekceNadpis: {
     fontSize: 11,
     fontWeight: "bold",
-    marginTop: 10,
-    borderBottom: "1pt solid #888",
+    color: "#14201c",
+    marginTop: 12,
+    borderBottom: "1pt solid #e1e7e4",
     paddingBottom: 2,
   },
-  souhrn: { fontSize: 8, color: "#666", marginBottom: 3 },
+  souhrn: { fontSize: 8, color: "#5a6b64", marginBottom: 3 },
   hlavicka: {
     flexDirection: "row",
-    borderBottom: "1.5pt solid #333",
-    paddingBottom: 2,
-    fontWeight: "bold",
+    borderBottom: "1.2pt solid #1e2d28",
+    paddingBottom: 3,
+  },
+  hlavickaText: {
+    fontSize: 8,
+    fontWeight: "normal",
+    color: "#5a6b64",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   radek: {
     flexDirection: "row",
-    paddingVertical: 1.5,
-    borderBottom: "0.5pt solid #eee",
+    paddingVertical: 2,
+    borderBottom: "0.5pt solid #ecf0ee",
   },
-  nedobehl: { color: "#888" },
+  // Barvy buněk se dědí z řádku, aby nedoběhnuvší (nedobehl) zešedly celí;
+  // teal/tučné akcenty jen na buňkách, které mají jen klasifikovaní.
+  nedobehl: { color: "#808e88" },
   poradi: { width: "7%" },
+  poradiKlas: { color: "#2e7059", fontWeight: "bold" },
   cislo: { width: "8%" },
   prijmeni: { width: "20%", fontWeight: "bold" },
   jmeno: { width: "16%" },
@@ -59,6 +70,7 @@ const s = StyleSheet.create({
   oddil: { width: "22%" },
   kat: { width: "10%" },
   cas: { width: "12%", textAlign: "right" },
+  casKlas: { fontWeight: "bold", color: "#14201c" },
   ztrata: { width: "12%", textAlign: "right" },
 });
 
@@ -102,15 +114,15 @@ export function VysledkovaPDF({
               </Text>
             )}
             <View style={s.hlavicka}>
-              <Text style={s.poradi}>Poř.</Text>
-              <Text style={s.cislo}>Číslo</Text>
-              <Text style={s.prijmeni}>Příjmení</Text>
-              <Text style={s.jmeno}>Jméno</Text>
-              <Text style={s.rocnik}>Roč.</Text>
-              <Text style={s.oddil}>Oddíl / Město</Text>
-              {sKategorii && <Text style={s.kat}>Kat.</Text>}
-              <Text style={s.cas}>Čas</Text>
-              <Text style={s.ztrata}>Ztráta</Text>
+              <Text style={[s.poradi, s.hlavickaText]}>Poř.</Text>
+              <Text style={[s.cislo, s.hlavickaText]}>Číslo</Text>
+              <Text style={[s.prijmeni, s.hlavickaText]}>Příjmení</Text>
+              <Text style={[s.jmeno, s.hlavickaText]}>Jméno</Text>
+              <Text style={[s.rocnik, s.hlavickaText]}>Roč.</Text>
+              <Text style={[s.oddil, s.hlavickaText]}>Oddíl / Město</Text>
+              {sKategorii && <Text style={[s.kat, s.hlavickaText]}>Kat.</Text>}
+              <Text style={[s.cas, s.hlavickaText]}>Čas</Text>
+              <Text style={[s.ztrata, s.hlavickaText]}>Ztráta</Text>
             </View>
             {sk.radky.map((r) => {
               const z = r.zavodnik;
@@ -121,7 +133,11 @@ export function VysledkovaPDF({
                   style={[s.radek, ...(nedobehl ? [s.nedobehl] : [])]}
                   wrap={false}
                 >
-                  <Text style={s.poradi}>{r.poradi ?? ""}</Text>
+                  <Text
+                    style={[s.poradi, ...(nedobehl ? [] : [s.poradiKlas])]}
+                  >
+                    {r.poradi ?? ""}
+                  </Text>
                   <Text style={s.cislo}>{z.startovniCislo ?? "—"}</Text>
                   <Text style={s.prijmeni}>{z.prijmeni}</Text>
                   <Text style={s.jmeno}>{z.jmeno}</Text>
@@ -134,7 +150,7 @@ export function VysledkovaPDF({
                         : "—"}
                     </Text>
                   )}
-                  <Text style={s.cas}>
+                  <Text style={[s.cas, ...(nedobehl ? [] : [s.casKlas])]}>
                     {r.stav === "klasifikovan" && r.cistyCasMs !== null
                       ? cistyCas(r.cistyCasMs)
                       : STAV_LABEL[r.stav] ?? "—"}

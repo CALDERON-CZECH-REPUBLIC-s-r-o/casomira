@@ -10,6 +10,7 @@ import {
   type ImportZavodnik,
   type VysledekImportu,
 } from "@/server/import";
+import { Btn, Card } from "../../../_components/ui";
 
 type Bunky = (string | number)[][];
 type CileKlic =
@@ -247,43 +248,46 @@ export function ImportWizard({
   return (
     <div className="flex flex-col gap-6">
       {/* Krok 1: soubor */}
-      <section className="rounded-md border p-4">
+      <Card className="p-5">
         <div className="flex items-center justify-between gap-4">
-          <label className="text-sm font-medium">
+          <label className="cal-label">
             1. Vyber soubor s přihláškami
             <input
               type="file"
               accept=".xls,.xlsx"
               onChange={naSoubor}
-              className="mt-2 block text-sm"
+              className="cal-input mt-2 block"
             />
           </label>
-          <button
+          <Btn
             type="button"
+            variant="ghost"
             onClick={stahnoutSablonu}
-            className="shrink-0 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="shrink-0"
           >
             ↓ Stáhnout šablonu .xlsx
-          </button>
+          </Btn>
         </div>
         {chybaSouboru && (
-          <p className="mt-2 text-sm text-red-600">{chybaSouboru}</p>
+          <p className="mt-3 rounded-[10px] bg-error-bg p-3 text-sm text-error">
+            {chybaSouboru}
+          </p>
         )}
-      </section>
+      </Card>
 
       {bunky.length > 0 && (
         <>
           {/* Krok 2: list + řádek hlavičky */}
-          <section className="rounded-md border p-4">
-            <h2 className="mb-3 text-sm font-medium">2. List a hlavička</h2>
+          <Card className="p-5">
+            <h2 className="mb-3 cal-label">2. List a hlavička</h2>
             <div className="flex flex-wrap items-end gap-4">
               {nazvyListu.length > 1 && (
-                <label className="flex flex-col gap-1 text-sm">
+                <label className="flex flex-col gap-1 cal-label">
                   List
                   <select
                     value={aktivniList}
                     onChange={(e) => zmenList(e.target.value)}
-                    className="rounded-md border border-gray-300 px-2 py-1.5"
+                    className="cal-input"
                   >
                     {nazvyListu.map((n) => (
                       <option key={n} value={n}>
@@ -293,7 +297,7 @@ export function ImportWizard({
                   </select>
                 </label>
               )}
-              <label className="flex flex-col gap-1 text-sm">
+              <label className="flex flex-col gap-1 cal-label">
                 Řádek hlavičky
                 <select
                   value={hlavickaRadek}
@@ -302,7 +306,7 @@ export function ImportWizard({
                     setHlavickaRadek(hr);
                     autoMapuj(bunky, hr);
                   }}
-                  className="rounded-md border border-gray-300 px-2 py-1.5"
+                  className="cal-input"
                 >
                   {bunky.slice(0, 15).map((_, i) => (
                     <option key={i} value={i}>
@@ -311,17 +315,17 @@ export function ImportWizard({
                   ))}
                 </select>
               </label>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-500">
                 Náhled hlavičky:{" "}
                 {sloupce.map((s) => s.label).join(" · ") || "—"}
               </p>
             </div>
-          </section>
+          </Card>
 
           {/* Krok 3: mapování */}
-          <section className="rounded-md border p-4">
-            <h2 className="mb-3 text-sm font-medium">3. Přiřaď sloupce</h2>
-            <div className="mb-3 flex flex-wrap gap-4 text-sm">
+          <Card className="p-5">
+            <h2 className="mb-3 cal-label">3. Přiřaď sloupce</h2>
+            <div className="mb-3 flex flex-wrap gap-4 text-sm text-ink-700">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -338,7 +342,7 @@ export function ImportWizard({
                     onChange={(e) =>
                       setPoradiJmena(e.target.value as "PJ" | "JP")
                     }
-                    className="rounded-md border border-gray-300 px-2 py-1"
+                    className="cal-input"
                   >
                     <option value="PJ">Příjmení Jméno</option>
                     <option value="JP">Jméno Příjmení</option>
@@ -410,12 +414,12 @@ export function ImportWizard({
                 onChange={(v) => setMapovani((m) => ({ ...m, mesto: v }))}
               />
             </div>
-          </section>
+          </Card>
 
           {/* Krok 4: náhled */}
-          <section className="rounded-md border p-4">
+          <Card className="p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-medium">4. Náhled a validace</h2>
+              <h2 className="cal-label">4. Náhled a validace</h2>
               <div className="flex flex-wrap gap-3 text-xs">
                 <Znacka barva="green">{platne.length} k importu</Znacka>
                 {chybne.length > 0 && (
@@ -432,7 +436,7 @@ export function ImportWizard({
 
             <div className="max-h-96 overflow-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 border-b bg-white text-left text-gray-500">
+                <thead className="sticky top-0 bg-white text-left text-[12px] font-medium uppercase text-ink-500">
                   <tr>
                     <th className="py-1">Č.</th>
                     <th>Příjmení</th>
@@ -444,30 +448,40 @@ export function ImportWizard({
                     <th>Stav</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-ink-150">
                   {nahled.slice(0, 300).map((r) => (
                     <tr
                       key={r.index}
-                      className={`border-b last:border-0 ${r.chyba ? "bg-red-50" : ""}`}
+                      className={
+                        r.chyba
+                          ? "bg-error-bg"
+                          : r.varovani.length
+                            ? "bg-warning-bg"
+                            : ""
+                      }
                     >
-                      <td className="py-1">{r.startovniCislo ?? "—"}</td>
-                      <td>{r.prijmeni || <span className="text-red-500">—</span>}</td>
+                      <td className="py-1 font-technical tabular-nums">
+                        {r.startovniCislo ?? "—"}
+                      </td>
+                      <td>{r.prijmeni || <span className="text-error">—</span>}</td>
                       <td>{r.jmeno || "—"}</td>
-                      <td>{r.rokNarozeni ?? "—"}</td>
-                      <td className={r.pohlavi ? "" : "text-amber-600"}>
+                      <td className="font-technical tabular-nums">
+                        {r.rokNarozeni ?? "—"}
+                      </td>
+                      <td className={r.pohlavi ? "" : "text-warning"}>
                         {r.pohlavi ?? "?"}
                       </td>
                       <td>{r.oddil ?? "—"}</td>
                       <td>{r.mesto ?? "—"}</td>
                       <td className="text-xs">
                         {r.chyba ? (
-                          <span className="text-red-600">{r.chyba}</span>
+                          <span className="text-error">{r.chyba}</span>
                         ) : r.varovani.length ? (
-                          <span className="text-amber-600">
+                          <span className="text-warning">
                             {r.varovani.join(", ")}
                           </span>
                         ) : (
-                          <span className="text-green-600">ok</span>
+                          <span className="text-success">ok</span>
                         )}
                       </td>
                     </tr>
@@ -475,29 +489,28 @@ export function ImportWizard({
                 </tbody>
               </table>
               {nahled.length > 300 && (
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-ink-500">
                   Zobrazeno prvních 300 z {nahled.length} řádků.
                 </p>
               )}
             </div>
-          </section>
+          </Card>
 
           {/* Krok 5: import */}
           <section className="flex items-center gap-4">
-            <button
+            <Btn
               type="button"
               onClick={importuj}
               disabled={pending || platne.length === 0}
-              className="rounded-md bg-black px-4 py-2 font-medium text-white disabled:opacity-40"
             >
               {pending
                 ? "Importuji…"
                 : `Importovat ${platne.length} závodníků`}
-            </button>
+            </Btn>
             {vysledek && (
               <div className="text-sm">
                 {vysledek.ok ? (
-                  <span className="text-green-700">
+                  <span className="text-success">
                     Hotovo: vloženo {vysledek.vlozeno}
                     {vysledek.nezarazeno > 0
                       ? `, z toho ${vysledek.nezarazeno} bez kategorie`
@@ -505,13 +518,13 @@ export function ImportWizard({
                     .{" "}
                     <Link
                       href={`/admin/akce/${akceId}/zavodnici`}
-                      className="text-blue-600 underline"
+                      className="font-medium text-teal-600 hover:text-teal-700"
                     >
                       Zobrazit závodníky →
                     </Link>
                   </span>
                 ) : (
-                  <span className="text-red-600">
+                  <span className="text-error">
                     {vysledek.chyby.join(" ")}
                   </span>
                 )}
@@ -536,12 +549,12 @@ function MapPole({
   onChange: (v: number) => void;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
+    <label className="cal-label">
       {label}
       <select
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="rounded-md border border-gray-300 px-2 py-1.5"
+        className="cal-input"
       >
         <option value={NEMAPOVANO}>— nemapováno —</option>
         {sloupce.map((s) => (
@@ -562,11 +575,15 @@ function Znacka({
   children: React.ReactNode;
 }) {
   const cls = {
-    green: "bg-green-100 text-green-800",
-    red: "bg-red-100 text-red-800",
-    amber: "bg-amber-100 text-amber-800",
+    green: "bg-success-bg text-success",
+    red: "bg-error-bg text-error",
+    amber: "bg-warning-bg text-warning",
   }[barva];
   return (
-    <span className={`rounded-full px-2 py-0.5 ${cls}`}>{children}</span>
+    <span
+      className={`rounded-full px-2 py-0.5 font-technical text-[11px] ${cls}`}
+    >
+      {children}
+    </span>
   );
 }

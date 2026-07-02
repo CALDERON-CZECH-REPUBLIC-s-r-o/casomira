@@ -44,6 +44,7 @@ export default async function VysledkovaListinaPage({
       <TiskStyl />
       <TiskToolbar zpetHref={`/admin/akce/${id}/listiny`} titulek="Listiny" />
 
+      <div className="cal-card p-8 shadow-[var(--shadow-sm)] print:border-0 print:p-0 print:shadow-none">
       <ListinaHlavicka
         nazev={data.akce.nazev}
         datum={data.akce.datum}
@@ -53,7 +54,7 @@ export default async function VysledkovaListinaPage({
       />
 
       {bezStartu && (
-        <p className="mb-4 rounded bg-amber-50 p-2 text-sm text-amber-800 print:hidden">
+        <p className="mb-4 rounded-[10px] bg-warning-bg p-3 text-sm text-warning print:hidden">
           Akce nemá nastavený čas startu — čisté časy nelze spočítat. Nastav
           start na měřicí obrazovce.
         </p>
@@ -74,6 +75,7 @@ export default async function VysledkovaListinaPage({
           ),
         )
       )}
+      </div>
     </main>
   );
 }
