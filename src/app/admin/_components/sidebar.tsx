@@ -14,6 +14,7 @@ import {
   Settings,
   MapPin,
   Mic,
+  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,6 +32,7 @@ const NAV: NavPolozka[] = [
   { label: "Měření", segment: "mereni", icon: Timer, externi: true },
   { label: "Měřicí body", segment: "brany", icon: MapPin },
   { label: "Opravy", segment: "opravy", icon: Wrench },
+  { label: "Konflikty", segment: "konflikty", icon: AlertTriangle },
   { label: "Listiny", segment: "listiny", icon: FileText },
   { label: "Moderátor", segment: "moderator", icon: Mic, externi: true },
   { label: "Publikování", segment: "publikovat", icon: UploadCloud },
