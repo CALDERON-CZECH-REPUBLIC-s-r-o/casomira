@@ -21,6 +21,10 @@ x-app: &app
     NODE_ENV: production
     DATABASE_URL: ${DATABASE_URL:-postgres://casomira:casomira@db:5432/casomira}
     AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET musí být nastaven (openssl rand -base64 32)}
+    # Bootstrap org účtu při deployi (volitelné). Když nastaveny, `migrate` service
+    # založí/přenastaví admina po migraci. Jinak založ ručně `create-admin`.
+    ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     # Jen pro režim cloudového zrcadla (autorizace pushe /api/sync). Autoritativní
     # server ho nepotřebuje → volitelný.
     SYNC_TOKEN: ${SYNC_TOKEN:-}
@@ -45,7 +49,8 @@ services:
 
   migrate:
     <<: *app
-    command: ["npm", "run", "db:migrate"]
+    # Migrace + (volitelně) bootstrap org účtu z ADMIN_EMAIL/ADMIN_PASSWORD.
+    command: ["sh", "-c", "npm run db:migrate && npm run bootstrap-admin"]
     depends_on:
       db:
         condition: service_healthy

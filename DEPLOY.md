@@ -42,7 +42,13 @@ docker compose ps                      # web = healthy
 Bez internetu (na místě): pusť totéž na notebooku/mini-PC v LAN; zařízení se
 připojí přes jeho IP (`http://<IP>:3000`) po lokální WiFi.
 
-## Založení org účtu (po prvním deployi)
+## Org účet (přihlášení)
+
+**Automaticky při deployi (doporučeno):** nastav `ADMIN_EMAIL` + `ADMIN_PASSWORD`
+(min. 8 znaků) v env → `migrate` service po migraci účet založí/přenastaví
+(idempotentní). Čerstvý server má rovnou login.
+
+**Nebo ručně kdykoli:**
 
 ```bash
 docker compose exec web npm run create-admin -- org@akce.cz tajneheslo123
