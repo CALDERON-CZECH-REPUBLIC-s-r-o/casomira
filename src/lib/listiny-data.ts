@@ -65,6 +65,7 @@ export async function nactiDataAkce(akceId: string): Promise<DataAkce | null> {
       mesto: z.mesto,
       kategorieId: z.kategorieId,
       stav: z.stav,
+      cistyCasImportMs: z.cistyCasImportMs,
     })),
     kategorie: kategorie.map((k) => ({
       id: k.id,

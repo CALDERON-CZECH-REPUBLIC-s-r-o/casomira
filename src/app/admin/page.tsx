@@ -30,6 +30,12 @@ export default async function AdminPage() {
             </h1>
           </div>
           <div className="flex flex-none items-center gap-4">
+            <Link
+              href="/admin/vyvoj"
+              className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
+            >
+              Vývoj časů
+            </Link>
             <form
               action={async () => {
                 "use server";
