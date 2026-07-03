@@ -104,10 +104,7 @@ function CelkovaTabule({ skupina }: { skupina: VerejnaSkupina }) {
 
   // Posun okna à 4 s (jen když se seznam nevejde najednou).
   useEffect(() => {
-    if (poctiOken <= 1) {
-      setOkno(0);
-      return;
-    }
+    if (poctiOken <= 1) return; // jedno okno → není co posouvat (okno % poctiOken=0)
     const i = setInterval(() => setOkno((o) => (o + 1) % poctiOken), 4000);
     return () => clearInterval(i);
   }, [poctiOken]);
@@ -133,10 +130,7 @@ function KategorieTabule({ kategorie }: { kategorie: VerejnaSkupina[] }) {
 
   // Cyklování à 10 s (jen když je kategorií víc než jedna).
   useEffect(() => {
-    if (N <= 1) {
-      setIdx(0);
-      return;
-    }
+    if (N <= 1) return; // jedna kategorie → necyklovat (idx % N=0)
     const i = setInterval(() => setIdx((x) => (x + 1) % N), 10000);
     return () => clearInterval(i);
   }, [N]);
