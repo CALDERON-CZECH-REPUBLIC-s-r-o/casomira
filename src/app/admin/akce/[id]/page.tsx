@@ -95,6 +95,9 @@ export default async function AkceDetailPage({
           <BtnLink href={`/admin/akce/${id}/import`} variant="ghost">
             Importovat závodníky
           </BtnLink>
+          <BtnLink href={`/admin/akce/${id}/import-vysledky`} variant="ghost">
+            Import výsledků z PDF
+          </BtnLink>
           <BtnLink href={`/admin/akce/${id}/kategorie`} variant="ghost">
             Kategorie
           </BtnLink>
