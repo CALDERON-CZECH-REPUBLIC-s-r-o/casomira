@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { akce } from "./akce";
 import { zavodnik } from "./zavodnik";
+import { mericiBod } from "./merici-bod";
 import { cilovyStavEnum } from "./enums";
 
 /**
@@ -35,6 +36,10 @@ export const cilovyZaznam = pgTable(
     }).notNull(),
     startovniCislo: integer("startovni_cislo"),
     zavodnikId: uuid("zavodnik_id").references(() => zavodnik.id, {
+      onDelete: "set null",
+    }),
+    // Měřicí bod (brána) průchodu. NULL = klasické cílové měření / cíl.
+    bodId: uuid("bod_id").references(() => mericiBod.id, {
       onDelete: "set null",
     }),
     stav: cilovyStavEnum("stav").notNull().default("neprirazeno"),

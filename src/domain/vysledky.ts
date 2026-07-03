@@ -29,6 +29,8 @@ export interface ZaznamVysledek {
   zavodnikId: string | null;
   casCile: Date | string;
   stav: "platny" | "neprirazeno" | "smazany" | "DNF";
+  // Měřicí bod průchodu; NULL/undefined = klasické cílové měření.
+  bodId?: string | null;
 }
 
 export interface KategorieVysledek {
@@ -78,16 +80,28 @@ function startMsProZavodnika(
  * - klasifikován = nejdřívější `platny` záznam a je nastaven start
  * - jinak bez_casu (nedoběhl / není start)
  */
+/**
+ * Je průchod cílový? Bez cílové brány (finishBodId=null) je cílem každý platný
+ * průchod (zpětná kompatibilita). S cílovou bránou počítá průchody v ní; průchody
+ * bez bodu (legacy) bereme také jako cíl, mezičasové brány NE.
+ */
+function jeCilovy(r: ZaznamVysledek, finishBodId: string | null): boolean {
+  if (finishBodId === null) return true;
+  const bod = r.bodId ?? null;
+  return bod === finishBodId || bod === null;
+}
+
 function vypoctiRadek(
   z: ZavodnikVysledek,
   zaznamyZavodnika: ZaznamVysledek[],
   startMs: number | null,
+  finishBodId: string | null,
 ): { stav: StavVysledku; cistyCasMs: number | null } {
   if (z.stav === "nenastoupil_DNS") return { stav: "DNS", cistyCasMs: null };
   if (z.stav === "diskvalifikovan_DSQ") return { stav: "DSQ", cistyCasMs: null };
 
   const platne = zaznamyZavodnika
-    .filter((r) => r.stav === "platny")
+    .filter((r) => r.stav === "platny" && jeCilovy(r, finishBodId))
     .map((r) => ms(r.casCile))
     .sort((a, b) => a - b);
 
@@ -178,8 +192,10 @@ export function serazeneVysledky(
   zaznamy: ZaznamVysledek[],
   akceStart: Date | string | null,
   kategorie: KategorieVysledek[],
+  body: { id: string; jeCil: boolean }[] = [],
 ): { kategorie: SkupinaVysledku[]; celkova: SkupinaVysledku } {
   const kategorieMap = new Map(kategorie.map((k) => [k.id, k]));
+  const finishBodId = body.find((b) => b.jeCil)?.id ?? null;
 
   // Záznamy podle závodníka.
   const dleZavodnika = new Map<string, ZaznamVysledek[]>();
@@ -196,6 +212,7 @@ export function serazeneVysledky(
       z,
       dleZavodnika.get(z.id) ?? [],
       startMs,
+      finishBodId,
     );
     return { zavodnik: z, stav, cistyCasMs };
   });

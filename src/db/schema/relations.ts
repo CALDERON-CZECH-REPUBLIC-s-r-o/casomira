@@ -3,12 +3,19 @@ import { akce } from "./akce";
 import { kategorie } from "./kategorie";
 import { zavodnik } from "./zavodnik";
 import { cilovyZaznam } from "./cilovy-zaznam";
+import { mericiBod } from "./merici-bod";
 
 /** Relace pro Drizzle relational queries (`db.query … with`). */
 
 export const akceRelations = relations(akce, ({ many }) => ({
   kategorie: many(kategorie),
   zavodnici: many(zavodnik),
+  zaznamy: many(cilovyZaznam),
+  body: many(mericiBod),
+}));
+
+export const mericiBodRelations = relations(mericiBod, ({ one, many }) => ({
+  akce: one(akce, { fields: [mericiBod.akceId], references: [akce.id] }),
   zaznamy: many(cilovyZaznam),
 }));
 
@@ -31,5 +38,9 @@ export const cilovyZaznamRelations = relations(cilovyZaznam, ({ one }) => ({
   zavodnik: one(zavodnik, {
     fields: [cilovyZaznam.zavodnikId],
     references: [zavodnik.id],
+  }),
+  bod: one(mericiBod, {
+    fields: [cilovyZaznam.bodId],
+    references: [mericiBod.id],
   }),
 }));
