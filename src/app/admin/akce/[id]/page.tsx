@@ -1,14 +1,30 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
-import { akce as akceT, kategorie as katT, zavodnik as zavT } from "@/db/schema";
+import {
+  akce as akceT,
+  kategorie as katT,
+  zavodnik as zavT,
+  cilovyZaznam as czT,
+} from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { upravitAkci, smazatAkci } from "@/server/akce";
 import { AkceFormFields } from "../../_components/akce-form";
-import { Btn, Card, PageHeader } from "../../_components/ui";
+import { Btn, BtnLink, Card, MetricCard } from "../../_components/ui";
+import { ConfirmDialog } from "../../_components/ui-client";
+import { SpravaShell } from "../../_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
+
+function formatStart(d: Date | null): string {
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("cs-CZ", {
+    day: "numeric",
+    month: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
 
 export default async function AkceDetailPage({
   params,
@@ -27,113 +43,113 @@ export default async function AkceDetailPage({
     zavT,
     and(eq(zavT.akceId, id), isNull(zavT.kategorieId)),
   );
-
-  return (
-    <main className="mx-auto max-w-3xl p-6">
-      <PageHeader
-        back={{ href: "/admin", label: "Administrace" }}
-        eyebrow="Akce"
-        title={akce.nazev}
-        desc={
-          <>
-            Veřejná URL:{" "}
-            <Link
-              href={`/${akce.slug}`}
-              target="_blank"
-              className="font-medium text-teal-600 hover:text-teal-700"
-            >
-              /{akce.slug} ↗
-            </Link>
-          </>
-        }
-      />
-
-      <nav className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <SekceKarta
-          href={`/admin/akce/${id}/mereni`}
-          titul="Měření"
-          popis="cílová obrazovka"
-          zvyraznit
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/kategorie`}
-          titul="Kategorie"
-          popis={`${kategorie} kategorií`}
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/zavodnici`}
-          titul="Závodníci"
-          popis={`${zavodnici} závodníků${bezKategorie ? ` · ${bezKategorie} bez kategorie` : ""}`}
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/import`}
-          titul="Import z Excelu"
-          popis="přihlášky .xls/.xlsx"
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/listiny`}
-          titul="Listiny"
-          popis="startovní · výsledková · PDF/XLSX"
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/opravy`}
-          titul="Opravy"
-          popis="editace průchodů · historie"
-        />
-        <SekceKarta
-          href={`/admin/akce/${id}/publikovat`}
-          titul="Publikování"
-          popis="push na cloud · záloha JSON"
-        />
-      </nav>
-
-      <section className="mb-8">
-        <div className="cal-eyebrow mb-3">Úprava akce</div>
-        <Card className="p-5">
-          <form action={upravitAkci.bind(null, id)} className="flex flex-col gap-6">
-            <AkceFormFields akce={akce} />
-            <Btn type="submit" className="self-start">
-              Uložit změny
-            </Btn>
-          </form>
-        </Card>
-      </section>
-
-      <section className="border-t border-ink-200 pt-6">
-        <form action={smazatAkci.bind(null, id)}>
-          <button className="text-sm font-medium text-error hover:underline">
-            Smazat akci (včetně kategorií, závodníků a záznamů)
-          </button>
-        </form>
-      </section>
-    </main>
+  const vCili = await db.$count(
+    czT,
+    and(eq(czT.akceId, id), eq(czT.stav, "platny")),
   );
-}
 
-function SekceKarta({
-  href,
-  titul,
-  popis,
-  zvyraznit = false,
-}: {
-  href: string;
-  titul: string;
-  popis: string;
-  zvyraznit?: boolean;
-}) {
   return (
-    <Link
-      href={href}
-      className={`group cal-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] ${
-        zvyraznit ? "border-teal-200 bg-teal-50" : ""
-      }`}
-    >
-      <div
-        className={`font-semibold ${zvyraznit ? "text-teal-700" : "text-ink-900 group-hover:text-teal-700"}`}
-      >
-        {titul}
+    <SpravaShell akceId={id} nazev={akce.nazev}>
+      <div className="mx-auto max-w-4xl p-8">
+        {/* Hlavička akce */}
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="cal-eyebrow mb-1 text-teal-600">Akce</div>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-ink-900">
+              {akce.nazev}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-500">
+              <span className="font-technical tabular-nums">{akce.datum}</span>
+              {akce.misto && <span>· {akce.misto}</span>}
+              <span>·</span>
+              <a
+                href={`/${akce.slug}`}
+                target="_blank"
+                className="font-medium text-teal-600 hover:text-teal-700"
+              >
+                /{akce.slug} ↗
+              </a>
+            </div>
+          </div>
+          <BtnLink href={`/admin/akce/${id}/mereni`} className="flex-none">
+            ▶ Spustit měření
+          </BtnLink>
+        </div>
+
+        {/* Metriky */}
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard label="Kategorie" value={kategorie} />
+          <MetricCard
+            label="Závodníci"
+            value={zavodnici}
+            sub={bezKategorie ? `${bezKategorie} bez kategorie` : "vše zařazeno"}
+          />
+          <MetricCard label="V cíli" value={vCili} sub="platných průchodů" />
+          <MetricCard
+            label="Start"
+            value={formatStart(akce.casStartu)}
+            sub={akce.casStartu ? "hromadný start" : "zatím nespuštěno"}
+            zvyraznit
+          />
+        </div>
+
+        {/* Rychlé akce */}
+        <div className="mb-10 flex flex-wrap gap-2">
+          <BtnLink href={`/admin/akce/${id}/import`} variant="ghost">
+            Importovat závodníky
+          </BtnLink>
+          <BtnLink href={`/admin/akce/${id}/kategorie`} variant="ghost">
+            Kategorie
+          </BtnLink>
+          <BtnLink href={`/admin/akce/${id}/listiny`} variant="ghost">
+            Listiny
+          </BtnLink>
+          <BtnLink href={`/admin/akce/${id}/publikovat`} variant="ghost">
+            Publikovat
+          </BtnLink>
+        </div>
+
+        {/* Úprava akce */}
+        <section className="mb-8">
+          <div className="cal-eyebrow mb-3">Úprava akce</div>
+          <Card className="p-5">
+            <form
+              action={upravitAkci.bind(null, id)}
+              className="flex flex-col gap-6"
+            >
+              <AkceFormFields akce={akce} />
+              <Btn type="submit" className="self-start">
+                Uložit změny
+              </Btn>
+            </form>
+          </Card>
+        </section>
+
+        {/* Nebezpečná zóna */}
+        <section className="border-t border-ink-200 pt-6">
+          <ConfirmDialog
+            title="Smazat akci?"
+            message={`Akce „${akce.nazev}" bude nenávratně smazána včetně všech kategorií, závodníků a naměřených průchodů.`}
+            dopady={[
+              `${zavodnici} závodníků`,
+              `${kategorie} kategorií`,
+              "všechny naměřené průchody a historie oprav",
+              "publikované výsledky na veřejném webu",
+            ]}
+            slovo="SMAZAT"
+            confirmLabel="Smazat akci"
+            action={smazatAkci.bind(null, id)}
+            trigger={(open) => (
+              <button
+                onClick={open}
+                className="text-sm font-medium text-error hover:underline"
+              >
+                Smazat akci…
+              </button>
+            )}
+          />
+        </section>
       </div>
-      <div className="mt-0.5 text-[13px] text-ink-500">{popis}</div>
-    </Link>
+    </SpravaShell>
   );
 }

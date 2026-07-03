@@ -35,21 +35,21 @@ export default async function PrihlaseniPage({
   }
 
   return (
-    <main className="font-brand flex flex-1 flex-col items-center justify-center bg-ink-50 p-6 text-ink-900">
+    <main className="cal-dots-dark cal-glow-top font-brand flex min-h-screen flex-1 flex-col items-center justify-center bg-ink-950 p-6 text-ink-900">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3">
           <Image
-            src="/calderon-logo.png"
+            src="/calderon-mark-white.png"
             alt="Calderon"
             width={140}
             height={26}
             style={{ height: 26, width: "auto" }}
             priority
           />
-          <div className="cal-eyebrow text-teal-600">Administrace závodů</div>
+          <div className="cal-eyebrow text-teal-300">Administrace závodů</div>
         </div>
 
-        <div className="cal-card p-6 shadow-[var(--shadow-md)]">
+        <div className="cal-card rounded-[22px] p-6 shadow-xl">
           <h1 className="mb-5 text-lg font-bold text-ink-900">
             Přihlášení organizátora
           </h1>

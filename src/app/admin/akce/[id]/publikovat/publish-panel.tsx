@@ -8,9 +8,11 @@ import { Btn } from "../../../_components/ui";
 export function PublishPanel({
   akceId,
   nakonfigurovano,
+  slug,
 }: {
   akceId: string;
   nakonfigurovano: boolean;
+  slug: string;
 }) {
   const [stav, setStav] = useState<string | null>(null);
   const [chyba, setChyba] = useState<string | null>(null);
@@ -56,6 +58,7 @@ export function PublishPanel({
   const chipLabel = chyba ? "Chyba" : stav ? "Publikováno" : "Nepublikováno";
 
   return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <Btn onClick={publikuj} disabled={!nakonfigurovano || pending}>
@@ -86,6 +89,13 @@ export function PublishPanel({
 
       {stav && !chyba && <p className="text-sm text-success">{stav}</p>}
       {chyba && <p className="text-sm text-error">{chyba}</p>}
+    </div>
+
+      <div className="flex aspect-square w-32 flex-none items-center justify-center rounded-[10px] border border-ink-200 bg-ink-50 text-center">
+        <span className="font-technical text-[10px] text-ink-400">
+          QR — /{slug}
+        </span>
+      </div>
     </div>
   );
 }

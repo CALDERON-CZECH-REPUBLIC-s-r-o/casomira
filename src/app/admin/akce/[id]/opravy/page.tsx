@@ -14,7 +14,8 @@ import {
   upravitCisloZaznamu,
   zmenitStavZaznamu,
 } from "@/server/opravy";
-import { Btn, Card, PageHeader } from "../../../_components/ui";
+import { Btn, Card, PageHeader, Pill } from "../../../_components/ui";
+import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -25,13 +26,15 @@ const STAV_LABEL: Record<string, string> = {
   DNF: "DNF",
 };
 
-const STAV_PILL: Record<string, string> = {
-  platny: "bg-teal-50 text-teal-700",
-  neprirazeno: "bg-warning-bg text-warning",
-  DNF: "bg-warning-bg text-warning",
-  DNS: "bg-warning-bg text-warning",
-  DSQ: "bg-error-bg text-error",
-  smazany: "bg-ink-100 text-ink-400 line-through",
+type PillTon = "success" | "warning" | "error" | "info" | "teal" | "ink";
+
+const STAV_TON: Record<string, PillTon> = {
+  platny: "teal",
+  neprirazeno: "warning",
+  DNF: "warning",
+  DNS: "warning",
+  DSQ: "error",
+  smazany: "ink",
 };
 
 export default async function OpravyPage({
@@ -61,9 +64,9 @@ export default async function OpravyPage({
   });
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
+    <SpravaShell akceId={id} nazev={akce.nazev}>
+      <div className="mx-auto max-w-4xl p-8">
       <PageHeader
-        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
         eyebrow="Opravy"
         title="Opravy průchodů"
         desc="Ruční úprava času (oprava překlepu), doplnění čísla, vložení vynechaného průchodu, DNF a mazání. Razítko měň jen při opravě překlepu."
@@ -176,11 +179,12 @@ export default async function OpravyPage({
                             : "neznámé číslo"}
                       </td>
                       <td className="px-2 py-1.5">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${STAV_PILL[z.stav] ?? "bg-ink-100 text-ink-500"}`}
+                        <Pill
+                          ton={STAV_TON[z.stav] ?? "ink"}
+                          className={z.stav === "smazany" ? "line-through" : ""}
                         >
                           {STAV_LABEL[z.stav] ?? z.stav}
-                        </span>
+                        </Pill>
                       </td>
                       <td className="px-4 py-1.5 text-right">
                         <div className="flex justify-end gap-1 text-xs">
@@ -246,7 +250,8 @@ export default async function OpravyPage({
           )}
         </Card>
       </section>
-    </main>
+      </div>
+    </SpravaShell>
   );
 }
 

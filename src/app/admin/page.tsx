@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Calendar } from "lucide-react";
 import { signOut } from "@/auth/nextauth";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { db } from "@/db/client";
-import { BtnLink, Card, PageHeader } from "./_components/ui";
+import { BtnLink, Card, EmptyState, Pill } from "./_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +15,21 @@ export default async function AdminPage() {
   const akce = await db.query.akce.findMany({
     orderBy: (a, { desc }) => [desc(a.datum)],
   });
+  // Server komponenta (force-dynamic) — čas se čte jednou za request.
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs = Date.now();
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <PageHeader
-        eyebrow="Časomíra"
-        title="Administrace"
-        actions={
-          <>
-            <BtnLink href="/admin/akce/nova">+ Nová akce</BtnLink>
+    <main className="min-h-screen bg-ink-50">
+      <div className="cal-dots border-b border-ink-200 bg-[rgba(248,250,249,.92)]">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-end justify-between gap-4 p-6">
+          <div className="min-w-0">
+            <div className="cal-eyebrow mb-1 text-teal-600">Administrace</div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink-900">
+              Vaše závody
+            </h1>
+          </div>
+          <div className="flex flex-none items-center gap-4">
             <form
               action={async () => {
                 "use server";
@@ -33,41 +40,64 @@ export default async function AdminPage() {
                 Odhlásit
               </button>
             </form>
-          </>
-        }
-      />
+            <BtnLink href="/admin/akce/nova">+ Nová akce</BtnLink>
+          </div>
+        </div>
+      </div>
 
-      <section>
-        <div className="cal-eyebrow mb-3">Akce</div>
+      <section className="mx-auto max-w-3xl p-6">
         {akce.length === 0 ? (
-          <Card className="p-6 text-sm text-ink-500">Zatím žádné akce.</Card>
+          <EmptyState
+            icon={<Calendar size={28} strokeWidth={1.75} />}
+            title="Zatím žádné akce"
+            desc="Založte svůj první závod a začněte přijímat přihlášky."
+            actions={
+              <BtnLink href="/admin/akce/nova">Založit první akci</BtnLink>
+            }
+          />
         ) : (
           <Card className="divide-y divide-ink-150 overflow-hidden">
-            {akce.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-ink-50"
-              >
-                <div className="min-w-0">
-                  <Link
-                    href={`/admin/akce/${a.id}`}
-                    className="font-semibold text-ink-900 hover:text-teal-700"
-                  >
-                    {a.nazev}
-                  </Link>
-                  <div className="mt-0.5 font-technical text-[12px] text-ink-500">
-                    {a.datum} · {a.misto ?? "—"}
-                  </div>
-                </div>
-                <Link
-                  href={`/${a.slug}`}
-                  className="flex-none text-[13px] font-medium text-teal-600 hover:text-teal-700"
-                  target="_blank"
+            {akce.map((a) => {
+              const start = a.casStartu ? new Date(a.casStartu) : null;
+              const stav =
+                start && start.getTime() < nowMs ? (
+                  <Pill ton="ink">Dokončeno</Pill>
+                ) : start ? (
+                  <Pill ton="teal" dot>
+                    Připraveno
+                  </Pill>
+                ) : (
+                  <Pill ton="info">Přihlášky</Pill>
+                );
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-ink-50"
                 >
-                  veřejná stránka ↗
-                </Link>
-              </div>
-            ))}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2.5">
+                      <Link
+                        href={`/admin/akce/${a.id}`}
+                        className="font-semibold text-ink-900 hover:text-teal-700"
+                      >
+                        {a.nazev}
+                      </Link>
+                      {stav}
+                    </div>
+                    <div className="mt-0.5 font-technical text-[12px] tabular-nums text-ink-500">
+                      {a.datum} · {a.misto ?? "—"}
+                    </div>
+                  </div>
+                  <Link
+                    href={`/${a.slug}`}
+                    className="flex-none text-[13px] font-medium text-teal-600 hover:text-teal-700"
+                    target="_blank"
+                  >
+                    veřejná stránka ↗
+                  </Link>
+                </div>
+              );
+            })}
           </Card>
         )}
       </section>

@@ -6,6 +6,7 @@ import { akce as akceT } from "@/db/schema";
 import { env } from "@/lib/env";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { Card, PageHeader } from "../../../_components/ui";
+import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 import { PublishPanel, ObnovaForm } from "./publish-panel";
 
 export const dynamic = "force-dynamic";
@@ -26,9 +27,9 @@ export default async function PublikovatPage({
     : null;
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
+    <SpravaShell akceId={id} nazev={akce.nazev}>
+      <div className="mx-auto max-w-4xl p-8">
       <PageHeader
-        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
         eyebrow="Publikování"
         title="Publikování a zálohy"
         desc="Jednosměrný push výsledků na cloud pro vzdálené diváky. Měření běží lokálně — publikování je best-effort, výpadek sítě měření neovlivní."
@@ -49,7 +50,11 @@ export default async function PublikovatPage({
                 {cloudUrl} ↗
               </a>
             </p>
-            <PublishPanel akceId={id} nakonfigurovano={nakonfigurovano} />
+            <PublishPanel
+              akceId={id}
+              nakonfigurovano={nakonfigurovano}
+              slug={akce.slug}
+            />
           </>
         ) : (
           <p className="rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
@@ -86,6 +91,7 @@ export default async function PublikovatPage({
           </div>
         </div>
       </Card>
-    </main>
+      </div>
+    </SpravaShell>
   );
 }

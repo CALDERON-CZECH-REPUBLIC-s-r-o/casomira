@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { BtnLink, Card, PageHeader } from "../../../_components/ui";
+import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,9 @@ export default async function ListinyHubPage({
   const exp = (q: string) => `${base}/export?${q}`;
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
+    <SpravaShell akceId={id} nazev={akce.nazev}>
+      <div className="mx-auto max-w-4xl p-8">
       <PageHeader
-        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
         eyebrow="Listiny"
         title="Startovní a výsledkové listiny"
         desc={
@@ -85,7 +86,8 @@ export default async function ListinyHubPage({
           </Radek>
         </Card>
       </section>
-    </main>
+      </div>
+    </SpravaShell>
   );
 }
 

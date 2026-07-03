@@ -54,7 +54,7 @@ export function AkceSidebar({
   const base = `/admin/akce/${akceId}`;
 
   return (
-    <aside className="flex w-[236px] flex-none flex-col bg-ink-950 text-ink-300">
+    <aside className="sticky top-0 flex h-screen w-[236px] flex-none flex-col bg-ink-950 text-ink-300">
       <div className="flex items-center gap-2 px-5 py-5">
         <Image
           src="/calderon-mark-white.png"

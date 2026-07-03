@@ -5,7 +5,8 @@ import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { vekVRoce } from "@/domain/zarazeni";
 import { nastavitStavZavodnika } from "@/server/opravy";
-import { BtnLink, Card, PageHeader } from "../../../_components/ui";
+import { BtnLink, Card, PageHeader, Pill } from "../../../_components/ui";
+import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +38,9 @@ export default async function ZavodniciPage({
   const bezPohlavi = zavodnici.filter((z) => z.pohlavi === null).length;
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
+    <SpravaShell akceId={id} nazev={akce.nazev}>
+      <div className="mx-auto max-w-4xl p-8">
       <PageHeader
-        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
         eyebrow="Závodníci"
         title="Závodníci"
         desc={
@@ -104,9 +105,7 @@ export default async function ZavodniciPage({
                   <td className="p-3 text-xs">
                     <div className="flex items-center gap-2">
                       {z.stav !== "prihlasen" && (
-                        <span className="rounded-full bg-error-bg px-2 py-0.5 text-[11px] font-technical text-error">
-                          {ZAV_STAV_LABEL[z.stav]}
-                        </span>
+                        <Pill ton="error">{ZAV_STAV_LABEL[z.stav]}</Pill>
                       )}
                       {z.stav === "prihlasen" ? (
                         <>
@@ -124,7 +123,8 @@ export default async function ZavodniciPage({
           </table>
         </Card>
       )}
-    </main>
+      </div>
+    </SpravaShell>
   );
 }
 

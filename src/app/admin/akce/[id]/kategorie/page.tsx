@@ -14,6 +14,7 @@ import {
   popisPravidla,
 } from "../../../_components/kategorie-form";
 import { Btn, Card, PageHeader } from "../../../_components/ui";
+import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +44,9 @@ export default async function KategoriePage({
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
+    <SpravaShell akceId={id} nazev={akce.nazev}>
+      <div className="mx-auto max-w-3xl p-8">
       <PageHeader
-        back={{ href: `/admin/akce/${id}`, label: akce.nazev }}
         eyebrow="Kategorie"
         title="Kategorie"
         desc={
@@ -142,6 +143,7 @@ export default async function KategoriePage({
           </form>
         </Card>
       </section>
-    </main>
+      </div>
+    </SpravaShell>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /** 500 — Calderon 15b: číslo v amber, ujištění že naměřená data jsou v bezpečí. */
 export default function Error({
   error,
@@ -27,12 +29,12 @@ export default function Error({
         >
           Zkusit znovu
         </button>
-        <a
+        <Link
           href="/admin"
           className="cal-press rounded-[10px] border border-white/15 px-4 py-2 text-sm font-semibold text-ink-200 transition-colors hover:bg-white/5"
         >
           Přehled akcí
-        </a>
+        </Link>
       </div>
       <div className="mt-6 font-technical text-[11px] text-ink-500">
         CAS-500{error.digest ? ` · ${error.digest}` : ""}
