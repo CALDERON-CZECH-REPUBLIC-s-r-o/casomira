@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { Users } from "lucide-react";
@@ -138,7 +139,18 @@ export default async function ZavodniciPage({
                     {z.startovniCislo ?? "—"}
                   </td>
                   <td className="p-3 text-ink-900">
-                    {z.prijmeni} {z.jmeno}
+                    {z.startovniCislo !== null ? (
+                      <Link
+                        href={`/admin/akce/${id}/zavodnici/${z.startovniCislo}`}
+                        className="hover:text-teal-700 hover:underline"
+                      >
+                        {z.prijmeni} {z.jmeno}
+                      </Link>
+                    ) : (
+                      <>
+                        {z.prijmeni} {z.jmeno}
+                      </>
+                    )}
                   </td>
                   <td className="p-3 font-technical tabular-nums text-ink-700">
                     {z.rokNarozeni ?? "—"}
