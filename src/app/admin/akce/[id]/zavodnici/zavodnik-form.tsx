@@ -17,17 +17,19 @@ type ZavodnikData = {
 };
 
 /**
- * Modální formulář pro přidání / úpravu závodníka. `trigger(open)` vykreslí
- * spouštěč (tlačítko/odkaz), který dialog otevře — jako u ConfirmDialog.
+ * Modální formulář pro přidání / úpravu závodníka. Spouštěč si vykresluje sám
+ * (server komponenta nesmí předávat funkci klientské) — `triggerKind` volí vzhled.
  */
 export function ZavodnikFormDialog({
   akceId,
   zavodnik,
-  trigger,
+  triggerLabel,
+  triggerKind = "primary",
 }: {
   akceId: string;
   zavodnik?: ZavodnikData;
-  trigger: (open: () => void) => ReactNode;
+  triggerLabel: ReactNode;
+  triggerKind?: "primary" | "ghost" | "link";
 }) {
   const [open, setOpen] = useState(false);
   const jeUprava = Boolean(zavodnik);
@@ -37,7 +39,19 @@ export function ZavodnikFormDialog({
 
   return (
     <>
-      {trigger(() => setOpen(true))}
+      {triggerKind === "link" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-[13px] font-medium text-ink-500 underline transition-colors hover:text-teal-700"
+        >
+          {triggerLabel}
+        </button>
+      ) : (
+        <Btn variant={triggerKind} onClick={() => setOpen(true)}>
+          {triggerLabel}
+        </Btn>
+      )}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}

@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { akce as akceT, mericiBod as bodT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { nastavitCilovyBod, smazatBod } from "@/server/body";
-import { Btn, Card, EmptyState, PageHeader, Pill } from "@/app/admin/_components/ui";
+import { Card, EmptyState, PageHeader, Pill } from "@/app/admin/_components/ui";
 import { ConfirmDialog } from "@/app/admin/_components/ui-client";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 import { BodFormDialog } from "./bod-form";
@@ -42,10 +42,7 @@ export default async function BranyPage({
           title="Měřicí body na trati"
           desc="Brány na trati; jedna je cílová a rozhoduje o výsledku."
           actions={
-            <BodFormDialog
-              akceId={id}
-              trigger={(open) => <Btn onClick={open}>+ Přidat bod</Btn>}
-            />
+            <BodFormDialog akceId={id} triggerLabel="+ Přidat bod" />
           }
         />
 
@@ -55,10 +52,7 @@ export default async function BranyPage({
             title="Zatím žádné měřicí body"
             desc="Bez bodů běží klasické cílové měření — měří se jen průchod cílem. Přidej brány, pokud chceš mezičasy a tempo na trati."
             actions={
-              <BodFormDialog
-                akceId={id}
-                trigger={(open) => <Btn onClick={open}>Přidat bod</Btn>}
-              />
+              <BodFormDialog akceId={id} triggerLabel="Přidat bod" />
             }
           />
         ) : (
@@ -107,14 +101,8 @@ export default async function BranyPage({
                     <BodFormDialog
                       akceId={id}
                       bod={bod}
-                      trigger={(open) => (
-                        <button
-                          onClick={open}
-                          className="text-ink-500 underline hover:text-teal-700"
-                        >
-                          upravit
-                        </button>
-                      )}
+                      triggerLabel="upravit"
+                      triggerKind="link"
                     />
                     <ConfirmDialog
                       title="Smazat měřicí bod"
@@ -129,14 +117,8 @@ export default async function BranyPage({
                       ]}
                       confirmLabel="Smazat bod"
                       action={smazatBod.bind(null, bod.id, id)}
-                      trigger={(open) => (
-                        <button
-                          onClick={open}
-                          className="text-error underline hover:text-error"
-                        >
-                          smazat
-                        </button>
-                      )}
+                      triggerLabel="smazat"
+                      triggerClassName="text-error underline hover:text-error"
                     />
                   </div>
                 </div>

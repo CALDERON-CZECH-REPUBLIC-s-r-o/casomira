@@ -7,17 +7,19 @@ import type { MericiBod } from "@/db/schema";
 import { upravitBod, vytvoritBod } from "@/server/body";
 
 /**
- * Modální formulář pro přidání / úpravu měřicího bodu. `trigger(open)` vykreslí
- * spouštěč (tlačítko/odkaz), který dialog otevře — jako u ZavodnikFormDialog.
+ * Modální formulář pro přidání / úpravu měřicího bodu. Spouštěč si vykresluje
+ * sám (server komponenta nesmí předat funkci klientské) — `triggerKind` volí vzhled.
  */
 export function BodFormDialog({
   akceId,
   bod,
-  trigger,
+  triggerLabel,
+  triggerKind = "primary",
 }: {
   akceId: string;
   bod?: MericiBod;
-  trigger: (open: () => void) => ReactNode;
+  triggerLabel: ReactNode;
+  triggerKind?: "primary" | "ghost" | "link";
 }) {
   const [open, setOpen] = useState(false);
   const jeUprava = Boolean(bod);
@@ -27,7 +29,19 @@ export function BodFormDialog({
 
   return (
     <>
-      {trigger(() => setOpen(true))}
+      {triggerKind === "link" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-[13px] font-medium text-ink-500 underline transition-colors hover:text-teal-700"
+        >
+          {triggerLabel}
+        </button>
+      ) : (
+        <Btn variant={triggerKind} onClick={() => setOpen(true)}>
+          {triggerLabel}
+        </Btn>
+      )}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}

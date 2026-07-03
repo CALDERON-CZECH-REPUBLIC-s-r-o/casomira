@@ -61,7 +61,8 @@ export function Dialog({
 /** Destruktivní potvrzení: vyjmenuje dopady, vyžaduje opsat kontrolní slovo,
  * pak submitne server akci `action` (bound). */
 export function ConfirmDialog({
-  trigger,
+  triggerLabel,
+  triggerClassName,
   title,
   message,
   dopady,
@@ -69,7 +70,8 @@ export function ConfirmDialog({
   confirmLabel = "Smazat",
   action,
 }: {
-  trigger: (open: () => void) => ReactNode;
+  triggerLabel: ReactNode;
+  triggerClassName?: string;
   title: string;
   message: ReactNode;
   dopady?: string[];
@@ -84,10 +86,19 @@ export function ConfirmDialog({
 
   return (
     <>
-      {trigger(() => {
-        setV("");
-        setOpen(true);
-      })}
+      <button
+        type="button"
+        onClick={() => {
+          setV("");
+          setOpen(true);
+        }}
+        className={
+          triggerClassName ??
+          "text-sm font-medium text-error transition-colors hover:underline"
+        }
+      >
+        {triggerLabel}
+      </button>
       <Dialog open={open} onClose={() => setOpen(false)} title={title}>
         <p className="text-sm text-ink-600">{message}</p>
         {dopady && dopady.length > 0 && (

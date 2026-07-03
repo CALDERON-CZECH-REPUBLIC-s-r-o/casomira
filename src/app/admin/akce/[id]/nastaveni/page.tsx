@@ -145,15 +145,8 @@ export default async function NastaveniPage({
             slovo="SMAZAT"
             confirmLabel="Smazat akci"
             action={smazatAkci.bind(null, id)}
-            trigger={(open) => (
-              <button
-                type="button"
-                onClick={open}
-                className="text-sm font-semibold text-error hover:underline"
-              >
-                Smazat akci…
-              </button>
-            )}
+            triggerLabel="Smazat akci…"
+            triggerClassName="text-sm font-semibold text-error hover:underline"
           />
         </div>
       </div>

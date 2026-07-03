@@ -55,10 +55,7 @@ export default async function ZavodniciPage({
         }
         actions={
           <>
-            <ZavodnikFormDialog
-              akceId={id}
-              trigger={(open) => <Btn onClick={open}>+ Přidat závodníka</Btn>}
-            />
+            <ZavodnikFormDialog akceId={id} triggerLabel="+ Přidat závodníka" />
             <BtnLink href={`/admin/akce/${id}/import`} variant="ghost">
               + Import z Excelu
             </BtnLink>
@@ -109,11 +106,8 @@ export default async function ZavodniciPage({
               <BtnLink href={`/admin/akce/${id}/import`}>+ Import z Excelu</BtnLink>
               <ZavodnikFormDialog
                 akceId={id}
-                trigger={(open) => (
-                  <Btn variant="ghost" onClick={open}>
-                    Přidat ručně
-                  </Btn>
-                )}
+                triggerLabel="Přidat ručně"
+                triggerKind="ghost"
               />
             </>
           }
@@ -191,14 +185,8 @@ export default async function ZavodniciPage({
                       <ZavodnikFormDialog
                         akceId={id}
                         zavodnik={z}
-                        trigger={(open) => (
-                          <button
-                            onClick={open}
-                            className="text-ink-500 underline hover:text-teal-700"
-                          >
-                            upravit
-                          </button>
-                        )}
+                        triggerLabel="upravit"
+                        triggerKind="link"
                       />
                     </div>
                   </td>
