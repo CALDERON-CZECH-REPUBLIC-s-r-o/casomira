@@ -57,6 +57,56 @@ export async function vytvoritKategorii(akceId: string, formData: FormData) {
   revalidatePath(`/admin/akce/${akceId}/kategorie`);
 }
 
+const hromadneSchema = z.array(
+  z.object({
+    nazev: z.string().trim().min(1),
+    kod: z.string().trim().nullable(),
+    pohlavi: z.enum(["M", "Z", "smisene"]),
+    vekOd: z.number().int().nullable(),
+    vekDo: z.number().int().nullable(),
+    rokNarozeniOd: z.number().int().nullable(),
+    rokNarozeniDo: z.number().int().nullable(),
+  }),
+);
+
+/**
+ * Hromadné vytvoření kategorií (průvodce). Připojí za stávající (offset pořadí)
+ * a přepočítá zařazení závodníků. Vrací počet vytvořených.
+ */
+export async function vytvoritKategorieHromadne(
+  akceId: string,
+  vstup: unknown,
+): Promise<{ vytvoreno: number }> {
+  await vyzadujPrihlaseni();
+  const parsed = hromadneSchema.safeParse(vstup);
+  if (!parsed.success || parsed.data.length === 0) return { vytvoreno: 0 };
+
+  const existujici = await db.query.kategorie.findMany({
+    where: eq(kategorie.akceId, akceId),
+    columns: { poradi: true },
+  });
+  const offset = existujici.reduce((m, k) => Math.max(m, k.poradi), 0);
+
+  await db.insert(kategorie).values(
+    parsed.data.map((k, i) => ({
+      akceId,
+      nazev: k.nazev,
+      kod: k.kod,
+      pohlavi: k.pohlavi,
+      vekOd: k.vekOd,
+      vekDo: k.vekDo,
+      rokNarozeniOd: k.rokNarozeniOd,
+      rokNarozeniDo: k.rokNarozeniDo,
+      poradi: offset + i + 1,
+    })),
+  );
+
+  await prepocitatZarazeni(akceId);
+  revalidatePath(`/admin/akce/${akceId}/kategorie`);
+  revalidatePath(`/admin/akce/${akceId}`);
+  return { vytvoreno: parsed.data.length };
+}
+
 export async function upravitKategorii(
   id: string,
   akceId: string,

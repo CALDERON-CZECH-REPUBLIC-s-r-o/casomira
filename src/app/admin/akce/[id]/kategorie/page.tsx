@@ -15,6 +15,7 @@ import {
 } from "../../../_components/kategorie-form";
 import { Btn, Card, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
+import { KategoriePruvodce } from "./kategorie-pruvodce";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -60,11 +61,14 @@ export default async function KategoriePage({
           </>
         }
         actions={
-          <form action={spustitPrepocet}>
-            <Btn type="submit" variant="ghost">
-              ↻ Přepočítat zařazení
-            </Btn>
-          </form>
+          <>
+            <KategoriePruvodce akceId={id} />
+            <form action={spustitPrepocet}>
+              <Btn type="submit" variant="ghost">
+                ↻ Přepočítat zařazení
+              </Btn>
+            </form>
+          </>
         }
       />
 
