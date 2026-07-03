@@ -26,9 +26,12 @@ automatické; web nastartuje až po zdravé DB a doběhlé migraci.
 ## A) Coolify
 
 1. Nová „Docker Compose" resource → repo casomira, soubor `docker-compose.yml`.
-2. Environment Variables: `AUTH_SECRET`, `APP_BASE_URL` (doména), příp. `POSTGRES_PASSWORD`.
-3. Deploy. Traefik vystaví `web` (interní port 3000) na doméně; host porty se neřeší.
-4. Health: Coolify čte `/api/health` (v compose healthcheck už je).
+2. Doména: **`casomira.calderon.cz`** (DNS A/AAAA na Coolify server; Traefik + TLS).
+   `APP_BASE_URL` má tuto doménu už jako default v compose — netřeba nastavovat.
+3. Environment Variables: `AUTH_SECRET` (povinné), `ADMIN_EMAIL` + `ADMIN_PASSWORD`
+   (auto-založí org účet), příp. `POSTGRES_PASSWORD`.
+4. Deploy. Traefik vystaví `web` (interní port 3000) na doméně; host porty se neřeší.
+5. Health: Coolify čte `/api/health` (v compose healthcheck už je).
 
 ## B) Generický server / LAN krabice (docker compose)
 
