@@ -100,6 +100,7 @@ export async function smazatAkci(id: string) {
 }
 
 const nastaveniSchema = z.object({
+  slug: z.string().trim().optional(),
   verejna: z.boolean(),
   autoPublikace: z.boolean(),
   presnostCasu: z.enum(["sekundy", "desetiny", "setiny"]),
@@ -109,26 +110,44 @@ const nastaveniSchema = z.object({
   ),
 });
 
-/** Uloží nastavení akce (10a) — viditelnost, auto-publikace, přesnost, délka. */
+/** Uloží nastavení akce (10a) — odkaz (slug), viditelnost, auto-publikace, přesnost, délka. */
 export async function ulozitNastaveni(id: string, formData: FormData) {
   await vyzadujPrihlaseni();
   const d = nastaveniSchema.parse({
+    slug: formData.get("slug"),
     verejna: formData.get("verejna") === "on",
     autoPublikace: formData.get("autoPublikace") === "on",
     presnostCasu: formData.get("presnostCasu"),
     delkaM: formData.get("delkaM"),
   });
+
+  const stara = await db.query.akce.findFirst({
+    where: eq(akce.id, id),
+    columns: { slug: true },
+  });
+
+  // Odkaz (slug): slugify vstupu, zajisti unikátnost. Prázdný → ponech stávající.
+  const zaklad = slugify(d.slug ?? "");
+  const novySlug = zaklad
+    ? await unikatniSlug(zaklad, id)
+    : (stara?.slug ?? "akce");
+
   await db
     .update(akce)
     .set({
+      slug: novySlug,
       verejna: d.verejna,
       autoPublikace: d.autoPublikace,
       presnostCasu: d.presnostCasu,
       delkaM: d.delkaM ?? null,
     })
     .where(eq(akce.id, id));
+
   revalidatePath(`/admin/akce/${id}/nastaveni`);
   revalidatePath(`/admin/akce/${id}`);
+  // Veřejná cesta pod starým i novým slugem.
+  if (stara?.slug) revalidatePath(`/${stara.slug}`);
+  revalidatePath(`/${novySlug}`);
 }
 
 /** Nastaví/posune čas hromadného startu akce (měřicí obrazovka i ruční úprava). */

@@ -45,6 +45,32 @@ export default async function NastaveniPage({
           </div>
           <form action={ulozitNastaveni.bind(null, id)}>
             <div className="flex flex-col gap-5">
+              <label className="cal-label">
+                Odkaz veřejné stránky
+                <div className="flex items-center gap-1 rounded-[10px] border border-ink-200 bg-white pl-3 focus-within:border-teal-400">
+                  <span className="font-technical text-sm text-ink-400">/</span>
+                  <input
+                    name="slug"
+                    defaultValue={akce.slug}
+                    placeholder="nazev-akce"
+                    className="flex-1 border-0 bg-transparent px-1 py-2 text-sm font-medium text-ink-900 outline-none"
+                  />
+                </div>
+                <span className="flex flex-wrap items-center gap-x-3 text-xs">
+                  <a
+                    href={`/${akce.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-teal-600 hover:underline"
+                  >
+                    otevřít /{akce.slug} ↗
+                  </a>
+                  <span className="text-warning">
+                    Změna odkazu rozbije dřív sdílené URL a QR.
+                  </span>
+                </span>
+              </label>
+
               <label className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -55,17 +81,6 @@ export default async function NastaveniPage({
                 <span className="text-sm">
                   <span className="font-medium text-ink-900">
                     Veřejná stránka viditelná
-                  </span>
-                  <span className="mt-0.5 block text-ink-500">
-                    Adresa:{" "}
-                    <a
-                      href={`/${akce.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-teal-600 hover:underline"
-                    >
-                      /{akce.slug}
-                    </a>
                   </span>
                 </span>
               </label>
