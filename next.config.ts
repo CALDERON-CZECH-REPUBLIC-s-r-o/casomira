@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Standalone build → malý runtime image (server.js + jen potřebné node_modules).
-  // Coolify spouští `node server.js` ze stejného image.
-  output: "standalone",
+  // Bez `output: standalone` — image drží plné node_modules (kvůli migracím
+  // `db:migrate` přes tsx) a spouští `next start`. Standalone by s `next start`
+  // nefungoval (Next waruje) a nic by zde neušetřil.
   // Nativní / server-only moduly se nesmí bundlovat do server komponent.
   serverExternalPackages: [
     "@node-rs/argon2",

@@ -7,3 +7,9 @@ node_modules
 npm-debug.log*
 *.tsbuildinfo
 vzory
+# Referenční / lokální materiály — nepatří do image.
+design_handoff_mereni
+*.zip
+data
+raw
+.DS_Store
