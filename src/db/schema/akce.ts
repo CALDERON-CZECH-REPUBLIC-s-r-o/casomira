@@ -5,6 +5,7 @@ import {
   date,
   integer,
   timestamp,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -22,6 +23,15 @@ export const akce = pgTable("akce", {
   // Hromadný start akce. NULL dokud se nestartuje.
   casStartu: timestamp("cas_startu", { withTimezone: true }),
   poznamka: text("poznamka"),
+  // --- Nastavení akce (10a) ---
+  // Veřejná stránka /{slug} viditelná (false = skrytá / 404).
+  verejna: boolean("verejna").notNull().default(true),
+  // Auto-publikace na cloud na pozadí.
+  autoPublikace: boolean("auto_publikace").notNull().default(false),
+  // Přesnost zobrazeného času: 'sekundy' | 'desetiny' | 'setiny'.
+  presnostCasu: text("presnost_casu").notNull().default("desetiny"),
+  // Délka trati v metrech (pro tempo/mezičasy). NULL = neuvedeno.
+  delkaM: integer("delka_m"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

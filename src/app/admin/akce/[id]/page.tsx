@@ -8,10 +8,7 @@ import {
   cilovyZaznam as czT,
 } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
-import { upravitAkci, smazatAkci } from "@/server/akce";
-import { AkceFormFields } from "../../_components/akce-form";
-import { Btn, BtnLink, Card, MetricCard } from "../../_components/ui";
-import { ConfirmDialog } from "../../_components/ui-client";
+import { BtnLink, MetricCard } from "../../_components/ui";
 import { SpravaShell } from "../../_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
@@ -107,48 +104,10 @@ export default async function AkceDetailPage({
           <BtnLink href={`/admin/akce/${id}/publikovat`} variant="ghost">
             Publikovat
           </BtnLink>
+          <BtnLink href={`/admin/akce/${id}/nastaveni`} variant="ghost">
+            Nastavení
+          </BtnLink>
         </div>
-
-        {/* Úprava akce */}
-        <section className="mb-8">
-          <div className="cal-eyebrow mb-3">Úprava akce</div>
-          <Card className="p-5">
-            <form
-              action={upravitAkci.bind(null, id)}
-              className="flex flex-col gap-6"
-            >
-              <AkceFormFields akce={akce} />
-              <Btn type="submit" className="self-start">
-                Uložit změny
-              </Btn>
-            </form>
-          </Card>
-        </section>
-
-        {/* Nebezpečná zóna */}
-        <section className="border-t border-ink-200 pt-6">
-          <ConfirmDialog
-            title="Smazat akci?"
-            message={`Akce „${akce.nazev}" bude nenávratně smazána včetně všech kategorií, závodníků a naměřených průchodů.`}
-            dopady={[
-              `${zavodnici} závodníků`,
-              `${kategorie} kategorií`,
-              "všechny naměřené průchody a historie oprav",
-              "publikované výsledky na veřejném webu",
-            ]}
-            slovo="SMAZAT"
-            confirmLabel="Smazat akci"
-            action={smazatAkci.bind(null, id)}
-            trigger={(open) => (
-              <button
-                onClick={open}
-                className="text-sm font-medium text-error hover:underline"
-              >
-                Smazat akci…
-              </button>
-            )}
-          />
-        </section>
       </div>
     </SpravaShell>
   );

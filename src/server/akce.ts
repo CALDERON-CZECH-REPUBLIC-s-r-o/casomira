@@ -99,6 +99,38 @@ export async function smazatAkci(id: string) {
   redirect("/admin/akce");
 }
 
+const nastaveniSchema = z.object({
+  verejna: z.boolean(),
+  autoPublikace: z.boolean(),
+  presnostCasu: z.enum(["sekundy", "desetiny", "setiny"]),
+  delkaM: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.coerce.number().int().positive().optional(),
+  ),
+});
+
+/** Uloží nastavení akce (10a) — viditelnost, auto-publikace, přesnost, délka. */
+export async function ulozitNastaveni(id: string, formData: FormData) {
+  await vyzadujPrihlaseni();
+  const d = nastaveniSchema.parse({
+    verejna: formData.get("verejna") === "on",
+    autoPublikace: formData.get("autoPublikace") === "on",
+    presnostCasu: formData.get("presnostCasu"),
+    delkaM: formData.get("delkaM"),
+  });
+  await db
+    .update(akce)
+    .set({
+      verejna: d.verejna,
+      autoPublikace: d.autoPublikace,
+      presnostCasu: d.presnostCasu,
+      delkaM: d.delkaM ?? null,
+    })
+    .where(eq(akce.id, id));
+  revalidatePath(`/admin/akce/${id}/nastaveni`);
+  revalidatePath(`/admin/akce/${id}`);
+}
+
 /** Nastaví/posune čas hromadného startu akce (měřicí obrazovka i ruční úprava). */
 export async function nastavitStartAkce(id: string, casISO: string | null) {
   await vyzadujPrihlaseni();

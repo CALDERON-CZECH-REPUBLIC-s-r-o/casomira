@@ -1,0 +1,731 @@
+{
+  "id": "85172e25-e82a-41a2-bb80-d531d48dad5b",
+  "prevId": "d3fec329-edc1-48cf-b857-3be818025c85",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.uzivatel": {
+      "name": "uzivatel",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jmeno": {
+          "name": "jmeno",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hash_hesla": {
+          "name": "hash_hesla",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "onboarding_hotovo": {
+          "name": "onboarding_hotovo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uzivatel_email_unique": {
+          "name": "uzivatel_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.akce": {
+      "name": "akce",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nazev": {
+          "name": "nazev",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datum": {
+          "name": "datum",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "misto": {
+          "name": "misto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rok": {
+          "name": "rok",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cas_startu": {
+          "name": "cas_startu",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poznamka": {
+          "name": "poznamka",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verejna": {
+          "name": "verejna",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "auto_publikace": {
+          "name": "auto_publikace",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "presnost_casu": {
+          "name": "presnost_casu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'desetiny'"
+        },
+        "delka_m": {
+          "name": "delka_m",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "akce_slug_unique": {
+          "name": "akce_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.kategorie": {
+      "name": "kategorie",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "akce_id": {
+          "name": "akce_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nazev": {
+          "name": "nazev",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kod": {
+          "name": "kod",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pohlavi": {
+          "name": "pohlavi",
+          "type": "pohlavi_kategorie",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rok_narozeni_od": {
+          "name": "rok_narozeni_od",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rok_narozeni_do": {
+          "name": "rok_narozeni_do",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vek_od": {
+          "name": "vek_od",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vek_do": {
+          "name": "vek_do",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poradi": {
+          "name": "poradi",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cas_startu": {
+          "name": "cas_startu",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poznamka": {
+          "name": "poznamka",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "kategorie_akce_idx": {
+          "name": "kategorie_akce_idx",
+          "columns": [
+            {
+              "expression": "akce_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "kategorie_akce_id_akce_id_fk": {
+          "name": "kategorie_akce_id_akce_id_fk",
+          "tableFrom": "kategorie",
+          "tableTo": "akce",
+          "columnsFrom": [
+            "akce_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.zavodnik": {
+      "name": "zavodnik",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "akce_id": {
+          "name": "akce_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jmeno": {
+          "name": "jmeno",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prijmeni": {
+          "name": "prijmeni",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rok_narozeni": {
+          "name": "rok_narozeni",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pohlavi": {
+          "name": "pohlavi",
+          "type": "pohlavi",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "startovni_cislo": {
+          "name": "startovni_cislo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "oddil": {
+          "name": "oddil",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mesto": {
+          "name": "mesto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kategorie_id": {
+          "name": "kategorie_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stav": {
+          "name": "stav",
+          "type": "zavodnik_stav",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'prihlasen'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "zavodnik_akce_idx": {
+          "name": "zavodnik_akce_idx",
+          "columns": [
+            {
+              "expression": "akce_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "zavodnik_kategorie_idx": {
+          "name": "zavodnik_kategorie_idx",
+          "columns": [
+            {
+              "expression": "kategorie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "zavodnik_akce_id_akce_id_fk": {
+          "name": "zavodnik_akce_id_akce_id_fk",
+          "tableFrom": "zavodnik",
+          "tableTo": "akce",
+          "columnsFrom": [
+            "akce_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "zavodnik_kategorie_id_kategorie_id_fk": {
+          "name": "zavodnik_kategorie_id_kategorie_id_fk",
+          "tableFrom": "zavodnik",
+          "tableTo": "kategorie",
+          "columnsFrom": [
+            "kategorie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "zavodnik_akce_cislo_uq": {
+          "name": "zavodnik_akce_cislo_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "akce_id",
+            "startovni_cislo"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cilovy_zaznam": {
+      "name": "cilovy_zaznam",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "client_id": {
+          "name": "client_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "akce_id": {
+          "name": "akce_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cas_cile": {
+          "name": "cas_cile",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "startovni_cislo": {
+          "name": "startovni_cislo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "zavodnik_id": {
+          "name": "zavodnik_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stav": {
+          "name": "stav",
+          "type": "cilovy_stav",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'neprirazeno'"
+        },
+        "poradi_doteku": {
+          "name": "poradi_doteku",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poznamka": {
+          "name": "poznamka",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "edited_at": {
+          "name": "edited_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "cilovy_akce_cas_idx": {
+          "name": "cilovy_akce_cas_idx",
+          "columns": [
+            {
+              "expression": "akce_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cas_cile",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "cilovy_zavodnik_idx": {
+          "name": "cilovy_zavodnik_idx",
+          "columns": [
+            {
+              "expression": "zavodnik_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cilovy_zaznam_akce_id_akce_id_fk": {
+          "name": "cilovy_zaznam_akce_id_akce_id_fk",
+          "tableFrom": "cilovy_zaznam",
+          "tableTo": "akce",
+          "columnsFrom": [
+            "akce_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cilovy_zaznam_zavodnik_id_zavodnik_id_fk": {
+          "name": "cilovy_zaznam_zavodnik_id_zavodnik_id_fk",
+          "tableFrom": "cilovy_zaznam",
+          "tableTo": "zavodnik",
+          "columnsFrom": [
+            "zavodnik_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "cilovy_zaznam_client_id_unique": {
+          "name": "cilovy_zaznam_client_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "client_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.uprava_log": {
+      "name": "uprava_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "akce_id": {
+          "name": "akce_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zaznam_id": {
+          "name": "zaznam_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "popis": {
+          "name": "popis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kdy": {
+          "name": "kdy",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uprava_log_akce_idx": {
+          "name": "uprava_log_akce_idx",
+          "columns": [
+            {
+              "expression": "akce_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kdy",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "uprava_log_akce_id_akce_id_fk": {
+          "name": "uprava_log_akce_id_akce_id_fk",
+          "tableFrom": "uprava_log",
+          "tableTo": "akce",
+          "columnsFrom": [
+            "akce_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.cilovy_stav": {
+      "name": "cilovy_stav",
+      "schema": "public",
+      "values": [
+        "platny",
+        "neprirazeno",
+        "smazany",
+        "DNF"
+      ]
+    },
+    "public.pohlavi": {
+      "name": "pohlavi",
+      "schema": "public",
+      "values": [
+        "M",
+        "Z"
+      ]
+    },
+    "public.pohlavi_kategorie": {
+      "name": "pohlavi_kategorie",
+      "schema": "public",
+      "values": [
+        "M",
+        "Z",
+        "smisene"
+      ]
+    },
+    "public.zavodnik_stav": {
+      "name": "zavodnik_stav",
+      "schema": "public",
+      "values": [
+        "prihlasen",
+        "nenastoupil_DNS",
+        "diskvalifikovan_DSQ"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

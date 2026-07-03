@@ -113,6 +113,7 @@ export async function nactiVerejnaData(
 ): Promise<VerejnaData | null> {
   const akce = await db.query.akce.findFirst({ where: eq(akceT.slug, slug) });
   if (!akce) return null;
+  if (!akce.verejna) return null; // skrytá akce → 404 / prázdné API
   const data = await nactiDataAkce(akce.id);
   if (!data) return null;
 
