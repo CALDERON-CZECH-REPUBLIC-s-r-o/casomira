@@ -3,7 +3,7 @@ import { Calendar } from "lucide-react";
 import { signOut } from "@/auth/nextauth";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { db } from "@/db/client";
-import { BtnLink, Card, EmptyState, Pill } from "./_components/ui";
+import { BtnLink, Card, EmptyState, Pill, PoweredBy } from "./_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +101,10 @@ export default async function AdminPage() {
           </Card>
         )}
       </section>
+
+      <footer className="mx-auto flex max-w-3xl justify-center px-6 pb-8">
+        <PoweredBy />
+      </footer>
     </main>
   );
 }

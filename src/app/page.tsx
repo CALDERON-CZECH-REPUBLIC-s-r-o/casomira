@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/db/client";
+import { PoweredBy } from "@/app/admin/_components/ui";
 import {
   VerejnyRozcestnik,
   type VerejnaAkce,
@@ -30,7 +31,7 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-ink-50">
       <section className="cal-dots-dark cal-glow-top bg-ink-950">
-        <div className="mx-auto max-w-2xl px-6 py-16 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:py-20 lg:max-w-5xl">
           <div className="cal-eyebrow text-teal-300">Časomíra</div>
           <h1 className="mt-3 font-display text-4xl font-bold text-white">
             Výsledky závodů, živě
@@ -41,13 +42,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-2xl p-6">
+      <div className="mx-auto w-full max-w-2xl p-6 lg:max-w-5xl">
         <VerejnyRozcestnik akce={data} />
 
-        <footer className="mt-10 text-sm text-ink-400">
+        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-400">
           <Link href="/admin" className="hover:text-ink-600 hover:underline">
             Administrace
           </Link>
+          <PoweredBy />
         </footer>
       </div>
     </main>

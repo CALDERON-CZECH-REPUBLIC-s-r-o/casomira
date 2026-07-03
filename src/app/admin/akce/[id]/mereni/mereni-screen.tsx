@@ -14,6 +14,7 @@ import {
 } from "@/lib/outbox";
 import { ulozitPruchody, nastavitStart } from "@/server/mereni";
 import { spustSyncWorker } from "@/lib/mereni-sync";
+import { PoweredBy } from "@/app/admin/_components/ui";
 
 interface ZavodnikInfo {
   startovniCislo: number | null;
@@ -921,6 +922,7 @@ export function MereniScreen({
           >
             zpět na akci
           </Link>
+          <PoweredBy />
         </span>
       </footer>
     </div>

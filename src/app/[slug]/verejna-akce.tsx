@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cistyCas, ztrata, casDneKratky } from "@/lib/cas";
-import { Btn, Card, MedalCircle, Pill } from "@/app/admin/_components/ui";
+import { Btn, Card, MedalCircle, Pill, PoweredBy } from "@/app/admin/_components/ui";
 import { Dialog, SegmentedToggle } from "@/app/admin/_components/ui-client";
 import type {
   VerejnaData,
@@ -67,7 +67,7 @@ export function VerejnaAkce({
   const datumText = `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
+    <main className="mx-auto w-full max-w-2xl px-4 py-6 lg:max-w-5xl">
       {/* Hero hlavička akce */}
       <header className="cal-dots-dark rounded-[16px] bg-ink-950 px-5 py-5 text-white">
         <div className="flex items-start justify-between gap-3">
@@ -150,8 +150,9 @@ export function VerejnaAkce({
         )}
       </div>
 
-      <footer className="mt-10 text-center font-technical text-[11px] text-ink-400">
-        Časomíra · výsledky online
+      <footer className="mt-10 flex flex-col items-center gap-1.5 text-center font-technical text-[11px] text-ink-400">
+        <span>Časomíra · výsledky online</span>
+        <PoweredBy />
       </footer>
 
       <DetailDialog
@@ -266,6 +267,16 @@ function VysledkySkupina({
           souhrn={souhrn}
         />
       )}
+      {/* Hlavička tabulky — jen desktop; zrcadlí šířky sloupců řádku */}
+      <div className="hidden items-center gap-4 border-b border-ink-150 pb-1.5 font-technical text-[11px] uppercase tracking-[.06em] text-ink-400 lg:flex">
+        <span className="w-[34px] flex-none text-center">Poř.</span>
+        <span className="w-[56px] flex-none">Číslo</span>
+        <span className="min-w-0 flex-[2]">Jméno</span>
+        <span className="w-[64px] flex-none">Ročník</span>
+        <span className="min-w-0 flex-1">Oddíl</span>
+        <span className="w-[84px] flex-none text-right">Čas</span>
+        <span className="w-[90px] flex-none text-right">Ztráta</span>
+      </div>
       <div className="divide-y divide-ink-150">
         {skupina.radky.map((r) => (
           <VysledekRadek
@@ -295,7 +306,7 @@ function VysledekRadek({
     <button
       type="button"
       onClick={onClick}
-      className="cal-press flex w-full items-center gap-3 py-2.5 text-left"
+      className="cal-press flex w-full items-center gap-3 py-2.5 text-left lg:gap-4"
     >
       <span className="flex w-[34px] flex-none justify-center">
         {jeMedaile ? (
@@ -306,28 +317,46 @@ function VysledekRadek({
           </span>
         )}
       </span>
-      <span className="min-w-0 flex-1">
+      {/* číslo — samostatný sloupec jen na desktopu */}
+      <span className="hidden w-[56px] flex-none font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+        č.{r.cislo ?? "—"}
+      </span>
+      <span className="min-w-0 flex-1 lg:flex-[2]">
         <span
           className={`block truncate font-medium ${nedobehl ? "text-ink-400" : "text-ink-900"}`}
         >
           {r.prijmeni} {r.jmeno}
         </span>
-        <span className="block truncate font-technical text-[11px] text-ink-400">
+        {/* dvouřádkový subtext jen na mobilu; na desktopu jsou č./oddíl vlastní sloupce */}
+        <span className="block truncate font-technical text-[11px] text-ink-400 lg:hidden">
           č.{r.cislo ?? "—"}
           {r.oddil ? ` · ${r.oddil}` : ""}
         </span>
       </span>
-      <span className="flex-none text-right">
+      {/* ročník — jen desktop */}
+      <span className="hidden w-[64px] flex-none font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+        {r.rocnik ?? "—"}
+      </span>
+      {/* oddíl — jen desktop */}
+      <span className="hidden min-w-0 flex-1 truncate font-technical text-[14px] text-ink-400 lg:block">
+        {r.oddil || "—"}
+      </span>
+      <span className="flex-none text-right lg:w-[84px]">
         <span
           className={`block font-technical font-semibold tabular-nums ${nedobehl ? "text-ink-400" : "text-ink-900"}`}
         >
           {casBunka(r, bezi)}
         </span>
+        {/* ztráta pod časem jen na mobilu; na desktopu je vlastní sloupec */}
         {r.stav === "klasifikovan" && (
-          <span className="block font-technical text-[11px] tabular-nums text-ink-400">
+          <span className="block font-technical text-[11px] tabular-nums text-ink-400 lg:hidden">
             {ztrata(r.ztrataMs)}
           </span>
         )}
+      </span>
+      {/* ztráta — samostatný sloupec jen na desktopu */}
+      <span className="hidden w-[90px] flex-none text-right font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+        {r.stav === "klasifikovan" ? ztrata(r.ztrataMs) : "—"}
       </span>
     </button>
   );
@@ -439,19 +468,28 @@ function StartTabulka({
   return (
     <div className="mb-4 divide-y divide-ink-150">
       {zavodnici.map((z) => (
-        <div key={z.id} className="flex items-center gap-3 py-2.5">
+        <div key={z.id} className="flex items-center gap-3 py-2.5 lg:gap-4">
           <span className="w-[34px] flex-none text-center font-technical text-[15px] tabular-nums text-ink-500">
             {z.cislo ?? "—"}
           </span>
-          <span className="min-w-0 flex-1">
+          <span className="min-w-0 flex-1 lg:flex-[2]">
             <span className="block truncate font-medium text-ink-900">
               {z.prijmeni} {z.jmeno}
             </span>
-            <span className="block truncate font-technical text-[11px] text-ink-400">
+            {/* dvouřádkový subtext jen na mobilu; na desktopu vlastní sloupce */}
+            <span className="block truncate font-technical text-[11px] text-ink-400 lg:hidden">
               {z.rocnik ? `roč. ${z.rocnik}` : ""}
               {z.rocnik && z.oddil ? " · " : ""}
               {z.oddil || (z.rocnik ? "" : "—")}
             </span>
+          </span>
+          {/* ročník — jen desktop */}
+          <span className="hidden w-[64px] flex-none font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+            {z.rocnik ?? "—"}
+          </span>
+          {/* oddíl — jen desktop */}
+          <span className="hidden min-w-0 flex-1 truncate font-technical text-[14px] text-ink-400 lg:block">
+            {z.oddil || "—"}
           </span>
           {sKategorii && (
             <Pill ton="teal" className="flex-none">

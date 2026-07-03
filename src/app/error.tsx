@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PoweredBy } from "@/app/admin/_components/ui";
 
 /** 500 — Calderon 15b: číslo v amber, ujištění že naměřená data jsou v bezpečí. */
 export default function Error({
@@ -38,6 +39,9 @@ export default function Error({
       </div>
       <div className="mt-6 font-technical text-[11px] text-ink-500">
         CAS-500{error.digest ? ` · ${error.digest}` : ""}
+      </div>
+      <div className="mt-10">
+        <PoweredBy variant="dark" />
       </div>
     </main>
   );

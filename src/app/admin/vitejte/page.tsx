@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { akce, zavodnik, cilovyZaznam } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { dokoncitOnboarding } from "@/server/onboarding";
+import { PoweredBy } from "@/app/admin/_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +122,10 @@ export default async function VitejtePage() {
             Přeskočit a přejít do administrace →
           </button>
         </form>
+
+        <div className="mt-10 flex justify-center">
+          <PoweredBy variant="dark" />
+        </div>
       </div>
     </main>
   );

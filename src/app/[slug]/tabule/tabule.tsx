@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cistyCas, ztrata } from "@/lib/cas";
-import { MedalCircle } from "@/app/admin/_components/ui";
+import { MedalCircle, PoweredBy } from "@/app/admin/_components/ui";
 import type {
   VerejnaData,
   VerejnaSkupina,
@@ -91,6 +91,11 @@ export function Tabule({
       ) : (
         <CelkovaTabule skupina={data.vysledky.celkova} />
       )}
+
+      {/* Patička — nenápadně v rohu, neruší tabuli */}
+      <div className="mt-4 flex-none text-right opacity-70">
+        <PoweredBy variant="dark" />
+      </div>
     </div>
   );
 }

@@ -17,7 +17,7 @@ import {
   type MericiBodDomain,
   type SplitZaznam,
 } from "@/domain/splity";
-import { MedalCircle } from "@/app/admin/_components/ui";
+import { MedalCircle, PoweredBy } from "@/app/admin/_components/ui";
 import { Refresh } from "./refresh";
 
 /**
@@ -459,6 +459,10 @@ export default async function ModeratorPage({
           </div>
         )}
       </section>
+
+      <div className="mt-8 flex justify-center">
+        <PoweredBy variant="dark" />
+      </div>
     </main>
   );
 }

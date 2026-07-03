@@ -92,7 +92,7 @@ export function VerejnyRozcestnik({ akce }: { akce: VerejnaAkce[] }) {
           desc="Zkuste upravit hledaný výraz."
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {filtrovane.map((a) => {
             const start = a.casStartu ? new Date(a.casStartu).getTime() : null;
             const jeStart = start !== null;

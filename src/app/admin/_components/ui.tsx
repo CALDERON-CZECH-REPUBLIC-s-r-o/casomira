@@ -93,6 +93,32 @@ export function PageHeader({
   );
 }
 
+/* ---------- Powered by Calderon ---------- */
+
+/** Patičkový odkaz „Powered by Calderon" → firemní web. `variant` dle podkladu. */
+export function PoweredBy({
+  variant = "light",
+  className = "",
+}: {
+  variant?: "light" | "dark";
+  className?: string;
+}) {
+  const barva =
+    variant === "dark"
+      ? "text-ink-400 hover:text-teal-300"
+      : "text-ink-400 hover:text-teal-600";
+  return (
+    <a
+      href="https://calderon.cz"
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`font-technical text-[11px] tracking-[.04em] transition-colors ${barva} ${className}`}
+    >
+      Powered by <span className="font-semibold">Calderon</span>
+    </a>
+  );
+}
+
 /* ---------- Pill / badge ---------- */
 
 type PillTon = "success" | "warning" | "error" | "info" | "teal" | "ink";

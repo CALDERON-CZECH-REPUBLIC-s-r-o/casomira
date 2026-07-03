@@ -1,7 +1,7 @@
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { vytvoritAkci } from "@/server/akce";
 import { AkceFormFields } from "../../_components/akce-form";
-import { Btn, Card, PageHeader } from "../../_components/ui";
+import { Btn, Card, PageHeader, PoweredBy } from "../../_components/ui";
 
 export default async function NovaAkcePage() {
   await vyzadujPrihlaseni();
@@ -21,6 +21,10 @@ export default async function NovaAkcePage() {
           </Btn>
         </form>
       </Card>
+
+      <footer className="mt-8 flex justify-center">
+        <PoweredBy />
+      </footer>
     </main>
   );
 }

@@ -2,7 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, signIn } from "@/auth/nextauth";
-import { Btn } from "../admin/_components/ui";
+import { Btn, PoweredBy } from "../admin/_components/ui";
 
 /**
  * Přihlášení organizátora (Credentials). Po úspěchu redirect na callbackUrl nebo /admin.
@@ -88,6 +88,10 @@ export default async function PrihlaseniPage({
               Přihlásit se
             </Btn>
           </form>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <PoweredBy variant="dark" />
         </div>
       </div>
     </main>

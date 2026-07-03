@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PoweredBy } from "@/app/admin/_components/ui";
 
 /** 404 — Calderon 15a: tmavý dot-grid, velké mono číslo v teal. */
 export default function NotFound() {
@@ -27,6 +28,9 @@ export default function NotFound() {
         >
           Domů
         </Link>
+      </div>
+      <div className="mt-10">
+        <PoweredBy variant="dark" />
       </div>
     </main>
   );

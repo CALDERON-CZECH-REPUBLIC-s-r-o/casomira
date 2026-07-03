@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AkceSidebar } from "./sidebar";
+import { PoweredBy } from "./ui";
 
 /**
  * Shell správy akce — tmavý sidebar vlevo + obsah vpravo. Používají ho admin
@@ -21,7 +22,12 @@ export function SpravaShell({
   return (
     <div className="flex min-h-screen bg-ink-50">
       <AkceSidebar akceId={akceId} nazev={nazev} uzivatel={uzivatel} />
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col">
+        <div className="flex-1">{children}</div>
+        <footer className="flex justify-end border-t border-ink-150 px-8 py-4">
+          <PoweredBy />
+        </footer>
+      </main>
     </div>
   );
 }
