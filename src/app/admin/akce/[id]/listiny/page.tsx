@@ -86,6 +86,13 @@ export default async function ListinyHubPage({
           </Radek>
         </Card>
       </section>
+
+      <section className="mt-8 border-t border-ink-200 pt-6">
+        <div className="cal-eyebrow mb-3">Historická data</div>
+        <BtnLink href={`/admin/akce/${id}/import-vysledky`} variant="ghost">
+          Import historických výsledků z PDF
+        </BtnLink>
+      </section>
       </div>
     </SpravaShell>
   );
