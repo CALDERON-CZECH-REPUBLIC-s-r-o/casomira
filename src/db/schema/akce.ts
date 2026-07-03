@@ -32,6 +32,8 @@ export const akce = pgTable("akce", {
   presnostCasu: text("presnost_casu").notNull().default("desetiny"),
   // Délka trati v metrech (pro tempo/mezičasy). NULL = neuvedeno.
   delkaM: integer("delka_m"),
+  // Historická akce — výsledky naimportované z PDF, ne měřené živě.
+  historicka: boolean("historicka").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

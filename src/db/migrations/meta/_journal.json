@@ -43,6 +43,13 @@
       "when": 1783068339175,
       "tag": "0005_parallel_silverclaw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783072469170,
+      "tag": "0006_omniscient_swordsman",
+      "breakpoints": true
     }
   ]
 }

@@ -178,3 +178,75 @@ export async function doplnitPohlaviDleJmen(
   revalidatePath(`/admin/akce/${akceId}`);
   return { doplneno };
 }
+
+const historickyRadekSchema = z.object({
+  prijmeni: z.string().trim().min(1),
+  jmeno: z.string().trim().default(""),
+  rokNarozeni: z.number().int().min(1900).max(2100).nullable(),
+  startovniCislo: z.number().int().positive().nullable(),
+  oddil: z.string().trim().nullable(),
+  casMs: z.number().int().positive(),
+});
+
+/**
+ * Import historických výsledků z PDF: založí závodníky s uloženým čistým časem
+ * (`cistyCasImportMs`), odhadne pohlaví z jména, zařadí do kategorií a označí
+ * akci jako historickou. Kolizní startovní čísla se uloží bez čísla.
+ */
+export async function importovatHistorickeVysledky(
+  akceId: string,
+  vstup: unknown,
+): Promise<{ ok: boolean; vlozeno: number; chyba?: string }> {
+  await vyzadujPrihlaseni();
+  const parsed = z.array(historickyRadekSchema).safeParse(vstup);
+  if (!parsed.success || parsed.data.length === 0) {
+    return { ok: false, vlozeno: 0, chyba: "Neplatná nebo prázdná data." };
+  }
+  const ak = await db.query.akce.findFirst({
+    where: eq(akceT.id, akceId),
+    columns: { rok: true },
+  });
+  if (!ak) return { ok: false, vlozeno: 0, chyba: "Akce neexistuje." };
+
+  const kategorie = await db.query.kategorie.findMany({
+    where: eq(katT.akceId, akceId),
+  });
+  const existujici = await db.query.zavodnik.findMany({
+    where: eq(zavT.akceId, akceId),
+    columns: { startovniCislo: true },
+  });
+  const obsazena = new Set(
+    existujici.map((z) => z.startovniCislo).filter((c): c is number => c !== null),
+  );
+
+  const radky = parsed.data.map((r) => {
+    const pohlavi = odhadniPohlaviZeJmena(r.jmeno, r.prijmeni);
+    let cislo = r.startovniCislo;
+    if (cislo !== null && obsazena.has(cislo)) cislo = null; // kolize → bez čísla
+    if (cislo !== null) obsazena.add(cislo);
+    const kategorieId = zaradit(
+      { pohlavi, rokNarozeni: r.rokNarozeni },
+      kategorie,
+      ak.rok,
+    );
+    return {
+      akceId,
+      jmeno: r.jmeno,
+      prijmeni: r.prijmeni,
+      rokNarozeni: r.rokNarozeni,
+      pohlavi,
+      startovniCislo: cislo,
+      oddil: r.oddil,
+      mesto: null,
+      kategorieId,
+      cistyCasImportMs: r.casMs,
+    };
+  });
+
+  await db.insert(zavT).values(radky);
+  await db.update(akceT).set({ historicka: true }).where(eq(akceT.id, akceId));
+
+  revalidatePath(`/admin/akce/${akceId}/zavodnici`);
+  revalidatePath(`/admin/akce/${akceId}`);
+  return { ok: true, vlozeno: radky.length };
+}

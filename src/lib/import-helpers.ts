@@ -23,6 +23,21 @@ export function rozdelJmeno(
     : { prijmeni: parts[parts.length - 1], jmeno: parts.slice(0, -1).join(" ") };
 }
 
+/**
+ * Parsuje čas výsledku na ms. Přijímá `mm:ss`, `mm:ss.d`, `h:mm:ss`, `h:mm:ss.d`
+ * (čárka i tečka jako desetinná). Vrací null, když formát nesedí.
+ */
+export function parseCasNaMs(raw: string): number | null {
+  const s = raw.trim().replace(",", ".");
+  const m = s.match(/^(?:(\d+):)?(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (!m) return null;
+  const h = m[1] ? parseInt(m[1], 10) : 0;
+  const min = parseInt(m[2], 10);
+  const sec = parseFloat(m[3]);
+  if (min > 59 || sec >= 60) return null;
+  return Math.round(((h * 60 + min) * 60 + sec) * 1000);
+}
+
 /** Převede buňku na celé číslo (vytáhne číslice), jinak null. */
 export function parseCislo(raw: string | number | undefined | null): number | null {
   if (raw === undefined || raw === null || raw === "") return null;

@@ -23,6 +23,8 @@ export interface ZavodnikVysledek {
   mesto: string | null;
   kategorieId: string | null;
   stav: "prihlasen" | "nenastoupil_DNS" | "diskvalifikovan_DSQ";
+  // Importovaný čistý čas (historické výsledky) — má přednost před měřením.
+  cistyCasImportMs?: number | null;
 }
 
 export interface ZaznamVysledek {
@@ -99,6 +101,11 @@ function vypoctiRadek(
 ): { stav: StavVysledku; cistyCasMs: number | null } {
   if (z.stav === "nenastoupil_DNS") return { stav: "DNS", cistyCasMs: null };
   if (z.stav === "diskvalifikovan_DSQ") return { stav: "DSQ", cistyCasMs: null };
+
+  // Historický import: uložený čistý čas má přednost (bez měření/startu).
+  if (z.cistyCasImportMs != null) {
+    return { stav: "klasifikovan", cistyCasMs: z.cistyCasImportMs };
+  }
 
   const platne = zaznamyZavodnika
     .filter((r) => r.stav === "platny" && jeCilovy(r, finishBodId))

@@ -34,6 +34,8 @@ export const zavodnik = pgTable(
     kategorieId: uuid("kategorie_id").references(() => kategorie.id, {
       onDelete: "set null",
     }),
+    // Importovaný čistý čas (historické výsledky z PDF). NULL = počítá se z měření.
+    cistyCasImportMs: integer("cisty_cas_import_ms"),
     stav: zavodnikStavEnum("stav").notNull().default("prihlasen"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
