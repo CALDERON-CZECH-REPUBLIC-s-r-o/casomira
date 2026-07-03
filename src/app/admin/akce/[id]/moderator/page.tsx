@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -290,6 +291,12 @@ export default async function ModeratorPage({
       {/* Hlavička */}
       <header className="mb-8 flex items-start justify-between gap-4">
         <div className="min-w-0">
+          <Link
+            href={`/admin/akce/${id}`}
+            className="mb-2 inline-flex items-center gap-1 rounded-[8px] border border-white/15 px-2.5 py-1 font-technical text-[11px] uppercase tracking-[.08em] text-ink-300 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            ← Zpět na akci
+          </Link>
           <div className="cal-eyebrow text-teal-300">Moderátor</div>
           <h1 className="mt-1 truncate font-display text-3xl font-bold tracking-tight">
             {akce.nazev}

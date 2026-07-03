@@ -13,6 +13,7 @@ import {
   type OutboxPruchod,
 } from "@/lib/outbox";
 import { ulozitPruchody, nastavitStart } from "@/server/mereni";
+import { spustSyncWorker } from "@/lib/mereni-sync";
 
 interface ZavodnikInfo {
   startovniCislo: number | null;
@@ -59,6 +60,8 @@ export function MereniScreen({
   const [casStartu, setCasStartu] = useState<string | null>(casStartuProp);
   const [online, setOnline] = useState(true);
   const [nowMs, setNowMs] = useState<number | null>(null);
+  // Pokus o záznam bez odstartované akce → upozornění.
+  const [chybaBezStartu, setChybaBezStartu] = useState(false);
   const poradiRef = useRef(
     Math.max(0, ...pocatecniZaznamy.map((z) => z.poradiDoteku)),
   );
@@ -154,6 +157,25 @@ export function MereniScreen({
     };
   }, [sync]);
 
+  // Background sync worker — běží dál i po odchodu z obrazovky (odskok do menu).
+  // Worker se NETERMINUJE (singleton přežívá navigaci); jen odpojíme posluchače.
+  useEffect(() => {
+    const w = spustSyncWorker(akceId);
+    if (!w) return;
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data as { type?: string; clientIds?: string[] };
+      if (d?.type === "synced" && d.clientIds?.length) {
+        const ids = new Set(d.clientIds);
+        setOnline(true);
+        setZaznamy((prev) =>
+          prev.map((z) => (ids.has(z.clientId) ? { ...z, dirty: false } : z)),
+        );
+      }
+    };
+    w.addEventListener("message", onMsg);
+    return () => w.removeEventListener("message", onMsg);
+  }, [akceId]);
+
   // Živé hodiny — tikají po 100 ms; klient-only (deterministické SSR z null).
   useEffect(() => {
     const raf = requestAnimationFrame(() => setNowMs(Date.now()));
@@ -168,6 +190,11 @@ export function MereniScreen({
   // Jádro sdílené velkým tlačítkem i číselníkem. Razítko vzniká v okamžiku volání.
   const pridejPruchod = useCallback(
     async (platneCislo: number | null) => {
+      // Bez odstartované akce nelze měřit (čistý čas by neměl smysl).
+      if (!casStartu) {
+        setChybaBezStartu(true);
+        return;
+      }
       const cas = new Date(); // wall-clock, ms (NIKDY performance.now)
       poradiRef.current += 1;
       const p: OutboxPruchod = {
@@ -188,7 +215,7 @@ export function MereniScreen({
       }
       sync();
     },
-    [akceId, sync, aktivniBod, body.length],
+    [akceId, sync, aktivniBod, body.length, casStartu],
   );
 
   const zaznamenat = useCallback(async () => {
@@ -252,6 +279,7 @@ export function MereniScreen({
   async function start() {
     const iso = new Date().toISOString();
     setCasStartu(iso);
+    setChybaBezStartu(false);
     await nastavitStart(akceId, iso);
   }
   async function zrusitStart() {
@@ -340,6 +368,19 @@ export function MereniScreen({
         }}
       >
         <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href={`/admin/akce/${akceId}`}
+            title="Zpět do menu (měření běží dál na pozadí)"
+            className="flex flex-none items-center gap-1 rounded-[8px] px-2 py-1.5"
+            style={{
+              border: "1px solid var(--ink-200)",
+              background: "#fff",
+              font: "600 12px var(--cal-font-sans)",
+              color: "var(--ink-700)",
+            }}
+          >
+            ← Menu
+          </Link>
           <Image
             src="/calderon-logo.png"
             alt="Calderon"
@@ -603,42 +644,21 @@ export function MereniScreen({
                     ? zavodniciMap.get(z.startovniCislo)
                     : undefined;
                 return (
-                  <div
+                  <PosledniRadek
                     key={z.clientId}
-                    className="flex items-center gap-[10px] px-1 py-2"
-                    style={{ borderBottom: "1px solid var(--ink-150)" }}
-                  >
-                    <span
-                      style={{
-                        font: "700 14px var(--cal-font-mono)",
-                        color: "var(--teal-600)",
-                        fontVariantNumeric: "tabular-nums",
-                        minWidth: 30,
-                      }}
-                    >
-                      {z.startovniCislo}
-                    </span>
-                    <span
-                      className="min-w-0 flex-1 truncate"
-                      style={{
-                        font: "400 12px/1.3 var(--cal-font-sans)",
-                        color: zav ? "var(--ink-700)" : "var(--error)",
-                      }}
-                    >
-                      {zav ? `${zav.prijmeni} ${zav.jmeno}` : "neznámé číslo"}
-                    </span>
-                    <span
-                      style={{
-                        font: "500 12px var(--cal-font-mono)",
-                        color: "var(--ink-500)",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {startMs !== null
+                    cislo={z.startovniCislo}
+                    jmeno={zav ? `${zav.prijmeni} ${zav.jmeno}` : "neznámé číslo"}
+                    zname={!!zav}
+                    cas={
+                      startMs !== null
                         ? uplynulyCas(new Date(z.casCile).getTime() - startMs)
-                        : casDneKratky(z.casCile)}
-                    </span>
-                  </div>
+                        : casDneKratky(z.casCile)
+                    }
+                    onReassign={(v) => priraditCislo(z.clientId, v)}
+                    onDelete={() =>
+                      upravZaznam(z.clientId, { stav: "smazany" })
+                    }
+                  />
                 );
               })
             )}
@@ -647,6 +667,20 @@ export function MereniScreen({
 
         {/* Hlavní plocha */}
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {!casStartu && (
+            <div
+              className="mx-5 mt-4 flex items-center gap-2 rounded-[10px] px-4 py-2.5"
+              style={{
+                background: chybaBezStartu ? "var(--error-bg)" : "var(--warning-bg)",
+                color: chybaBezStartu ? "var(--error)" : "var(--warning)",
+                font: "600 13px var(--cal-font-sans)",
+              }}
+            >
+              {chybaBezStartu
+                ? "Akce není odstartovaná — průchod nelze zaznamenat. Spusť START vlevo."
+                : "Akce zatím není odstartovaná. Spusť START vlevo, pak měř."}
+            </div>
+          )}
           {rezim === "ciselnik" ? (
             <>
               <div className="flex items-center justify-between px-5 pb-3 pt-[15px]">
@@ -718,6 +752,7 @@ export function MereniScreen({
                         <button
                           key={z.startovniCislo}
                           onClick={() => pridejPruchod(z.startovniCislo!)}
+                          disabled={!casStartu}
                           className="cal-tile flex flex-col items-center justify-center gap-0.5"
                           title={`${z.prijmeni} ${z.jmeno}`}
                           style={{
@@ -725,6 +760,8 @@ export function MereniScreen({
                             borderRadius: "var(--radius-md)",
                             border: `1.5px solid ${done ? "var(--teal-500)" : "var(--ink-200)"}`,
                             background: done ? "var(--teal-50)" : "#fff",
+                            opacity: casStartu ? 1 : 0.5,
+                            cursor: casStartu ? "pointer" : "not-allowed",
                           }}
                         >
                           <span
@@ -771,6 +808,7 @@ export function MereniScreen({
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 py-6">
               <button
                 onClick={zaznamenat}
+                disabled={!casStartu}
                 className="cal-press w-full max-w-[520px]"
                 style={{
                   height: 188,
@@ -778,6 +816,8 @@ export function MereniScreen({
                   background: "var(--teal-500)",
                   color: "#fff",
                   boxShadow: "var(--shadow-primary)",
+                  opacity: casStartu ? 1 : 0.45,
+                  cursor: casStartu ? "pointer" : "not-allowed",
                 }}
               >
                 <span
@@ -1030,6 +1070,110 @@ function QueueCard({
           fontVariantNumeric: "tabular-nums",
         }}
       />
+    </div>
+  );
+}
+
+/** Řádek historie „POSLEDNÍ" — editovatelné číslo + smazání průchodu. */
+function PosledniRadek({
+  cislo,
+  jmeno,
+  zname,
+  cas,
+  onReassign,
+  onDelete,
+}: {
+  cislo: number | null;
+  jmeno: string;
+  zname: boolean;
+  cas: string;
+  onReassign: (v: string) => void;
+  onDelete: () => void;
+}) {
+  const [uprava, setUprava] = useState(false);
+  const [v, setV] = useState(cislo !== null ? String(cislo) : "");
+  const commit = () => {
+    const t = v.trim();
+    if (t && t !== String(cislo)) onReassign(t);
+    setUprava(false);
+  };
+  return (
+    <div
+      className="flex items-center gap-[8px] px-1 py-2"
+      style={{ borderBottom: "1px solid var(--ink-150)" }}
+    >
+      {uprava ? (
+        <input
+          autoFocus
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") setUprava(false);
+          }}
+          onBlur={commit}
+          inputMode="numeric"
+          className="text-center outline-none"
+          style={{
+            width: 44,
+            height: 30,
+            borderRadius: 7,
+            border: "1px solid var(--teal-500)",
+            font: "700 14px var(--cal-font-mono)",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        />
+      ) : (
+        <button
+          onClick={() => {
+            setV(cislo !== null ? String(cislo) : "");
+            setUprava(true);
+          }}
+          title="Upravit číslo"
+          style={{
+            font: "700 14px var(--cal-font-mono)",
+            color: "var(--teal-600)",
+            fontVariantNumeric: "tabular-nums",
+            minWidth: 30,
+            textAlign: "left",
+          }}
+        >
+          {cislo ?? "—"}
+        </button>
+      )}
+      <span
+        className="min-w-0 flex-1 truncate"
+        style={{
+          font: "400 12px/1.3 var(--cal-font-sans)",
+          color: zname ? "var(--ink-700)" : "var(--error)",
+        }}
+      >
+        {jmeno}
+      </span>
+      <span
+        style={{
+          font: "500 12px var(--cal-font-mono)",
+          color: "var(--ink-500)",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {cas}
+      </span>
+      <button
+        onClick={onDelete}
+        title="Smazat průchod"
+        className="flex-none"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 6,
+          color: "var(--ink-400)",
+          font: "700 14px var(--cal-font-sans)",
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </button>
     </div>
   );
 }
