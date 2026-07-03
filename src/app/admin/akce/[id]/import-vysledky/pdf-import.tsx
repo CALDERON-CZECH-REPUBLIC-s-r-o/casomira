@@ -1,11 +1,32 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { parseCasNaMs } from "@/lib/import-helpers";
 import { importovatHistorickeVysledky } from "@/server/zavodnici";
 import { Btn, BtnLink, Card, Pill, Stepper } from "../../../_components/ui";
 
-/** Jeden řádek náhledu — vše jako string kvůli editovatelnosti. */
+type Field =
+  | "poradi"
+  | "cislo"
+  | "prijmeni"
+  | "jmeno"
+  | "prijmeniJmeno"
+  | "rocnik"
+  | "oddil"
+  | "cas";
+
+const POLE: { v: Field | ""; label: string }[] = [
+  { v: "", label: "— nepoužít —" },
+  { v: "poradi", label: "Pořadí" },
+  { v: "cislo", label: "Startovní číslo" },
+  { v: "prijmeni", label: "Příjmení" },
+  { v: "jmeno", label: "Jméno" },
+  { v: "prijmeniJmeno", label: "Příjmení a jméno" },
+  { v: "rocnik", label: "Ročník" },
+  { v: "oddil", label: "Oddíl / Město" },
+  { v: "cas", label: "Čas" },
+];
+
 type Radek = {
   poradi: string;
   cislo: string;
@@ -16,13 +37,20 @@ type Radek = {
   cas: string;
 };
 
-const TIME_RE = /\b(?:\d{1,2}:\d{2}:\d{2}(?:[.,]\d)?|\d{1,2}:\d{1,2}(?:[.,]\d)?)\b/;
+const TIME_RE =
+  /\b(?:\d{1,2}:\d{2}:\d{2}(?:[.,]\d)?|\d{1,2}:\d{1,2}(?:[.,]\d)?)\b/;
+const ROCNIK_RE = /^(?:19|20)\d{2}$/;
+const HDR_RE =
+  /^(poř|pořadí|číslo|č\.|st\.?č|jméno|příjmení|ročník|roč|oddíl|klub|město|čas|kategorie|pohlaví)/i;
 
-/**
- * Rekonstruuje textové řádky z PDF: položky se seskupí podle y-souřadnice
- * (transform[5]) a v rámci řádku se seřadí podle x (transform[4]).
- */
-async function extrahovatRadky(file: File): Promise<string[]> {
+interface Token {
+  x: number;
+  w: number;
+  s: string;
+}
+
+/** Extrahuje řádky z PDF jako pole tokenů (x, šířka, text), shora dolů. */
+async function extrahovatTokeny(file: File): Promise<Token[][]> {
   const pdfjs = await import("pdfjs-dist");
   try {
     pdfjs.GlobalWorkerOptions.workerSrc = (
@@ -34,96 +62,155 @@ async function extrahovatRadky(file: File): Promise<string[]> {
       import.meta.url,
     ).toString();
   }
-
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
-  const radky: string[] = [];
-
+  const radky: Token[][] = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
     const tc = await page.getTextContent();
-    const skupiny = new Map<number, { x: number; s: string }[]>();
-    for (const item of tc.items) {
-      if (!("str" in item)) continue;
-      const str = item.str;
-      if (!str.trim()) continue;
-      const y = Math.round(item.transform[5]);
-      const x = item.transform[4] as number;
-      // sloučit blízké y do jednoho řádku (tolerance 2px)
-      let klic = y;
-      for (const k of skupiny.keys()) {
-        if (Math.abs(k - y) <= 2) {
-          klic = k;
+    const g = new Map<number, Token[]>();
+    for (const it of tc.items) {
+      if (!("str" in it) || !it.str.trim()) continue;
+      const y = Math.round(it.transform[5]);
+      let k = y;
+      for (const kk of g.keys())
+        if (Math.abs(kk - y) <= 2) {
+          k = kk;
           break;
         }
-      }
-      const arr = skupiny.get(klic) ?? [];
-      arr.push({ x, s: str });
-      skupiny.set(klic, arr);
+      const arr = g.get(k) ?? [];
+      arr.push({ x: it.transform[4], w: it.width, s: it.str });
+      g.set(k, arr);
     }
-    const yKlice = [...skupiny.keys()].sort((a, b) => b - a); // shora dolů
-    for (const yk of yKlice) {
-      const cast = skupiny
-        .get(yk)!
-        .sort((a, b) => a.x - b.x)
-        .map((i) => i.s)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (cast) radky.push(cast);
-    }
+    for (const [, arr] of [...g.entries()].sort((a, b) => b[0] - a[0]))
+      radky.push(arr.sort((a, b) => a.x - b.x));
   }
   return radky;
 }
 
-/** Heuristické rozparsování jednoho řádku na Radek; null = řádek bez času. */
-function parsovatRadek(line: string): Radek | null {
-  const cas = line.match(TIME_RE)?.[0];
-  if (!cas) return null;
+/**
+ * Rozpozná sloupce: primárně kotví podle řádku s hlavičkou (výsledkovky ho mají),
+ * data přiřadí k nejbližší kotvě. Bez hlavičky spadne na detekci mezer (gutters).
+ */
+function detekujMrizku(radky: Token[][]): {
+  labely: string[] | null;
+  mrizka: string[][];
+} {
+  const hdrIdx = radky.findIndex(
+    (l) => l.filter((t) => HDR_RE.test(t.s)).length >= 3,
+  );
 
-  const pred = line.slice(0, line.indexOf(cas)).trim();
-  const tokeny = pred.split(/\s+/).filter(Boolean);
-
-  let poradi = "";
-  let cislo = "";
-  let rocnik = "";
-  const jmenaTokeny: string[] = [];
-  const oddilTokeny: string[] = [];
-
-  const isInt = (t: string) => /^\d+$/.test(t);
-  const isRocnik = (t: string) => /^(?:19|20)\d{2}$/.test(t);
-  const isAlpha = (t: string) => /[A-Za-zÁ-Žá-ž]/.test(t);
-
-  let jmenaHotova = false;
-  for (const t of tokeny) {
-    if (isRocnik(t)) {
-      rocnik = t;
-      jmenaHotova = jmenaTokeny.length > 0;
-      continue;
-    }
-    if (isInt(t)) {
-      if (poradi === "") poradi = t;
-      else if (cislo === "" && jmenaTokeny.length === 0) cislo = t;
-      else oddilTokeny.push(t);
-      continue;
-    }
-    if (isAlpha(t)) {
-      if (!jmenaHotova && jmenaTokeny.length < 2) jmenaTokeny.push(t);
-      else oddilTokeny.push(t);
-      continue;
-    }
-    oddilTokeny.push(t);
+  if (hdrIdx >= 0) {
+    const kotvy = radky[hdrIdx].map((t) => ({ x: t.x, label: t.s }));
+    const priradit = (l: Token[]): string[] => {
+      const cols = kotvy.map(() => "");
+      for (const t of l) {
+        let bi = 0;
+        let bd = Infinity;
+        for (let i = 0; i < kotvy.length; i++) {
+          const d = Math.abs(t.x - kotvy[i].x);
+          if (d < bd) {
+            bd = d;
+            bi = i;
+          }
+        }
+        cols[bi] = (cols[bi] + " " + t.s).trim();
+      }
+      return cols;
+    };
+    // Data = řádky pod hlavičkou (tituly nad ní vynecháme).
+    const mrizka = radky
+      .slice(hdrIdx + 1)
+      .filter((l) => l.length >= 2)
+      .map(priradit);
+    return { labely: kotvy.map((k) => k.label), mrizka };
   }
 
-  return {
-    poradi,
-    cislo,
-    prijmeni: jmenaTokeny[0] ?? "",
-    jmeno: jmenaTokeny[1] ?? "",
-    rocnik,
-    oddil: oddilTokeny.join(" "),
-    cas: cas.replace(",", "."),
+  // Fallback: gutters přes řádky s ≥3 tokeny.
+  const data = radky.filter((l) => l.length >= 3);
+  const iv: [number, number][] = [];
+  for (const l of data) for (const t of l) iv.push([t.x, t.x + t.w]);
+  iv.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [a, b] of iv) {
+    const last = merged[merged.length - 1];
+    if (last && a <= last[1] + 1) last[1] = Math.max(last[1], b);
+    else merged.push([a, b]);
+  }
+  const hranice = [-Infinity];
+  for (let i = 1; i < merged.length; i++)
+    if (merged[i][0] - merged[i - 1][1] >= 5)
+      hranice.push((merged[i - 1][1] + merged[i][0]) / 2);
+  hranice.push(Infinity);
+  const priradit = (l: Token[]): string[] => {
+    const cols = Array(hranice.length - 1).fill("");
+    for (const t of l) {
+      const c = t.x + t.w / 2;
+      for (let i = 0; i < hranice.length - 1; i++)
+        if (c >= hranice[i] && c < hranice[i + 1]) {
+          cols[i] = (cols[i] + " " + t.s).trim();
+          break;
+        }
+    }
+    return cols;
   };
+  return { labely: null, mrizka: data.map(priradit) };
+}
+
+/** Automapování: z labelů hlavičky, jinak z obsahu sloupce. */
+function autoMapovani(
+  labely: string[] | null,
+  mrizka: string[][],
+  pocet: number,
+): (Field | "")[] {
+  const map: (Field | "")[] = Array(pocet).fill("");
+  const vzorky = (i: number) =>
+    mrizka
+      .map((r) => r[i] ?? "")
+      .filter(Boolean)
+      .slice(0, 20);
+
+  for (let i = 0; i < pocet; i++) {
+    const l = (labely?.[i] ?? "").toLowerCase();
+    if (/příjmen|prijmen/.test(l)) map[i] = "prijmeni";
+    else if (/jméno|jmeno/.test(l)) map[i] = "jmeno";
+    else if (/ročník|rocnik|roč/.test(l)) map[i] = "rocnik";
+    else if (/čas|cas/.test(l)) map[i] = "cas";
+    else if (/číslo|cislo|st\.?č|č\./.test(l)) map[i] = "cislo";
+    else if (/poř|pořadí|poradi/.test(l)) map[i] = "poradi";
+    else if (/oddíl|oddil|klub|město|mesto/.test(l)) map[i] = "oddil";
+    // kategorie / pohlaví → nepoužít (necháme prázdné)
+  }
+
+  // Doplň z obsahu, co label neurčil.
+  const pouzito = new Set(map.filter(Boolean));
+  for (let i = 0; i < pocet; i++) {
+    if (map[i]) continue;
+    const v = vzorky(i);
+    if (v.length === 0) continue;
+    const podil = (re: RegExp) =>
+      v.filter((s) => re.test(s.trim())).length / v.length;
+    if (!pouzito.has("cas") && podil(TIME_RE) >= 0.5) {
+      map[i] = "cas";
+      pouzito.add("cas");
+    } else if (!pouzito.has("rocnik") && podil(ROCNIK_RE) >= 0.5) {
+      map[i] = "rocnik";
+      pouzito.add("rocnik");
+    } else if (!pouzito.has("cislo") && podil(/^\d{1,4}$/) >= 0.5) {
+      map[i] = pouzito.has("poradi") ? "cislo" : "poradi";
+      pouzito.add(map[i]);
+    } else if (podil(/[A-Za-zÁ-Žá-ž]/) >= 0.5) {
+      map[i] = !pouzito.has("prijmeni")
+        ? "prijmeni"
+        : !pouzito.has("jmeno")
+          ? "jmeno"
+          : !pouzito.has("oddil")
+            ? "oddil"
+            : "";
+      if (map[i]) pouzito.add(map[i]);
+    }
+  }
+  return map;
 }
 
 const prazdny = (): Radek => ({
@@ -136,12 +223,36 @@ const prazdny = (): Radek => ({
   cas: "",
 });
 
+function radekZMapovani(cols: string[], mapovani: (Field | "")[]): Radek {
+  const r = prazdny();
+  cols.forEach((val, i) => {
+    const f = mapovani[i];
+    if (!f || !val.trim()) return;
+    if (f === "prijmeniJmeno") {
+      const parts = val.trim().split(/\s+/);
+      r.prijmeni = parts[0] ?? "";
+      r.jmeno = parts.slice(1).join(" ");
+    } else if (f === "cas") {
+      r.cas = (val.match(TIME_RE)?.[0] ?? val.trim()).replace(",", ".");
+    } else if (f === "rocnik") {
+      r.rocnik = val.match(/(?:19|20)\d{2}/)?.[0] ?? val.trim();
+    } else if (f === "cislo" || f === "poradi") {
+      r[f] = val.match(/\d+/)?.[0] ?? val.trim();
+    } else {
+      r[f] = val.trim();
+    }
+  });
+  return r;
+}
+
 function radekPlatny(r: Radek): boolean {
   return r.prijmeni.trim() !== "" && parseCasNaMs(r.cas) !== null;
 }
 
 export function PdfImport({ akceId }: { akceId: string }) {
-  const [radky, setRadky] = useState<Radek[]>([]);
+  const [mrizka, setMrizka] = useState<string[][]>([]);
+  const [labely, setLabely] = useState<string[] | null>(null);
+  const [mapovani, setMapovani] = useState<(Field | "")[]>([]);
   const [nazevSouboru, setNazevSouboru] = useState("");
   const [chybaPdf, setChybaPdf] = useState<string | null>(null);
   const [nacita, setNacita] = useState(false);
@@ -152,35 +263,52 @@ export function PdfImport({ akceId }: { akceId: string }) {
   } | null>(null);
   const [ukladam, startUkladani] = useTransition();
 
-  const aktivni = vysledek?.ok ? 2 : radky.length > 0 ? 1 : 0;
-  const platnych = radky.filter(radekPlatny).length;
+  const pocetSl = mapovani.length;
+  const maCas = mapovani.includes("cas");
+  const maPrijmeni =
+    mapovani.includes("prijmeni") || mapovani.includes("prijmeniJmeno");
+
+  // Naparsované řádky dle aktuálního mapování.
+  const radky = useMemo(
+    () => mrizka.map((cols) => radekZMapovani(cols, mapovani)),
+    [mrizka, mapovani],
+  );
+  const platne = radky.filter(radekPlatny);
+
+  const aktivni = vysledek?.ok ? 2 : mrizka.length > 0 ? 1 : 0;
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setChybaPdf(null);
     setVysledek(null);
-    setRadky([]);
+    setMrizka([]);
     setNazevSouboru(file.name);
     setNacita(true);
     try {
-      const textRadky = await extrahovatRadky(file);
-      if (textRadky.length === 0) {
+      const tokeny = await extrahovatTokeny(file);
+      if (tokeny.length === 0) {
         setChybaPdf(
-          "PDF neobsahuje žádný extrahovatelný text (patrně skenovaný obrázek).",
+          "PDF neobsahuje extrahovatelný text (patrně skenovaný obrázek).",
         );
         return;
       }
-      const parsed = textRadky
-        .map(parsovatRadek)
-        .filter((r): r is Radek => r !== null);
-      if (parsed.length === 0) {
+      const { labely: lbl, mrizka: grid } = detekujMrizku(tokeny);
+      const pocet = Math.max(0, ...grid.map((r) => r.length));
+      const gridN = grid.map((r) => {
+        const a = r.slice(0, pocet);
+        while (a.length < pocet) a.push("");
+        return a;
+      });
+      if (pocet === 0 || gridN.length === 0) {
         setChybaPdf(
-          "V PDF se nepodařilo rozpoznat žádný řádek s časem. Zkontroluj, že jde o výsledkovou listinu.",
+          "Nepodařilo se rozpoznat sloupce. Zkontroluj, že jde o výsledkovou listinu.",
         );
         return;
       }
-      setRadky(parsed);
+      setLabely(lbl && lbl.length >= pocet ? lbl.slice(0, pocet) : lbl);
+      setMrizka(gridN);
+      setMapovani(autoMapovani(lbl, gridN, pocet));
     } catch (err) {
       setChybaPdf(
         `Nepodařilo se přečíst PDF: ${
@@ -192,44 +320,41 @@ export function PdfImport({ akceId }: { akceId: string }) {
     }
   }
 
-  function uprav(i: number, pole: keyof Radek, hodnota: string) {
-    setRadky((prev) =>
-      prev.map((r, j) => (j === i ? { ...r, [pole]: hodnota } : r)),
-    );
-  }
-
-  function smaz(i: number) {
-    setRadky((prev) => prev.filter((_, j) => j !== i));
+  function nastavMapovani(i: number, f: Field | "") {
+    setMapovani((prev) => prev.map((m, j) => (j === i ? f : m)));
   }
 
   function ulozit() {
-    const data = radky
-      .filter(radekPlatny)
-      .map((r) => {
-        const casMs = parseCasNaMs(r.cas);
-        const cislo = r.cislo.trim() === "" ? null : parseInt(r.cislo, 10);
-        const rocnik = r.rocnik.trim() === "" ? null : parseInt(r.rocnik, 10);
-        return {
-          prijmeni: r.prijmeni.trim(),
-          jmeno: r.jmeno.trim(),
-          rokNarozeni: rocnik !== null && Number.isFinite(rocnik) ? rocnik : null,
-          startovniCislo:
-            cislo !== null && Number.isFinite(cislo) && cislo > 0 ? cislo : null,
-          oddil: r.oddil.trim() === "" ? null : r.oddil.trim(),
-          casMs: casMs!,
-        };
-      });
+    const data = platne.map((r) => {
+      const cislo = r.cislo.trim() === "" ? null : parseInt(r.cislo, 10);
+      const rocnik = r.rocnik.trim() === "" ? null : parseInt(r.rocnik, 10);
+      return {
+        prijmeni: r.prijmeni.trim(),
+        jmeno: r.jmeno.trim(),
+        rokNarozeni:
+          rocnik !== null && Number.isFinite(rocnik) ? rocnik : null,
+        startovniCislo:
+          cislo !== null && Number.isFinite(cislo) && cislo > 0 ? cislo : null,
+        oddil: r.oddil.trim() === "" ? null : r.oddil.trim(),
+        casMs: parseCasNaMs(r.cas)!,
+      };
+    });
     startUkladani(async () => {
       const r = await importovatHistorickeVysledky(akceId, data);
       setVysledek(r);
     });
   }
 
+  const ukazka = mrizka.slice(0, 5);
+
   return (
     <div className="flex flex-col gap-6">
-      <Stepper kroky={["Nahrát PDF", "Kontrola", "Uložit"]} aktivni={aktivni} />
+      <Stepper
+        kroky={["Nahrát PDF", "Mapování sloupců", "Uložit"]}
+        aktivni={aktivni}
+      />
 
-      {/* Krok 1 — nahrání souboru */}
+      {/* Krok 1 — nahrání */}
       <Card className="p-5">
         <label className="cal-label">
           PDF výsledková listina
@@ -253,115 +378,75 @@ export function PdfImport({ akceId }: { akceId: string }) {
         )}
       </Card>
 
-      {/* Krok 2 — editovatelný náhled */}
-      {radky.length > 0 && !vysledek?.ok && (
+      {/* Krok 2 — mapování sloupců + náhled */}
+      {mrizka.length > 0 && !vysledek?.ok && (
         <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="cal-eyebrow">Kontrola řádků</div>
-            <Pill ton={platnych === radky.length ? "success" : "warning"}>
-              {platnych}/{radky.length} platných
-            </Pill>
-          </div>
+          <div className="mb-1 cal-eyebrow">Mapování sloupců</div>
+          <p className="mb-4 text-sm text-ink-500">
+            Rozpoznáno {pocetSl} sloupců{labely ? " (dle hlavičky)" : ""}. Urči,
+            co je čím. Ukázka prvních řádků:
+          </p>
 
           <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-y-1 text-sm">
+            <table className="w-full border-separate border-spacing-x-1 text-sm">
               <thead>
-                <tr className="cal-eyebrow text-left">
-                  <th className="px-1 pb-2 font-medium">Poř.</th>
-                  <th className="px-1 pb-2 font-medium">Číslo</th>
-                  <th className="px-1 pb-2 font-medium">Příjmení</th>
-                  <th className="px-1 pb-2 font-medium">Jméno</th>
-                  <th className="px-1 pb-2 font-medium">Roč.</th>
-                  <th className="px-1 pb-2 font-medium">Oddíl</th>
-                  <th className="px-1 pb-2 font-medium">Čas</th>
-                  <th className="pb-2" />
+                <tr>
+                  {Array.from({ length: pocetSl }).map((_, i) => (
+                    <th key={i} className="pb-2 text-left align-top">
+                      <div className="cal-eyebrow mb-1 truncate">
+                        {labely?.[i] || `Sloupec ${i + 1}`}
+                      </div>
+                      <select
+                        value={mapovani[i] ?? ""}
+                        onChange={(e) =>
+                          nastavMapovani(i, e.target.value as Field | "")
+                        }
+                        className="cal-input"
+                      >
+                        {POLE.map((p) => (
+                          <option key={p.v} value={p.v}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {radky.map((r, i) => {
-                  const spatny = !radekPlatny(r);
-                  return (
-                    <tr key={i} className={spatny ? "bg-error-bg" : ""}>
-                      <Cell w="w-14">
-                        <input
-                          className="cal-input"
-                          value={r.poradi}
-                          onChange={(e) => uprav(i, "poradi", e.target.value)}
-                        />
-                      </Cell>
-                      <Cell w="w-16">
-                        <input
-                          className="cal-input"
-                          value={r.cislo}
-                          onChange={(e) => uprav(i, "cislo", e.target.value)}
-                        />
-                      </Cell>
-                      <Cell>
-                        <input
-                          className="cal-input"
-                          value={r.prijmeni}
-                          onChange={(e) => uprav(i, "prijmeni", e.target.value)}
-                        />
-                      </Cell>
-                      <Cell>
-                        <input
-                          className="cal-input"
-                          value={r.jmeno}
-                          onChange={(e) => uprav(i, "jmeno", e.target.value)}
-                        />
-                      </Cell>
-                      <Cell w="w-20">
-                        <input
-                          className="cal-input"
-                          value={r.rocnik}
-                          onChange={(e) => uprav(i, "rocnik", e.target.value)}
-                        />
-                      </Cell>
-                      <Cell>
-                        <input
-                          className="cal-input"
-                          value={r.oddil}
-                          onChange={(e) => uprav(i, "oddil", e.target.value)}
-                        />
-                      </Cell>
-                      <Cell w="w-24">
-                        <input
-                          className="cal-input font-technical tabular-nums"
-                          value={r.cas}
-                          onChange={(e) => uprav(i, "cas", e.target.value)}
-                        />
-                      </Cell>
-                      <td className="px-1 align-middle">
-                        <button
-                          type="button"
-                          onClick={() => smaz(i)}
-                          aria-label="Smazat řádek"
-                          className="cal-press flex h-7 w-7 items-center justify-center rounded-full text-ink-400 hover:bg-error-bg hover:text-error"
-                        >
-                          ×
-                        </button>
+                {ukazka.map((cols, ri) => (
+                  <tr key={ri}>
+                    {cols.map((c, ci) => (
+                      <td
+                        key={ci}
+                        className="max-w-[180px] truncate border-t border-ink-150 py-1.5 text-ink-700"
+                      >
+                        {c || <span className="text-ink-300">—</span>}
                       </td>
-                    </tr>
-                  );
-                })}
+                    ))}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
+          {(!maCas || !maPrijmeni) && (
+            <p className="mt-4 rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
+              Namapuj alespoň <strong>Příjmení</strong> (nebo „Příjmení a
+              jméno“) a <strong>Čas</strong> — bez nich nejde výsledek uložit.
+            </p>
+          )}
+
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <Btn
-              variant="ghost"
-              type="button"
-              onClick={() => setRadky((p) => [...p, prazdny()])}
-            >
-              + Přidat řádek
-            </Btn>
+            <Pill ton={platne.length > 0 ? "success" : "warning"}>
+              {platne.length}/{radky.length} platných řádků
+            </Pill>
             <Btn
               type="button"
               onClick={ulozit}
-              disabled={ukladam || platnych === 0}
+              disabled={ukladam || platne.length === 0}
             >
-              {ukladam ? "Ukládám…" : `Uložit ${platnych} výsledků`}
+              {ukladam ? "Ukládám…" : `Uložit ${platne.length} výsledků`}
             </Btn>
           </div>
 
@@ -393,14 +478,4 @@ export function PdfImport({ akceId }: { akceId: string }) {
       )}
     </div>
   );
-}
-
-function Cell({
-  children,
-  w = "",
-}: {
-  children: React.ReactNode;
-  w?: string;
-}) {
-  return <td className={`px-1 align-middle ${w}`}>{children}</td>;
 }
