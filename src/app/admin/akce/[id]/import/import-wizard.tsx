@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
-import { normalizujPohlavi, odhadniPohlaviZPrijmeni } from "@/lib/pohlavi";
+import { normalizujPohlavi, odhadniPohlaviZeJmena } from "@/lib/pohlavi";
 import { rozdelJmeno, parseCislo } from "@/lib/import-helpers";
 import {
   importovatZavodniky,
@@ -54,7 +54,7 @@ export function ImportWizard({
   });
   const [sliteJmeno, setSliteJmeno] = useState(true);
   const [poradiJmena, setPoradiJmena] = useState<"PJ" | "JP">("PJ");
-  const [heuristika, setHeuristika] = useState(false);
+  const [heuristika, setHeuristika] = useState(true);
   const [vysledek, setVysledek] = useState<VysledekImportu | null>(null);
   const [pending, startTransition] = useTransition();
   const [chybaSouboru, setChybaSouboru] = useState<string | null>(null);
@@ -170,7 +170,8 @@ export function ImportWizard({
         mapovani.rok === NEMAPOVANO ? "" : (r[mapovani.rok] as string),
       );
       let pohlavi = normalizujPohlavi(get("pohlavi"));
-      if (pohlavi === null && heuristika) pohlavi = odhadniPohlaviZPrijmeni(prijmeni);
+      if (pohlavi === null && heuristika)
+        pohlavi = odhadniPohlaviZeJmena(jmeno, prijmeni);
 
       const oddil = get("oddil") || null;
       const mesto = get("mesto") || null;
@@ -355,7 +356,7 @@ export function ImportWizard({
                   checked={heuristika}
                   onChange={(e) => setHeuristika(e.target.checked)}
                 />
-                Doplnit chybějící pohlaví z příjmení (-á → žena)
+                Doplnit chybějící pohlaví dle jména a příjmení
               </label>
             </div>
 

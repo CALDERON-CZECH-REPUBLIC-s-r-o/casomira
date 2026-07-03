@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { Users } from "lucide-react";
 import { db } from "@/db/client";
 import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { vekVRoce } from "@/domain/zarazeni";
 import { nastavitStavZavodnika } from "@/server/opravy";
-import { BtnLink, Card, PageHeader, Pill } from "../../../_components/ui";
+import { doplnitPohlaviDleJmen, nastavitPohlavi } from "@/server/zavodnici";
+import { prepocitatZarazeni } from "@/server/kategorie";
+import { Btn, BtnLink, Card, EmptyState, PageHeader, Pill } from "../../../_components/ui";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
+import { ZavodnikFormDialog } from "./zavodnik-form";
 
 export const dynamic = "force-dynamic";
 
@@ -49,23 +53,70 @@ export default async function ZavodniciPage({
           </span>
         }
         actions={
-          <BtnLink href={`/admin/akce/${id}/import`}>+ Import z Excelu</BtnLink>
+          <>
+            <ZavodnikFormDialog
+              akceId={id}
+              trigger={(open) => <Btn onClick={open}>+ Přidat závodníka</Btn>}
+            />
+            <BtnLink href={`/admin/akce/${id}/import`} variant="ghost">
+              + Import z Excelu
+            </BtnLink>
+          </>
         }
       />
 
       {(bezKategorie > 0 || bezPohlavi > 0) && (
-        <p className="mb-4 rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
-          K řešení:{" "}
-          {bezPohlavi > 0 && <>{bezPohlavi} bez pohlaví; </>}
-          {bezKategorie > 0 && <>{bezKategorie} bez kategorie </>}
-          (doplň pohlaví / uprav kategorie a spusť přepočet).
-        </p>
+        <div className="mb-4 rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
+          <p>
+            K řešení:{" "}
+            {bezPohlavi > 0 && <>{bezPohlavi} bez pohlaví; </>}
+            {bezKategorie > 0 && <>{bezKategorie} bez kategorie </>}
+            (doplň pohlaví / uprav kategorie a spusť přepočet).
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <form
+              action={async () => {
+                "use server";
+                await doplnitPohlaviDleJmen(id);
+              }}
+            >
+              <Btn variant="ghost" type="submit">
+                Doplnit pohlaví dle jmen
+              </Btn>
+            </form>
+            <form
+              action={async () => {
+                "use server";
+                await prepocitatZarazeni(id);
+              }}
+            >
+              <Btn variant="ghost" type="submit">
+                Přepočítat zařazení
+              </Btn>
+            </form>
+          </div>
+        </div>
       )}
 
       {zavodnici.length === 0 ? (
-        <p className="text-sm text-ink-500">
-          Zatím žádní závodníci. Naimportuj přihlášky z Excelu.
-        </p>
+        <EmptyState
+          icon={<Users className="h-7 w-7" />}
+          title="Zatím žádní závodníci"
+          desc="Naimportuj přihlášky z Excelu, nebo přidej závodníka ručně."
+          actions={
+            <>
+              <BtnLink href={`/admin/akce/${id}/import`}>+ Import z Excelu</BtnLink>
+              <ZavodnikFormDialog
+                akceId={id}
+                trigger={(open) => (
+                  <Btn variant="ghost" onClick={open}>
+                    Přidat ručně
+                  </Btn>
+                )}
+              />
+            </>
+          }
+        />
       ) : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">
@@ -95,8 +146,18 @@ export default async function ZavodniciPage({
                       ? ` (${vekVRoce(akce.rok, z.rokNarozeni)} let)`
                       : ""}
                   </td>
-                  <td className={`p-3 ${z.pohlavi ? "text-ink-700" : "text-error"}`}>
-                    {z.pohlavi ? POHLAVI_LABEL[z.pohlavi] : "?"}
+                  <td className="p-3">
+                    <div className="flex items-center gap-1.5">
+                      {z.pohlavi ? (
+                        <span className="font-medium text-ink-700">
+                          {POHLAVI_LABEL[z.pohlavi]}
+                        </span>
+                      ) : (
+                        <span className="font-bold text-error">?</span>
+                      )}
+                      <PohlaviBtn zavodnikId={z.id} akceId={id} pohlavi="M" aktivni={z.pohlavi === "M"} />
+                      <PohlaviBtn zavodnikId={z.id} akceId={id} pohlavi="Z" aktivni={z.pohlavi === "Z"} />
+                    </div>
                   </td>
                   <td className="p-3 text-ink-700">{z.oddil ?? z.mesto ?? "—"}</td>
                   <td className={`p-3 ${z.kategorie ? "text-ink-700" : "text-amber-500"}`}>
@@ -115,6 +176,18 @@ export default async function ZavodniciPage({
                       ) : (
                         <StavZav zavodnikId={z.id} akceId={id} stav="prihlasen" label="zrušit" />
                       )}
+                      <ZavodnikFormDialog
+                        akceId={id}
+                        zavodnik={z}
+                        trigger={(open) => (
+                          <button
+                            onClick={open}
+                            className="text-ink-500 underline hover:text-teal-700"
+                          >
+                            upravit
+                          </button>
+                        )}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -125,6 +198,32 @@ export default async function ZavodniciPage({
       )}
       </div>
     </SpravaShell>
+  );
+}
+
+function PohlaviBtn({
+  zavodnikId,
+  akceId,
+  pohlavi,
+  aktivni,
+}: {
+  zavodnikId: string;
+  akceId: string;
+  pohlavi: "M" | "Z";
+  aktivni: boolean;
+}) {
+  return (
+    <form action={nastavitPohlavi.bind(null, zavodnikId, akceId, pohlavi)}>
+      <button
+        className={`text-[11px] transition-colors ${
+          aktivni
+            ? "font-bold text-teal-700"
+            : "text-ink-400 hover:text-teal-700"
+        }`}
+      >
+        {POHLAVI_LABEL[pohlavi]}
+      </button>
+    </form>
   );
 }
 

@@ -15,6 +15,7 @@ import {
 } from "../../../_components/kategorie-form";
 import { Btn, Card, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -100,8 +101,18 @@ export default async function KategoriePage({
                       {popisPravidla(kat)}
                     </span>
                   </span>
-                  <span className="flex-none font-technical text-[11px] uppercase tracking-[.08em] text-ink-400">
-                    upravit ▾
+                  <span className="flex flex-none items-center gap-3">
+                    <Link
+                      href={`/admin/akce/${id}/kategorie/${encodeURIComponent(
+                        kat.kod ?? kat.nazev,
+                      )}`}
+                      className="font-technical text-[11px] uppercase tracking-[.08em] text-teal-600 hover:text-teal-700"
+                    >
+                      žebříček →
+                    </Link>
+                    <span className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-400">
+                      upravit ▾
+                    </span>
                   </span>
                 </summary>
                 <div className="border-t border-ink-150 bg-ink-50 p-4">
