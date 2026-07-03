@@ -62,6 +62,8 @@ export function MereniScreen({
   const [nowMs, setNowMs] = useState<number | null>(null);
   // Pokus o záznam bez odstartované akce → upozornění.
   const [chybaBezStartu, setChybaBezStartu] = useState(false);
+  // Čas poslední lokální zálohy (z background workeru).
+  const [posledniZaloha, setPosledniZaloha] = useState<number | null>(null);
   const poradiRef = useRef(
     Math.max(0, ...pocatecniZaznamy.map((z) => z.poradiDoteku)),
   );
@@ -163,7 +165,7 @@ export function MereniScreen({
     const w = spustSyncWorker(akceId);
     if (!w) return;
     const onMsg = (e: MessageEvent) => {
-      const d = e.data as { type?: string; clientIds?: string[] };
+      const d = e.data as { type?: string; clientIds?: string[]; kdy?: number };
       if (d?.type === "synced" && d.clientIds?.length) {
         const ids = new Set(d.clientIds);
         setOnline(true);
@@ -171,6 +173,7 @@ export function MereniScreen({
           prev.map((z) => (ids.has(z.clientId) ? { ...z, dirty: false } : z)),
         );
       }
+      if (d?.type === "zaloha" && d.kdy) setPosledniZaloha(d.kdy);
     };
     w.addEventListener("message", onMsg);
     return () => w.removeEventListener("message", onMsg);
@@ -905,13 +908,20 @@ export function MereniScreen({
         <span>
           Tip: notebook nech v síti a vypni spánek (<code>caffeinate -d</code>).
         </span>
-        <Link
-          href={`/admin/akce/${akceId}`}
-          className="underline"
-          style={{ color: "var(--ink-500)" }}
-        >
-          zpět na akci
-        </Link>
+        <span className="flex items-center gap-3">
+          <span title="Automatická lokální záloha každých 30 s">
+            {posledniZaloha
+              ? `záloha ${casDneKratky(new Date(posledniZaloha))}`
+              : "záloha —"}
+          </span>
+          <Link
+            href={`/admin/akce/${akceId}`}
+            className="underline"
+            style={{ color: "var(--ink-500)" }}
+          >
+            zpět na akci
+          </Link>
+        </span>
       </footer>
     </div>
   );

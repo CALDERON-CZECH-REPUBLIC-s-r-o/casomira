@@ -8,6 +8,7 @@ import { vyzadujPrihlaseni } from "@/auth/guard";
 import { Card, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 import { PublishPanel, ObnovaForm } from "./publish-panel";
+import { LokalniZalohy } from "./lokalni-zalohy";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,11 @@ export default async function PublikovatPage({
           </div>
         </div>
       </Card>
+
+      {/* Lokální automatické zálohy */}
+      <div className="mt-6">
+        <LokalniZalohy akceId={id} />
+      </div>
       </div>
     </SpravaShell>
   );

@@ -12,6 +12,12 @@ const STORE = "pruchody";
 const VERZE = 1;
 const INTERVAL_MS = 5000;
 
+// Lokální zálohy — samostatná IndexedDB (nezasahuje do outboxu). Rolling okno.
+const ZAL_DB = "casomira-zalohy";
+const ZAL_STORE = "zalohy";
+const ZAL_INTERVAL_MS = 30000;
+const ZAL_KEEP = 20;
+
 interface OutboxRow {
   clientId: string;
   akceId: string;
@@ -124,13 +130,76 @@ function tik() {
   for (const akceId of sledovane) synchronizuj(akceId);
 }
 
+// --- Lokální zálohy (à 30 s) ---
+let zalDbPromise: Promise<IDBDatabase> | null = null;
+let zalTimer: ReturnType<typeof setInterval> | null = null;
+
+function otevriZal(): Promise<IDBDatabase> {
+  if (zalDbPromise) return zalDbPromise;
+  zalDbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(ZAL_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(ZAL_STORE)) {
+        const s = db.createObjectStore(ZAL_STORE, { keyPath: "kdy" });
+        s.createIndex("akceId", "akceId", { unique: false });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return zalDbPromise;
+}
+
+async function ulozZalohu(akceId: string, snap: unknown, kdy: number) {
+  const db = await otevriZal();
+  await new Promise<void>((resolve) => {
+    const r = db
+      .transaction(ZAL_STORE, "readwrite")
+      .objectStore(ZAL_STORE)
+      .put({ kdy, akceId, snap });
+    r.onsuccess = () => resolve();
+    r.onerror = () => resolve();
+  });
+  // Rolling okno: nech posledních ZAL_KEEP pro tuto akci.
+  const db2 = await otevriZal();
+  const idx = db2.transaction(ZAL_STORE, "readwrite").objectStore(ZAL_STORE).index("akceId");
+  const req = idx.getAllKeys(IDBKeyRange.only(akceId));
+  req.onsuccess = () => {
+    const keys = (req.result as number[]).sort((a, b) => a - b);
+    const nadbytek = keys.slice(0, Math.max(0, keys.length - ZAL_KEEP));
+    if (nadbytek.length) {
+      const store = db2.transaction(ZAL_STORE, "readwrite").objectStore(ZAL_STORE);
+      for (const k of nadbytek) store.delete(k);
+    }
+  };
+}
+
+async function zalohuj(akceId: string) {
+  try {
+    const res = await fetch(`/api/mereni/snapshot?akceId=${akceId}`);
+    if (!res.ok) return;
+    const snap = await res.json();
+    if (!snap) return;
+    const kdy = Date.now();
+    await ulozZalohu(akceId, snap, kdy);
+    (self as unknown as Worker).postMessage({ type: "zaloha", akceId, kdy });
+  } catch {
+    /* offline / chyba → příště */
+  }
+}
+
+function tikZaloha() {
+  for (const akceId of sledovane) zalohuj(akceId);
+}
+
 self.onmessage = (e: MessageEvent) => {
   const data = e.data as { type?: string; akceId?: string };
   if (data?.type === "watch" && data.akceId) {
     sledovane.add(data.akceId);
-    if (timer === null) {
-      timer = setInterval(tik, INTERVAL_MS);
-    }
+    if (timer === null) timer = setInterval(tik, INTERVAL_MS);
+    if (zalTimer === null) zalTimer = setInterval(tikZaloha, ZAL_INTERVAL_MS);
     synchronizuj(data.akceId); // hned, ne až za 5 s
+    zalohuj(data.akceId); // první záloha hned
   }
 };
