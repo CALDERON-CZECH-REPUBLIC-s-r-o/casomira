@@ -1,11 +1,17 @@
-# Produkční Docker Compose pro Coolify — CLOUDOVÉ (read-only) zrcadlo.
+# Produkční Docker Compose — kompletní AUTORITATIVNÍ instance (db + migrace + web).
 # Služby: db (PostgreSQL) → migrate (jednorázová migrace) → web.
-# Veřejný web (/{slug}) + ingest (/api/sync). Měření běží LOKÁLNĚ na notebooku.
 #
-# POVINNÉ proměnné (Coolify → Environment Variables):
-#   AUTH_SECRET  – openssl rand -base64 32
-#   SYNC_TOKEN   – stejný token jako na lokální instanci (autorizace pushe)
-# Volitelné: POSTGRES_* (jinak default casomira/casomira).
+# Provozní modely (stejný image):
+#   1) AUTORITATIVNÍ server (doporučeno) — měřicí zařízení (notebooky/tablety)
+#      míří prohlížečem na tento web. Data sdílená → multi-device + failover
+#      (spadne notebook → otevři jiný, přihlas se, měř dál; server má vše).
+#      Pro místa bez internetu pusť tentýž compose na LAN krabici; zařízení se
+#      připojí přes lokální WiFi.
+#   2) Cloudové read-only zrcadlo — plněné pushem z jiné (lokální) instance přes
+#      /api/sync; k tomu nastav SYNC_TOKEN (stejný na obou).
+#
+# POVINNÉ: AUTH_SECRET (openssl rand -base64 32).
+# Volitelné: SYNC_TOKEN (jen pro režim 2 — zrcadlo), POSTGRES_* (default casomira).
 
 x-app: &app
   build:
@@ -15,7 +21,9 @@ x-app: &app
     NODE_ENV: production
     DATABASE_URL: ${DATABASE_URL:-postgres://casomira:casomira@db:5432/casomira}
     AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET musí být nastaven (openssl rand -base64 32)}
-    SYNC_TOKEN: ${SYNC_TOKEN:?SYNC_TOKEN musí být nastaven (autorizace pushe z lokální instance)}
+    # Jen pro režim cloudového zrcadla (autorizace pushe /api/sync). Autoritativní
+    # server ho nepotřebuje → volitelný.
+    SYNC_TOKEN: ${SYNC_TOKEN:-}
     APP_BASE_URL: ${APP_BASE_URL:-https://casomira.example.cz}
   restart: unless-stopped
 

@@ -1,10 +1,34 @@
 @AGENTS.md
 
-# Roadmap / backlog (nezačato — k rozmyšlení směru pro zákazníky)
+# Stav & roadmap
 
-MVP (M0–M8) hotové; měření běží offline-first lokálně, výsledky se jednosměrně
-publikují na cloud (viz README „Stav vývoje"). Níže jsou dvě větší iniciativy, které
-otevírají prodej produktu zákazníkům. Zatím **nezačato**, jen zmapované cesty.
+Všechny obrazovky dle Calderon design handoffu postaveny (Fáze 0–7): admin sidebar,
+veřejná část, brány + splity, moderátor, tabule, nastavení, onboarding, PDF import
+historických výsledků, auto-pohlaví. Měřicí obrazovka: blokace bez startu, editace/mazání
+historie, návrat do menu, **background sync worker** (`src/lib/mereni-sync.worker.ts` +
+`/api/mereni/sync`) běžící dál po odchodu z obrazovky, **lokální záloha à 30 s** do
+IndexedDB (`/api/mereni/snapshot` + `src/lib/zalohy.ts`).
+
+## Provozní model: AUTORITATIVNÍ server (zvoleno)
+
+Server (cloud nebo LAN krabice) drží data; měřicí zařízení jsou prohlížečoví klienti
+s IndexedDB outboxem + background workerem. Dává **multi-device + failover** (spadne
+notebook → otevři jiný, přihlas se, měř dál — server má vše; převzímající zařízení
+načte při otevření měřicí obrazovky všechny průchody ze serveru). Deploy = existující
+`docker-compose.yml` (db + migrace + web); `SYNC_TOKEN` je volitelný (jen pro režim
+odděleného cloud zrcadla přes `/api/sync`). Bez internetu: tentýž compose na LAN krabici,
+zařízení přes lokální WiFi.
+
+**Další krok (zvýšení robustnosti multi-device/failover):** měřicí obrazovka zatím jen
+*pushuje* svoje průchody a *pulluje* stav jen při načtení (mountu) — pro failover stačí.
+Pro **živý** souběh víc zařízení doplnit periodický *pull* nových serverových průchodů
+(nový GET `/api/mereni/pruchody?akceId=&since=`) a merge do stavu bez přepsání lokálních
+nesynchronizovaných. `poradiDoteku` je pak jen tie-break (per-zařízení monotónní, kolize
+neškodí). Konflikty/duplicity už řeší `/konflikty` (domain/konflikty.ts).
+
+# Roadmap / backlog (alternativní směry, nezačato)
+
+Níže zůstávají pro případ jiného rozhodnutí; zvolený směr výše je autoritativní server.
 
 ## 1. Standalone desktop aplikace s embedded DB
 

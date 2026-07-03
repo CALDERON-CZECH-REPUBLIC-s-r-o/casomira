@@ -1,6 +1,7 @@
-# Jednoduchý produkční image pro cloudové (read-only) zrcadlo na Coolify.
-# Plný image (vč. devDeps) — umožní spustit migrace přes `npm run db:migrate`.
-# Měření běží lokálně na notebooku; tento image slouží veřejnému webu + ingestu.
+# Produkční image kompletní aplikace (vč. devDeps kvůli migracím `db:migrate`).
+# Stejný image umí obě role (viz docker-compose.yml):
+#  1) autoritativní měřicí server — zařízení míří prohlížečem sem (multi-device
+#     + failover), 2) cloudové read-only zrcadlo plněné pushem /api/sync.
 FROM node:24-alpine
 WORKDIR /app
 
