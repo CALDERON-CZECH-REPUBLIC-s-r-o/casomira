@@ -20,6 +20,7 @@ export interface OutboxPruchod {
   startovniCislo: number | null;
   stav: PruchodStav;
   poradiDoteku: number;
+  bodId?: string | null; // měřicí bod (brána); NULL = klasický cíl
   dirty: boolean; // čeká na potvrzení serverem
 }
 

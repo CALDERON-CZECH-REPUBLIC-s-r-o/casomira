@@ -26,23 +26,36 @@ interface ZavodnikInfo {
  * zezelená s časem doběhu. Vlevo živá fronta „k doplnění" a poslední průchody.
  * Datový model, offline outbox a sync zůstávají beze změny — měníme jen UI.
  */
+interface BodInfo {
+  id: string;
+  nazev: string;
+  jeCil: boolean;
+}
+
 export function MereniScreen({
   akceId,
   nazev,
   casStartu: casStartuProp,
   zavodnici,
   pocatecniZaznamy,
+  body = [],
 }: {
   akceId: string;
   nazev: string;
   casStartu: string | null;
   zavodnici: ZavodnikInfo[];
   pocatecniZaznamy: OutboxPruchod[];
+  body?: BodInfo[];
 }) {
   const [zaznamy, setZaznamy] = useState<OutboxPruchod[]>(pocatecniZaznamy);
   const [inlineCislo, setInlineCislo] = useState("");
   const [rezim, setRezim] = useState<"tlacitko" | "ciselnik">("ciselnik");
   const [filtr, setFiltr] = useState("");
+  // Aktivní měřicí bod (brána), do kterého se zaznamenávají průchody.
+  // Default = cílová brána; akce bez bran → null (klasický cíl).
+  const [aktivniBod, setAktivniBod] = useState<string | null>(
+    () => body.find((b) => b.jeCil)?.id ?? body[0]?.id ?? null,
+  );
   const [casStartu, setCasStartu] = useState<string | null>(casStartuProp);
   const [online, setOnline] = useState(true);
   const [nowMs, setNowMs] = useState<number | null>(null);
@@ -77,6 +90,7 @@ export function MereniScreen({
           startovniCislo: p.startovniCislo,
           stav: p.stav,
           poradiDoteku: p.poradiDoteku,
+          bodId: p.bodId ?? null,
         })),
       );
       const potvrzene = res.map((r) => r.clientId);
@@ -163,6 +177,7 @@ export function MereniScreen({
         startovniCislo: platneCislo,
         stav: platneCislo !== null ? "platny" : "neprirazeno",
         poradiDoteku: poradiRef.current,
+        bodId: body.length > 0 ? aktivniBod : null,
         dirty: true,
       };
       setZaznamy((prev) => [p, ...prev]); // optimisticky, okamžitě
@@ -173,7 +188,7 @@ export function MereniScreen({
       }
       sync();
     },
-    [akceId, sync],
+    [akceId, sync, aktivniBod, body.length],
   );
 
   const zaznamenat = useCallback(async () => {
@@ -360,6 +375,31 @@ export function MereniScreen({
         </div>
 
         <div className="flex flex-none items-center gap-2 sm:gap-3">
+          {/* Aktivní měřicí bod (jen když akce má brány) */}
+          {body.length > 0 && (
+            <select
+              value={aktivniBod ?? ""}
+              onChange={(e) => setAktivniBod(e.target.value || null)}
+              title="Měřicí bod, do kterého se zaznamenává"
+              style={{
+                background: "var(--ink-900)",
+                color: "var(--teal-300)",
+                border: "1px solid var(--ink-700)",
+                borderRadius: "var(--radius-md)",
+                padding: "8px 10px",
+                font: "600 12px var(--cal-font-mono)",
+                letterSpacing: ".04em",
+              }}
+            >
+              {body.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.jeCil ? "🏁 " : "• "}
+                  {b.nazev}
+                </option>
+              ))}
+            </select>
+          )}
+
           {/* Živé hodiny */}
           <div
             className="flex items-baseline gap-2"

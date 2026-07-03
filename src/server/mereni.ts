@@ -12,6 +12,7 @@ const pruchodSchema = z.object({
   startovniCislo: z.number().int().positive().nullable(),
   stav: z.enum(["platny", "neprirazeno", "smazany", "DNF"]),
   poradiDoteku: z.number().int(),
+  bodId: z.string().uuid().nullable().optional(),
 });
 
 export interface VysledekUlozeni {
@@ -64,6 +65,7 @@ export async function ulozitPruchody(
         zavodnikId: zav?.id ?? null,
         stav: it.stav,
         poradiDoteku: it.poradiDoteku,
+        bodId: it.bodId ?? null,
       })
       .onConflictDoUpdate({
         target: cilovyZaznam.clientId,
@@ -71,6 +73,7 @@ export async function ulozitPruchody(
           startovniCislo: it.startovniCislo,
           zavodnikId: zav?.id ?? null,
           stav: it.stav,
+          bodId: it.bodId ?? null,
           editedAt: new Date(),
         },
       });
