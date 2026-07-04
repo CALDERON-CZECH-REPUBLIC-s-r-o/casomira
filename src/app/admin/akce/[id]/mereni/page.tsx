@@ -40,7 +40,7 @@ export default async function MereniPage({
   });
 
   return (
-    <main className="mx-auto w-full max-w-[1240px] p-3 sm:p-4">
+    <main className="w-full p-2">
       <MereniScreen
         akceId={id}
         nazev={akce.nazev}

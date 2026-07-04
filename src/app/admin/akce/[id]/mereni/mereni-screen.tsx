@@ -53,6 +53,8 @@ export function MereniScreen({
   const [inlineCislo, setInlineCislo] = useState("");
   const [rezim, setRezim] = useState<"tlacitko" | "ciselnik">("ciselnik");
   const [filtr, setFiltr] = useState("");
+  // Skrýt doběhnuté v číselníku → zbylá čísla se zvětší (na konci závodu).
+  const [skrytDobehnute, setSkrytDobehnute] = useState(false);
   // Aktivní měřicí bod (brána), do kterého se zaznamenávají průchody.
   // Default = cílová brána; akce bez bran → null (klasický cíl).
   const [aktivniBod, setAktivniBod] = useState<string | null>(
@@ -331,17 +333,25 @@ export function MereniScreen({
     return m;
   }, [zaznamy]);
 
-  // Mřížka startovních čísel (vzestupně), volitelně filtrovaná.
+  // Všechna startovní čísla (vzestupně) — pro počty.
+  const vsechnaCisla = useMemo(
+    () =>
+      zavodnici
+        .filter((z) => z.startovniCislo !== null)
+        .sort((a, b) => (a.startovniCislo ?? 0) - (b.startovniCislo ?? 0)),
+    [zavodnici],
+  );
+  const dobehlo = useMemo(
+    () => vsechnaCisla.filter((z) => cislaInfo.has(z.startovniCislo!)).length,
+    [vsechnaCisla, cislaInfo],
+  );
+  // Mřížka: filtr čísla + volitelně skrýt doběhnuté.
   const cislaZavodniku = useMemo(() => {
     const f = filtr.trim();
-    return zavodnici
-      .filter((z) => z.startovniCislo !== null)
+    return vsechnaCisla
       .filter((z) => (f ? String(z.startovniCislo).startsWith(f) : true))
-      .sort((a, b) => (a.startovniCislo ?? 0) - (b.startovniCislo ?? 0));
-  }, [zavodnici, filtr]);
-  const dobehlo = cislaZavodniku.filter((z) =>
-    cislaInfo.has(z.startovniCislo!),
-  ).length;
+      .filter((z) => !skrytDobehnute || !cislaInfo.has(z.startovniCislo!));
+  }, [vsechnaCisla, filtr, skrytDobehnute, cislaInfo]);
 
   const clock =
     nowMs !== null && startMs !== null
@@ -352,7 +362,7 @@ export function MereniScreen({
     <div
       className="cal-screen flex flex-col overflow-hidden rounded-[16px] border"
       style={{
-        height: "min(82vh, 760px)",
+        height: "calc(100dvh - 16px)",
         minHeight: 560,
         background: "var(--ink-50)",
         borderColor: "var(--ink-200)",
@@ -718,15 +728,39 @@ export function MereniScreen({
                     }}
                   />
                 </div>
-                <div
-                  style={{
-                    font: "500 11px var(--cal-font-mono)",
-                    letterSpacing: ".06em",
-                    color: "var(--ink-500)",
-                  }}
-                >
-                  <strong style={{ color: "var(--teal-600)" }}>{dobehlo}</strong>
-                  /{cislaZavodniku.length} DOBĚHLO
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setSkrytDobehnute((v) => !v)}
+                    title="Skrýt už doběhnuté a zvětšit zbylá čísla"
+                    style={{
+                      font: "600 11px var(--cal-font-mono)",
+                      letterSpacing: ".04em",
+                      padding: "7px 11px",
+                      borderRadius: "var(--radius-pill)",
+                      border: "1px solid",
+                      borderColor: skrytDobehnute
+                        ? "var(--teal-500)"
+                        : "var(--ink-200)",
+                      background: skrytDobehnute ? "var(--teal-50)" : "#fff",
+                      color: skrytDobehnute
+                        ? "var(--teal-700)"
+                        : "var(--ink-500)",
+                    }}
+                  >
+                    {skrytDobehnute ? "✓ jen zbývající" : "Skrýt doběhnuté"}
+                  </button>
+                  <div
+                    style={{
+                      font: "500 11px var(--cal-font-mono)",
+                      letterSpacing: ".06em",
+                      color: "var(--ink-500)",
+                    }}
+                  >
+                    <strong style={{ color: "var(--teal-600)" }}>
+                      {dobehlo}
+                    </strong>
+                    /{vsechnaCisla.length} DOBĚHLO
+                  </div>
                 </div>
               </div>
 
@@ -745,8 +779,9 @@ export function MereniScreen({
                   <div
                     className="grid gap-[10px]"
                     style={{
-                      gridTemplateColumns:
-                        "repeat(auto-fill,minmax(82px,1fr))",
+                      gridTemplateColumns: `repeat(auto-fill,minmax(${
+                        skrytDobehnute ? 128 : 88
+                      }px,1fr))`,
                     }}
                   >
                     {cislaZavodniku.map((z) => {
@@ -760,7 +795,7 @@ export function MereniScreen({
                           className="cal-tile flex flex-col items-center justify-center gap-0.5"
                           title={`${z.prijmeni} ${z.jmeno}`}
                           style={{
-                            height: 74,
+                            height: skrytDobehnute ? 104 : 78,
                             borderRadius: "var(--radius-md)",
                             border: `1.5px solid ${done ? "var(--teal-500)" : "var(--ink-200)"}`,
                             background: done ? "var(--teal-50)" : "#fff",
@@ -770,7 +805,7 @@ export function MereniScreen({
                         >
                           <span
                             style={{
-                              font: "700 24px/1 var(--cal-font-mono)",
+                              font: `700 ${skrytDobehnute ? 34 : 24}px/1 var(--cal-font-mono)`,
                               color: done
                                 ? "var(--teal-700)"
                                 : "var(--ink-900)",
@@ -780,9 +815,9 @@ export function MereniScreen({
                             {z.startovniCislo}
                           </span>
                           <span
-                            className="max-w-[74px] truncate"
+                            className="max-w-full truncate px-1"
                             style={{
-                              font: "400 9.5px/1.1 var(--cal-font-sans)",
+                              font: `400 ${skrytDobehnute ? 12 : 9.5}px/1.1 var(--cal-font-sans)`,
                               color: "var(--ink-400)",
                             }}
                           >
