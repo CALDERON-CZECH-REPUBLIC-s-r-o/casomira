@@ -23,6 +23,7 @@ export interface ZavodnikVysledek {
   mesto: string | null;
   kategorieId: string | null;
   stav: "prihlasen" | "nenastoupil_DNS" | "diskvalifikovan_DSQ";
+  pohlavi?: "M" | "Z" | null;
   // Importovaný čistý čas (historické výsledky) — má přednost před měřením.
   cistyCasImportMs?: number | null;
 }
