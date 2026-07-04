@@ -104,6 +104,20 @@ export default async function AkceDetailPage({
           <BtnLink href={`/admin/akce/${id}/listiny`} variant="ghost">
             Listiny
           </BtnLink>
+          <BtnLink
+            href={`/${akce.slug}/tabule`}
+            variant="ghost"
+            target="_blank"
+          >
+            Tabule (projekce) ↗
+          </BtnLink>
+          <BtnLink
+            href={`/admin/akce/${id}/moderator`}
+            variant="ghost"
+            target="_blank"
+          >
+            Moderátor ↗
+          </BtnLink>
           <BtnLink href={`/admin/akce/${id}/publikovat`} variant="ghost">
             Publikovat
           </BtnLink>

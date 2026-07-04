@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { akce as akceT } from "@/db/schema";
 import { env } from "@/lib/env";
 import { vyzadujPrihlaseni } from "@/auth/guard";
-import { Card, PageHeader } from "../../../_components/ui";
+import { BtnLink, Card, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 import { PublishPanel, ObnovaForm } from "./publish-panel";
 import { LokalniZalohy } from "./lokalni-zalohy";
@@ -65,6 +65,36 @@ export default async function PublikovatPage({
             <code className="font-technical"> /{akce.slug}</code>.
           </p>
         )}
+      </Card>
+
+      {/* Projekce — velkoplošná tabule */}
+      <Card className="mb-6 p-5">
+        <div className="cal-eyebrow mb-3 text-teal-600">
+          Projekce — velkoplošná tabule
+        </div>
+        <p className="mb-4 text-sm text-ink-600">
+          Tmavá tabule pro projektor / LED stěnu s živými výsledky (aktualizace à
+          5 s). Otevři na plátně a přepni prohlížeč na celou obrazovku (F11).
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <BtnLink href={`/${akce.slug}/tabule`} target="_blank">
+            Spustit tabuli ↗
+          </BtnLink>
+          <BtnLink
+            href={`/${akce.slug}/tabule?dle=kategorie`}
+            variant="ghost"
+            target="_blank"
+          >
+            Po kategoriích (střídá) ↗
+          </BtnLink>
+          <BtnLink
+            href={`/admin/akce/${id}/moderator`}
+            variant="ghost"
+            target="_blank"
+          >
+            Moderátorská obrazovka ↗
+          </BtnLink>
+        </div>
       </Card>
 
       {/* Zálohy */}
