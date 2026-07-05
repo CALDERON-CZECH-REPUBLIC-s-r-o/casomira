@@ -396,11 +396,11 @@ export function MereniScreen({
             ← Menu
           </Link>
           <Image
-            src="/calderon-logo.png"
-            alt="Calderon"
-            width={96}
-            height={18}
-            style={{ height: 18, width: "auto" }}
+            src="/casomir-mark.png"
+            alt="Časomír"
+            width={30}
+            height={28}
+            style={{ height: 26, width: "auto" }}
             priority
           />
           <span

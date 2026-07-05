@@ -37,19 +37,19 @@ export default async function PrihlaseniPage({
   return (
     <main className="cal-dots-dark cal-glow-top font-brand flex min-h-screen flex-1 flex-col items-center justify-center bg-ink-950 p-6 text-ink-900">
       <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <Image
+            src="/casomir-teal-dark.png"
+            alt="Časomír"
+            width={340}
+            height={255}
+            priority
+            className="h-auto w-full max-w-[260px]"
+          />
           <div className="cal-eyebrow text-teal-300">Administrace závodů</div>
         </div>
 
         <div className="cal-card rounded-[22px] p-6 shadow-xl">
-          <Image
-            src="/casomir-logo.png"
-            alt="Časomír"
-            width={280}
-            height={210}
-            priority
-            className="mx-auto mb-4 h-auto w-full max-w-[220px]"
-          />
           <h1 className="mb-5 text-center text-[15px] font-semibold text-ink-500">
             Přihlášení organizátora
           </h1>

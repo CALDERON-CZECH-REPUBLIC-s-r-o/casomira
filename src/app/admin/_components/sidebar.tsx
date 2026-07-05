@@ -59,15 +59,15 @@ export function AkceSidebar({
     <aside className="sticky top-0 flex h-screen w-[236px] flex-none flex-col bg-ink-950 text-ink-300">
       <div className="flex items-center gap-2 px-5 py-5">
         <Image
-          src="/calderon-mark-white.png"
-          alt="Calderon"
-          width={22}
-          height={22}
-          style={{ height: 22, width: "auto" }}
+          src="/casomir-mark-dark.png"
+          alt="Časomír"
+          width={30}
+          height={28}
+          style={{ height: 28, width: "auto" }}
           priority
         />
         <span className="font-display text-[15px] font-bold text-white">
-          Časomíra
+          Časomír
         </span>
       </div>
 

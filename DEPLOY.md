@@ -26,7 +26,7 @@ automatické; web nastartuje až po zdravé DB a doběhlé migraci.
 ## A) Coolify
 
 1. Nová „Docker Compose" resource → repo casomira, soubor `docker-compose.yml`.
-2. Doména: **`casomira.calderon.cz`** (DNS A/AAAA na Coolify server; Traefik + TLS).
+2. Doména: **`casomir.cz`** (DNS A/AAAA na Coolify server; Traefik + TLS).
    `APP_BASE_URL` má tuto doménu už jako default v compose — netřeba nastavovat.
 3. Environment Variables: `AUTH_SECRET` (povinné), `ADMIN_EMAIL` + `ADMIN_PASSWORD`
    (auto-založí org účet), příp. `POSTGRES_PASSWORD`.

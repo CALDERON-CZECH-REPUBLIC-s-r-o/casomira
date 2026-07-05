@@ -55,12 +55,12 @@ export default async function HomePage() {
       <section className="cal-dots border-b border-ink-200 bg-white">
         <div className="mx-auto max-w-3xl px-6 py-14 text-center sm:py-16">
           <Image
-            src="/casomir-logo.png"
+            src="/casomir-teal.png"
             alt="Časomír — měření běžeckých závodů"
             width={580}
             height={435}
             priority
-            className="mx-auto h-auto w-full max-w-[420px]"
+            className="mx-auto h-auto w-full max-w-[440px]"
           />
           <p className="mx-auto mt-4 max-w-xl text-lg text-ink-600">
             Měření běžeckých závodů od cíle po výsledky — offline v cíli, živě

@@ -28,7 +28,7 @@ x-app: &app
     # Jen pro režim cloudového zrcadla (autorizace pushe /api/sync). Autoritativní
     # server ho nepotřebuje → volitelný.
     SYNC_TOKEN: ${SYNC_TOKEN:-}
-    APP_BASE_URL: ${APP_BASE_URL:-https://casomira.calderon.cz}
+    APP_BASE_URL: ${APP_BASE_URL:-https://casomir.cz}
   restart: unless-stopped
 
 services:
