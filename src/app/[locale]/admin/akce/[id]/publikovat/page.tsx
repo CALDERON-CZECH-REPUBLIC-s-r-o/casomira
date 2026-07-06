@@ -6,7 +6,9 @@ import { akce as akceT } from "@/db/schema";
 import { env } from "@/lib/env";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { qrSvgDataUri } from "@/lib/qr";
-import { BtnLink, Card, PageHeader } from "../../../_components/ui";
+import { uzavritVysledky, otevritVysledky } from "@/server/akce";
+import { Btn, BtnLink, Card, PageHeader, Pill } from "../../../_components/ui";
+import { ConfirmDialog } from "@/app/[locale]/admin/_components/ui-client";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
 import { PublishPanel, ObnovaForm } from "./publish-panel";
 import { LokalniZalohy } from "./lokalni-zalohy";
@@ -37,6 +39,42 @@ export default async function PublikovatPage({
         title="Publikování a zálohy"
         desc="Jednosměrný push výsledků na cloud pro vzdálené diváky. Měření běží lokálně — publikování je best-effort, výpadek sítě měření neovlivní."
       />
+
+      {/* Oficiální výsledky */}
+      <Card className="mb-6 p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="cal-eyebrow text-teal-600">Oficiální výsledky</span>
+          {akce.vysledkyUzavreny ? (
+            <Pill ton="success" dot>
+              Uzavřeno
+            </Pill>
+          ) : (
+            <Pill ton="info">Živé</Pill>
+          )}
+        </div>
+        <p className="mb-4 text-sm text-ink-600">
+          Po závodě uzavři výsledky — na veřejné stránce se zastaví hodiny (vítězný
+          čas), přibude razítko „Potvrzeno rozhodčím“ a sekce nesklasifikovaných.
+          Průběžná aktualizace se zastaví.
+        </p>
+        {akce.vysledkyUzavreny ? (
+          <form action={otevritVysledky.bind(null, id)}>
+            <Btn variant="ghost" type="submit">
+              Znovu otevřít (zpět na živé)
+            </Btn>
+          </form>
+        ) : (
+          <ConfirmDialog
+            title="Uzavřít výsledky?"
+            message="Výsledky se označí jako oficiální. Hodiny se zastaví na vítězném čase a přidá se razítko rozhodčího. Lze to později znovu otevřít."
+            slovo="UZAVŘÍT"
+            confirmLabel="Uzavřít výsledky"
+            action={uzavritVysledky.bind(null, id)}
+            triggerLabel="Uzavřít výsledky (oficiální)"
+            triggerClassName="cal-press inline-flex items-center justify-center gap-2 rounded-[10px] bg-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] hover:bg-teal-600"
+          />
+        )}
+      </Card>
 
       {/* Publikování */}
       <Card className="mb-6 p-5">

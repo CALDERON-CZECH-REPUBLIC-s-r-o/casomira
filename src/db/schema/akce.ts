@@ -45,6 +45,9 @@ export const akce = pgTable("akce", {
   ucet: text("ucet"),
   // Startovné v celých Kč (NULL = neuvedeno / zdarma).
   startovne: integer("startovne"),
+  // Oficiální výsledky — organizátor uzavřel závod (hodiny stojí, razítko rozhodčího).
+  vysledkyUzavreny: boolean("vysledky_uzavreny").notNull().default(false),
+  uzavrenoAt: timestamp("uzavreno_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

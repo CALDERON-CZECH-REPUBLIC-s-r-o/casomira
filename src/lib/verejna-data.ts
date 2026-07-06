@@ -55,6 +55,8 @@ export interface VerejnaData {
     bezi: boolean; // start nastaven
     casStartu: string | null; // ISO čas startu (pro běžící čas na tabuli)
     aktualizovano: string; // ISO
+    uzavreno: boolean; // oficiální výsledky (uzavřeno organizátorem)
+    uzavrenoAt: string | null; // ISO čas uzavření (pro razítko)
     registraceOtevrena: boolean; // veřejné přihlašování zapnuté
     startovne: number | null; // Kč (jen k zobrazení; QR skládá server akce)
   };
@@ -141,6 +143,8 @@ export async function nactiVerejnaData(
       bezi: data.akce.casStartu !== null,
       casStartu: data.akce.casStartu ? data.akce.casStartu.toISOString() : null,
       aktualizovano: new Date().toISOString(),
+      uzavreno: akce.vysledkyUzavreny,
+      uzavrenoAt: akce.uzavrenoAt ? akce.uzavrenoAt.toISOString() : null,
       registraceOtevrena: akce.registraceOtevrena,
       startovne: akce.startovne,
     },

@@ -190,6 +190,38 @@ export async function ulozitPrihlasky(id: string, formData: FormData) {
   if (stara?.slug) revalidatePath(`/${stara.slug}`);
 }
 
+/** Uzavře výsledky akce (oficiální stav) — zastavené hodiny + razítko rozhodčího. */
+export async function uzavritVysledky(id: string) {
+  await vyzadujPrihlaseni();
+  const stara = await db.query.akce.findFirst({
+    where: eq(akce.id, id),
+    columns: { slug: true },
+  });
+  await db
+    .update(akce)
+    .set({ vysledkyUzavreny: true, uzavrenoAt: new Date() })
+    .where(eq(akce.id, id));
+  revalidatePath(`/admin/akce/${id}/publikovat`);
+  revalidatePath(`/admin/akce/${id}`);
+  if (stara?.slug) revalidatePath(`/${stara.slug}`);
+}
+
+/** Znovu otevře výsledky (zpět na živé). */
+export async function otevritVysledky(id: string) {
+  await vyzadujPrihlaseni();
+  const stara = await db.query.akce.findFirst({
+    where: eq(akce.id, id),
+    columns: { slug: true },
+  });
+  await db
+    .update(akce)
+    .set({ vysledkyUzavreny: false, uzavrenoAt: null })
+    .where(eq(akce.id, id));
+  revalidatePath(`/admin/akce/${id}/publikovat`);
+  revalidatePath(`/admin/akce/${id}`);
+  if (stara?.slug) revalidatePath(`/${stara.slug}`);
+}
+
 /** Nastaví/posune čas hromadného startu akce (měřicí obrazovka i ruční úprava). */
 export async function nastavitStartAkce(id: string, casISO: string | null) {
   await vyzadujPrihlaseni();

@@ -85,9 +85,9 @@ export function VerejnaAkce({
   const [tema, setTema] = useTema();
   const clock = useBezciCas(data.akce.casStartu, data.akce.bezi);
 
-  // Polling à 5 s, jen když je akce „živá" (běží měření).
+  // Polling à 5 s, jen když akce běží a NENÍ uzavřená (oficiální = statické).
   useEffect(() => {
-    if (!data.akce.bezi) return;
+    if (!data.akce.bezi || data.akce.uzavreno) return;
     let zruseno = false;
     const tik = async () => {
       try {
@@ -107,7 +107,7 @@ export function VerejnaAkce({
       zruseno = true;
       clearInterval(i);
     };
-  }, [slug, data.akce.bezi]);
+  }, [slug, data.akce.bezi, data.akce.uzavreno]);
 
   const a = data.akce;
   const d = new Date(a.datum + "T00:00:00");
@@ -116,6 +116,18 @@ export function VerejnaAkce({
   const naTrati = data.vysledky.celkova.radky.filter(
     (r) => r.stav === "bez_casu",
   ).length;
+  const uzavreno = a.uzavreno;
+  const vitez = data.vysledky.celkova.radky.find(
+    (r) => r.stav === "klasifikovan" && r.casMs != null,
+  );
+  const vitezniCas = vitez?.casMs != null ? cistyCas(vitez.casMs) : "—";
+  const nesklasifikovani = data.vysledky.celkova.radky.filter(
+    (r) => r.stav === "DNF" || r.stav === "DNS" || r.stav === "DSQ",
+  );
+  const razitko = a.uzavrenoAt ? new Date(a.uzavrenoAt) : null;
+  const razitkoText = razitko
+    ? `${razitko.getDate()}. ${razitko.getMonth() + 1}. ${razitko.getFullYear()} ${String(razitko.getHours()).padStart(2, "0")}:${String(razitko.getMinutes()).padStart(2, "0")}`
+    : "";
 
   return (
     <div
@@ -148,15 +160,15 @@ export function VerejnaAkce({
                 {a.misto ? ` · ${a.misto}` : ""}
               </p>
             </div>
-            <StavPill bezi={a.bezi} zive={zive} />
+            <StavPill bezi={a.bezi} zive={zive} uzavreno={uzavreno} />
           </div>
 
-          {/* Dominantní běžící čas + metriky */}
-          {a.bezi && (
+          {/* Dominantní čas (běžící / vítězný) + metriky */}
+          {(a.bezi || uzavreno) && (
             <div className="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3">
               <div>
                 <div className="cal-eyebrow" style={{ color: "var(--p-mut)" }}>
-                  {t("raceTime")}
+                  {uzavreno ? t("winningTime") : t("raceTime")}
                 </div>
                 <div
                   className="font-technical font-bold tabular-nums"
@@ -164,14 +176,17 @@ export function VerejnaAkce({
                     fontSize: 38,
                     lineHeight: 1,
                     color: "var(--p-clock)",
-                    textShadow: "var(--p-glow)",
+                    textShadow: uzavreno ? "none" : "var(--p-glow)",
                   }}
                 >
-                  {clock ?? "0:00.0"}
+                  {uzavreno ? vitezniCas : (clock ?? "0:00.0")}
                 </div>
               </div>
               <Metrika label={t("finished")} hodnota={dobehlo} />
-              <Metrika label={t("onCourseMetric")} hodnota={naTrati} />
+              <Metrika
+                label={uzavreno ? t("notClassifiedTitle") : t("onCourseMetric")}
+                hodnota={uzavreno ? nesklasifikovani.length : naTrati}
+              />
             </div>
           )}
 
@@ -268,10 +283,49 @@ export function VerejnaAkce({
         )}
       </div>
 
+        {/* Oficiální výsledky — tisk + nesklasifikováno */}
+        {uzavreno && tab === "vysledky" && (
+          <div className="mt-6 print:hidden">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="cal-press rounded-full px-4 py-2 text-sm font-semibold"
+              style={{ background: "var(--teal-500)", color: "#fff" }}
+            >
+              {t("downloadPdf")}
+            </button>
+            {nesklasifikovani.length > 0 && (
+              <section className="mt-6">
+                <KategorieHlavicka kod={null} nazev={t("notClassifiedTitle")} />
+                <div>
+                  {nesklasifikovani.map((r) => (
+                    <VysledekRadek
+                      key={r.id}
+                      r={r}
+                      bezi={false}
+                      onClick={() =>
+                        setDetail({ radek: r, skupina: data.vysledky.celkova })
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
         <footer
           className="mt-10 flex flex-col items-center gap-1.5 text-center font-technical text-[11px]"
           style={{ color: "var(--p-mut)" }}
         >
+          {uzavreno && (
+            <span
+              className="font-semibold uppercase tracking-[.06em]"
+              style={{ color: "var(--p-tkl)" }}
+            >
+              ✓ {t("confirmedBy", { datum: razitkoText })}
+            </span>
+          )}
           <span>{t("poweredResults")}</span>
           <PoweredBy variant={tema === "dark" ? "dark" : "light"} />
         </footer>
@@ -536,10 +590,33 @@ function Metrika({ label, hodnota }: { label: string; hodnota: number }) {
   );
 }
 
-function StavPill({ bezi, zive }: { bezi: boolean; zive: boolean }) {
+function StavPill({
+  bezi,
+  zive,
+  uzavreno,
+}: {
+  bezi: boolean;
+  zive: boolean;
+  uzavreno?: boolean;
+}) {
   const t = useTranslations("results");
   const base =
     "flex-none inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-technical text-[10.5px] font-semibold uppercase tracking-[.06em]";
+  if (uzavreno) {
+    return (
+      <span
+        className={base}
+        style={{
+          background: "var(--p-ofbg)",
+          border: "1px solid var(--p-ofb)",
+          color: "var(--p-offg)",
+        }}
+      >
+        <span style={{ color: "var(--teal-400)" }}>✓</span>
+        {t("officialResults")}
+      </span>
+    );
+  }
   if (!bezi) {
     return (
       <span

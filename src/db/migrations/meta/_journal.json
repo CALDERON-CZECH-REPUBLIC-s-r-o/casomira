@@ -64,6 +64,13 @@
       "when": 1783324260618,
       "tag": "0008_demonic_shriek",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783368118579,
+      "tag": "0009_fair_zeigeist",
+      "breakpoints": true
     }
   ]
 }
