@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslations } from "next-intl";
 import { cistyCas, ztrata, casDneKratky, uplynulyCas } from "@/lib/cas";
 import { Btn, Card, Pill, PoweredBy } from "@/app/[locale]/admin/_components/ui";
@@ -84,6 +90,25 @@ export function VerejnaAkce({
   const tp = useTranslations("prihlaska");
   const [tema, setTema] = useTema();
   const clock = useBezciCas(data.akce.casStartu, data.akce.bezi);
+
+  // Nový finišer → krátké zvýraznění řádku (slideFlash). Ref seedneme počáteční
+  // množinou, ať se při načtení nerozblikají všichni.
+  const klasIds = (dd: VerejnaData) =>
+    new Set(
+      dd.vysledky.celkova.radky
+        .filter((r) => r.stav === "klasifikovan")
+        .map((r) => r.id),
+    );
+  const prevKlasRef = useRef<Set<string>>(klasIds(initial));
+  const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const nyni = klasIds(data);
+    const novi = new Set<string>();
+    for (const id of nyni) if (!prevKlasRef.current.has(id)) novi.add(id);
+    prevKlasRef.current = nyni;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (novi.size) setFlashIds(novi);
+  }, [data]);
 
   // Polling à 5 s, jen když akce běží a NENÍ uzavřená (oficiální = statické).
   useEffect(() => {
@@ -255,6 +280,7 @@ export function VerejnaAkce({
               skupina={data.vysledky.celkova}
               bezi={a.bezi}
               celkova
+              flashIds={flashIds}
               onDetail={setDetail}
             />
           ) : data.vysledky.kategorie.length === 0 ? (
@@ -265,6 +291,7 @@ export function VerejnaAkce({
                 key={sk.kod ?? sk.nazev}
                 skupina={sk}
                 bezi={a.bezi}
+                flashIds={flashIds}
                 onDetail={setDetail}
               />
             ))
@@ -727,14 +754,43 @@ function VysledkySkupina({
   skupina,
   bezi,
   celkova,
+  flashIds,
   onDetail,
 }: {
   skupina: VerejnaSkupina;
   bezi: boolean;
   celkova?: boolean;
+  flashIds?: Set<string>;
   onDetail: (d: Detail) => void;
 }) {
   const t = useTranslations("results");
+  const listRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef<Map<string, number>>(new Map());
+  const poradiKlic = skupina.radky.map((r) => r.id).join(",");
+
+  // FLIP — plynulý posun řádků při změně pořadí (jen když se pořadí změní).
+  useLayoutEffect(() => {
+    const cont = listRef.current;
+    if (!cont) return;
+    const prev = posRef.current;
+    const nova = new Map<string, number>();
+    cont.querySelectorAll<HTMLElement>("[data-flip-id]").forEach((el) => {
+      const id = el.dataset.flipId!;
+      const top = el.getBoundingClientRect().top;
+      nova.set(id, top);
+      const stary = prev.get(id);
+      if (stary != null && stary !== top) {
+        el.style.transform = `translateY(${stary - top}px)`;
+        el.style.transition = "transform 0s";
+        requestAnimationFrame(() => {
+          el.style.transition = "transform .4s cubic-bezier(.16,1,.3,1)";
+          el.style.transform = "";
+        });
+      }
+    });
+    posRef.current = nova;
+  }, [poradiKlic]);
+
   if (skupina.radky.length === 0) return null;
   const souhrn =
     t("classifiedShort", { n: skupina.klasifikovano }) +
@@ -761,12 +817,13 @@ function VysledkySkupina({
         <span className="w-[84px] flex-none text-right">{t("colTime")}</span>
         <span className="w-[90px] flex-none text-right">{t("colGap")}</span>
       </div>
-      <div>
+      <div ref={listRef}>
         {skupina.radky.map((r) => (
           <VysledekRadek
             key={r.id}
             r={r}
             bezi={bezi}
+            flash={flashIds?.has(r.id)}
             onClick={() => onDetail({ radek: r, skupina })}
           />
         ))}
@@ -778,10 +835,12 @@ function VysledkySkupina({
 function VysledekRadek({
   r,
   bezi,
+  flash,
   onClick,
 }: {
   r: VerejnyRadek;
   bezi: boolean;
+  flash?: boolean;
   onClick: () => void;
 }) {
   const t = useTranslations("results");
@@ -790,8 +849,9 @@ function VysledekRadek({
   return (
     <button
       type="button"
+      data-flip-id={r.id}
       onClick={onClick}
-      className="cal-press flex w-full items-center gap-3 py-2.5 text-left lg:gap-4"
+      className={`cal-press flex w-full items-center gap-3 py-2.5 text-left lg:gap-4 ${flash ? "pub-flash" : ""}`}
       style={{ borderTop: "1px solid var(--p-line)" }}
     >
       <span
