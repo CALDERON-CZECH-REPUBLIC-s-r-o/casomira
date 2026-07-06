@@ -81,7 +81,8 @@
     "colClub": "Oddíl",
     "colTime": "Čas",
     "colGap": "Ztráta",
-    "yearAbbrev": "roč."
+    "yearAbbrev": "roč.",
+    "next": "další:"
   },
   "athlete": {
     "inCategory": "V kategorii",

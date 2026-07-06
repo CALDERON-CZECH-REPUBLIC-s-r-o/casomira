@@ -81,7 +81,8 @@
     "colClub": "Club",
     "colTime": "Time",
     "colGap": "Gap",
-    "yearAbbrev": "yr."
+    "yearAbbrev": "yr.",
+    "next": "next:"
   },
   "athlete": {
     "inCategory": "In category",

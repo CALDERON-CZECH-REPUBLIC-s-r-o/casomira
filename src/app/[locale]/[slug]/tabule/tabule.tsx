@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cistyCas, ztrata } from "@/lib/cas";
+import { useTranslations } from "next-intl";
+import { cistyCas, ztrata, uplynulyCas } from "@/lib/cas";
 import { MedalCircle, PoweredBy } from "@/app/[locale]/admin/_components/ui";
 import type {
   VerejnaData,
@@ -18,9 +19,9 @@ const STAV_LABEL: Record<string, string> = {
 /** Kolik řádků se vejde na jednu „stránku" tabule (okno pro auto-scroll). */
 const OKNO = 12;
 
-function casBunka(r: VerejnyRadek): string {
+function casBunka(r: VerejnyRadek, onCourse: string): string {
   if (r.stav === "klasifikovan" && r.casMs !== null) return cistyCas(r.casMs);
-  if (r.stav === "bez_casu") return "na trati";
+  if (r.stav === "bez_casu") return onCourse;
   return STAV_LABEL[r.stav] ?? "—";
 }
 
@@ -35,6 +36,7 @@ export function Tabule({
 }) {
   const [data, setData] = useState<VerejnaData>(initial);
   const [zive, setZive] = useState(true);
+  const [nowMs, setNowMs] = useState<number | null>(null);
 
   // Polling à 5 s, jen když akce „běží" (měření spuštěno) — zrcadlí verejna-akce.tsx.
   useEffect(() => {
@@ -63,6 +65,17 @@ export function Tabule({
   const a = data.akce;
   const kategorie = data.vysledky.kategorie.filter((sk) => sk.radky.length > 0);
 
+  // Běžící čas závodu (LED) — z casStartu.
+  useEffect(() => {
+    if (!a.bezi || !a.casStartu) return;
+    const i = setInterval(() => setNowMs(Date.now()), 100);
+    return () => clearInterval(i);
+  }, [a.bezi, a.casStartu]);
+  const clock =
+    a.casStartu && nowMs != null
+      ? uplynulyCas(nowMs - new Date(a.casStartu).getTime())
+      : null;
+
   return (
     <div className="cal-dots-dark flex min-h-screen flex-col bg-ink-950 p-8 text-white">
       {/* Hlavička */}
@@ -75,7 +88,18 @@ export function Tabule({
             <p className="mt-1 font-technical text-sm text-ink-400">{a.misto}</p>
           )}
         </div>
-        <div className="flex flex-none items-center gap-4">
+        <div className="flex flex-none items-center gap-5">
+          {clock && (
+            <span
+              className="font-technical text-5xl font-bold tabular-nums"
+              style={{
+                color: "#FFB000",
+                textShadow: "0 0 22px rgba(255,176,0,.35)",
+              }}
+            >
+              {clock}
+            </span>
+          )}
           <ZiveChip bezi={a.bezi} zive={zive} />
           <div className="flex w-28 aspect-square flex-col items-center justify-center rounded-[12px] border border-white/15 bg-white/5">
             <span className="font-technical text-[10px] text-ink-400">
@@ -130,6 +154,7 @@ function CelkovaTabule({ skupina }: { skupina: VerejnaSkupina }) {
 /* ---------- 13b: cyklující tabule po kategoriích ---------- */
 
 function KategorieTabule({ kategorie }: { kategorie: VerejnaSkupina[] }) {
+  const t = useTranslations("results");
   const [idx, setIdx] = useState(0);
   const N = kategorie.length;
 
@@ -164,7 +189,7 @@ function KategorieTabule({ kategorie }: { kategorie: VerejnaSkupina[] }) {
             ))}
           </div>
           <span className="flex-none font-technical text-sm text-ink-400">
-            další: {dalsi.kod ? `${dalsi.kod} ` : ""}
+            {t("next")} {dalsi.kod ? `${dalsi.kod} ` : ""}
             {dalsi.nazev}
           </span>
           <span className="flex-none font-technical text-sm tabular-nums text-ink-300">
@@ -196,17 +221,18 @@ function SkupinaNadpis({
 const GRID = "grid grid-cols-[80px_1fr_100px_minmax(0,1fr)_180px_150px] items-center gap-4";
 
 function ZebricekTabulka({ radky }: { radky: VerejnyRadek[] }) {
+  const t = useTranslations("results");
   return (
     <div>
       <div
         className={`${GRID} border-b border-white/15 pb-2 font-technical text-sm uppercase tracking-[.08em] text-ink-400`}
       >
-        <span className="text-center">Poř.</span>
-        <span>Závodník</span>
-        <span className="text-center">Ročník</span>
-        <span>Oddíl</span>
-        <span className="text-right">Čas</span>
-        <span className="text-right">Ztráta</span>
+        <span className="text-center">{t("colPos")}</span>
+        <span>{t("colName")}</span>
+        <span className="text-center">{t("colYear")}</span>
+        <span>{t("colClub")}</span>
+        <span className="text-right">{t("colTime")}</span>
+        <span className="text-right">{t("colGap")}</span>
       </div>
       <div className="divide-y divide-white/10">
         {radky.map((r) => (
@@ -218,6 +244,7 @@ function ZebricekTabulka({ radky }: { radky: VerejnyRadek[] }) {
 }
 
 function ZebricekRadek({ r }: { r: VerejnyRadek }) {
+  const t = useTranslations("results");
   const nedobehl = r.stav !== "klasifikovan";
   const jeMedaile = r.stav === "klasifikovan" && !!r.poradi && r.poradi <= 3;
   return (
@@ -241,7 +268,7 @@ function ZebricekRadek({ r }: { r: VerejnyRadek }) {
       </span>
       <span className="min-w-0 truncate text-ink-300">{r.oddil || "—"}</span>
       <span className="text-right font-technical font-semibold tabular-nums">
-        {casBunka(r)}
+        {casBunka(r, t("onCourse"))}
       </span>
       <span className="text-right font-technical tabular-nums text-ink-400">
         {r.stav === "klasifikovan" ? ztrata(r.ztrataMs) : "—"}
@@ -251,17 +278,18 @@ function ZebricekRadek({ r }: { r: VerejnyRadek }) {
 }
 
 function ZiveChip({ bezi, zive }: { bezi: boolean; zive: boolean }) {
+  const t = useTranslations("results");
   if (!bezi || !zive) {
     return (
       <span className="flex-none rounded-full bg-warning-bg px-3 py-1.5 font-technical text-sm font-medium uppercase tracking-[.06em] text-warning">
-        offline
+        {t("offline")}
       </span>
     );
   }
   return (
     <span className="flex-none inline-flex items-center gap-2 rounded-full bg-teal-500/15 px-3 py-1.5 font-technical text-sm font-medium uppercase tracking-[.06em] text-teal-300">
       <span className="cal-livedot h-2 w-2 rounded-full bg-teal-400" />
-      Živě
+      {t("live")}
     </span>
   );
 }

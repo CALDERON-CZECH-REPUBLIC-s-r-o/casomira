@@ -101,6 +101,25 @@ export function Landing({
   const [faqOtevrena, setFaqOtevrena] = useState(0);
   const [menuOtevrene, setMenuOtevrene] = useState(false);
   const hodiny = useBezciHodiny();
+
+  // Scroll-reveal — sekce s [data-reveal] se odkryjí při vstupu do viewportu.
+  useEffect(() => {
+    const prvky = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const io = new IntersectionObserver(
+      (zaznamy) => {
+        for (const z of zaznamy) {
+          if (z.isIntersecting) {
+            z.target.classList.add("cal-reveal-in");
+            io.unobserve(z.target);
+          }
+        }
+      },
+      { threshold: 0.12 },
+    );
+    prvky.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   const napsatDotaz = `mailto:${obsah.kontaktEmail}`;
   const ukazkaHref = akce.length > 0 ? "#zavody" : "#divaci";
 
@@ -188,16 +207,30 @@ export function Landing({
       <section className="cal-dots-dark cal-glow-top bg-ink-950 text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 md:grid-cols-2 md:py-24">
           <div>
-            <div className="cal-eyebrow text-teal-300">{obsah.hero.eyebrow}</div>
-            <h1 className="mt-4 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-white md:text-[54px]">
+            <div
+              className="cal-rise cal-eyebrow text-teal-300"
+              style={{ animationDelay: "40ms" }}
+            >
+              {obsah.hero.eyebrow}
+            </div>
+            <h1
+              className="cal-rise mt-4 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-white md:text-[54px]"
+              style={{ animationDelay: "100ms" }}
+            >
               {obsah.hero.h1a}
               <br />
               {obsah.hero.h1b}
             </h1>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-300 md:text-[17px]">
+            <p
+              className="cal-rise mt-5 max-w-md text-[15px] leading-relaxed text-ink-300 md:text-[17px]"
+              style={{ animationDelay: "160ms" }}
+            >
               {obsah.hero.sub}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div
+              className="cal-rise mt-8 flex flex-wrap gap-3"
+              style={{ animationDelay: "220ms" }}
+            >
               <Cta href="/prihlaseni">{obsah.hero.ctaPrimary}</Cta>
               <a
                 href={ukazkaHref}
@@ -206,7 +239,10 @@ export function Landing({
                 {obsah.hero.ctaSecondary}
               </a>
             </div>
-            <p className="mt-5 flex items-center gap-2 text-[12.5px] text-ink-400">
+            <p
+              className="cal-rise mt-5 flex items-center gap-2 text-[12.5px] text-ink-400"
+              style={{ animationDelay: "280ms" }}
+            >
               <span className="cal-livedot h-2 w-2 rounded-full bg-teal-400" />
               {obsah.hero.note}
             </p>
@@ -275,7 +311,7 @@ export function Landing({
 
       {/* ============ FUNKCE ============ */}
       <section id="funkce" className="scroll-mt-20 bg-ink-50">
-        <div className="mx-auto max-w-6xl px-5 py-20">
+        <div className="cal-reveal mx-auto max-w-6xl px-5 py-20" data-reveal>
           <div className="cal-eyebrow text-teal-600">{obsah.funkce.eyebrow}</div>
           <h2 className="mt-2 max-w-lg font-display text-[28px] font-bold tracking-tight text-ink-900">
             {obsah.funkce.h2}
@@ -306,7 +342,7 @@ export function Landing({
 
       {/* ============ JAK TO FUNGUJE ============ */}
       <section id="jak" className="scroll-mt-20 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-20">
+        <div className="cal-reveal mx-auto max-w-6xl px-5 py-20" data-reveal>
           <div className="cal-eyebrow text-teal-600">{obsah.jak.eyebrow}</div>
           <h2 className="mt-2 font-display text-[28px] font-bold tracking-tight text-ink-900">
             {obsah.jak.h2}
@@ -341,7 +377,7 @@ export function Landing({
         id="divaci"
         className="cal-dots-dark scroll-mt-20 bg-ink-950 text-white"
       >
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2">
+        <div className="cal-reveal mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2" data-reveal>
           <div>
             <div className="cal-eyebrow text-teal-300">{obsah.divaci.eyebrow}</div>
             <h2 className="mt-2 max-w-md font-display text-[28px] font-bold tracking-tight text-white">
@@ -393,7 +429,7 @@ export function Landing({
 
       {/* ============ CENÍK ============ */}
       <section id="cenik" className="scroll-mt-20 bg-ink-50">
-        <div className="mx-auto max-w-6xl px-5 py-20">
+        <div className="cal-reveal mx-auto max-w-6xl px-5 py-20" data-reveal>
           <div className="text-center">
             <div className="cal-eyebrow text-teal-600">{obsah.cenik.eyebrow}</div>
             <h2 className="mt-2 font-display text-[28px] font-bold tracking-tight text-ink-900">
@@ -467,7 +503,7 @@ export function Landing({
       {/* ============ ŽIVÉ ZÁVODY (reálná data) ============ */}
       {akce.length > 0 && (
         <section id="zavody" className="scroll-mt-20 bg-white">
-          <div className="mx-auto max-w-6xl px-5 py-20">
+          <div className="cal-reveal mx-auto max-w-6xl px-5 py-20" data-reveal>
             <div className="cal-eyebrow text-teal-600">Živé závody</div>
             <h2 className="mt-2 font-display text-[28px] font-bold tracking-tight text-ink-900">
               Výsledky a startovní listiny
@@ -509,7 +545,7 @@ export function Landing({
 
       {/* ============ FAQ ============ */}
       <section className="bg-ink-50">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 md:grid-cols-[minmax(0,1fr)_1.4fr]">
+        <div className="cal-reveal mx-auto grid max-w-6xl gap-10 px-5 py-20 md:grid-cols-[minmax(0,1fr)_1.4fr]" data-reveal>
           <div>
             <div className="cal-eyebrow text-teal-600">{obsah.faq.eyebrow}</div>
             <h2 className="mt-2 font-display text-[28px] font-bold tracking-tight text-ink-900">
@@ -569,7 +605,7 @@ export function Landing({
 
       {/* ============ CTA ============ */}
       <section className="cal-dots bg-white">
-        <div className="mx-auto max-w-3xl px-5 py-24 text-center">
+        <div className="cal-reveal mx-auto max-w-3xl px-5 py-24 text-center" data-reveal>
           <h2 className="font-display text-[30px] font-bold tracking-tight text-ink-900 md:text-[34px]">
             {obsah.ctaFinal.h2}
           </h2>
