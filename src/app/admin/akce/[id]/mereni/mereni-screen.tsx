@@ -15,6 +15,7 @@ import {
 import { ulozitPruchody, nastavitStart } from "@/server/mereni";
 import { spustSyncWorker } from "@/lib/mereni-sync";
 import { PoweredBy } from "@/app/admin/_components/ui";
+import { ConfirmDialog } from "@/app/admin/_components/ui-client";
 
 interface ZavodnikInfo {
   startovniCislo: number | null;
@@ -61,6 +62,9 @@ export function MereniScreen({
     () => body.find((b) => b.jeCil)?.id ?? body[0]?.id ?? null,
   );
   const [casStartu, setCasStartu] = useState<string | null>(casStartuProp);
+  // Organizátor ručně odemkl měření po doběhu všech (přepis auto-zastavení).
+  const [odemceno, setOdemceno] = useState(false);
+  const zamknutoRef = useRef(false);
   const [online, setOnline] = useState(true);
   const [nowMs, setNowMs] = useState<number | null>(null);
   // Pokus o záznam bez odstartované akce → upozornění.
@@ -201,6 +205,8 @@ export function MereniScreen({
         setChybaBezStartu(true);
         return;
       }
+      // Po doběhu všech je časomíra zastavená (dokud organizátor neodemkne).
+      if (zamknutoRef.current) return;
       const cas = new Date(); // wall-clock, ms (NIKDY performance.now)
       poradiRef.current += 1;
       const p: OutboxPruchod = {
@@ -353,10 +359,27 @@ export function MereniScreen({
       .filter((z) => !skrytDobehnute || !cislaInfo.has(z.startovniCislo!));
   }, [vsechnaCisla, filtr, skrytDobehnute, cislaInfo]);
 
+  // Závod dokončen = všechna startovní čísla mají průchod (stejný čítač jako „X/Y DOBĚHLO").
+  const zavodDokoncen = vsechnaCisla.length > 0 && dobehlo >= vsechnaCisla.length;
+  // Čas posledního doběhu (na něm se zmrazí časomíra).
+  const posledniDobehMs = useMemo(() => {
+    let max = 0;
+    for (const i of cislaInfo.values()) if (i.posledniMs > max) max = i.posledniMs;
+    return max;
+  }, [cislaInfo]);
+  // Zamčeno = dokončeno a organizátor to ručně neodemkl. Časomíra stojí, měření neběží.
+  const zamknuto = zavodDokoncen && !odemceno;
+  // Zrcadli do ref pro guard v pridejPruchod (čte se až v event handleru, ne při renderu).
+  useEffect(() => {
+    zamknutoRef.current = zamknuto;
+  }, [zamknuto]);
+
   const clock =
-    nowMs !== null && startMs !== null
-      ? uplynulyCas(nowMs - startMs)
-      : "00:00.0";
+    startMs !== null && zamknuto && posledniDobehMs > 0
+      ? uplynulyCas(posledniDobehMs - startMs) // zmrazeno na posledním doběhu
+      : nowMs !== null && startMs !== null
+        ? uplynulyCas(nowMs - startMs)
+        : "00:00.0";
 
   return (
     <div
@@ -465,7 +488,7 @@ export function MereniScreen({
             }}
           >
             <span
-              className={startMs !== null ? "cal-livedot" : undefined}
+              className={startMs !== null && !zamknuto ? "cal-livedot" : undefined}
               style={{
                 width: 6,
                 height: 6,
@@ -506,6 +529,50 @@ export function MereniScreen({
           )}
         </div>
       </header>
+
+      {/* ---------- Závod dokončen — časomíra zastavena ---------- */}
+      {zamknuto && (
+        <div
+          className="flex flex-none flex-wrap items-center gap-3 px-4 sm:px-6"
+          style={{
+            minHeight: 46,
+            padding: "8px 24px",
+            background: "var(--success-bg)",
+            borderBottom: "1px solid var(--ink-200)",
+          }}
+        >
+          <span
+            style={{
+              font: "700 13px var(--cal-font-sans)",
+              color: "var(--success)",
+            }}
+          >
+            ✓ Závod dokončen — časomíra zastavena
+          </span>
+          <span
+            style={{
+              font: "500 12px var(--cal-font-mono)",
+              color: "var(--ink-500)",
+            }}
+          >
+            všech {vsechnaCisla.length} startovních čísel má průchod
+          </span>
+          <button
+            onClick={() => setOdemceno(true)}
+            className="cal-press ml-auto"
+            style={{
+              background: "#fff",
+              border: "1px solid var(--ink-200)",
+              borderRadius: "var(--radius-md)",
+              padding: "7px 14px",
+              font: "600 12px var(--cal-font-sans)",
+              color: "var(--ink-700)",
+            }}
+          >
+            Odemknout měření
+          </button>
+        </div>
+      )}
 
       {/* ---------- Body ---------- */}
       <div className="flex min-h-0 flex-1">
@@ -550,13 +617,20 @@ export function MereniScreen({
                 >
                   {casDneKratky(casStartu)}
                 </strong>
-                <button
-                  onClick={zrusitStart}
-                  className="underline"
-                  style={{ color: "var(--error)", fontSize: 11 }}
-                >
-                  zrušit
-                </button>
+                <ConfirmDialog
+                  triggerLabel="zrušit"
+                  triggerClassName="text-[11px] text-error underline hover:no-underline"
+                  title="Zastavit závod?"
+                  message="Zrušení startu zastaví celý závod a nelze ho vzít zpět."
+                  dopady={[
+                    "Zastaví se měření — bez startu nelze zaznamenávat průchody",
+                    "Odstraní se čas startu; už změřené průchody ztratí referenci",
+                    "Obnovit původní start nelze",
+                  ]}
+                  slovo="ZRUŠIT"
+                  confirmLabel="Zastavit závod"
+                  action={zrusitStart}
+                />
               </div>
             ) : (
               <button
@@ -791,7 +865,7 @@ export function MereniScreen({
                         <button
                           key={z.startovniCislo}
                           onClick={() => pridejPruchod(z.startovniCislo!)}
-                          disabled={!casStartu}
+                          disabled={!casStartu || zamknuto}
                           className="cal-tile flex flex-col items-center justify-center gap-0.5"
                           title={`${z.prijmeni} ${z.jmeno}`}
                           style={{
@@ -799,8 +873,8 @@ export function MereniScreen({
                             borderRadius: "var(--radius-md)",
                             border: `1.5px solid ${done ? "var(--teal-500)" : "var(--ink-200)"}`,
                             background: done ? "var(--teal-50)" : "#fff",
-                            opacity: casStartu ? 1 : 0.5,
-                            cursor: casStartu ? "pointer" : "not-allowed",
+                            opacity: casStartu && !zamknuto ? 1 : 0.5,
+                            cursor: casStartu && !zamknuto ? "pointer" : "not-allowed",
                           }}
                         >
                           <span
@@ -847,7 +921,7 @@ export function MereniScreen({
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 py-6">
               <button
                 onClick={zaznamenat}
-                disabled={!casStartu}
+                disabled={!casStartu || zamknuto}
                 className="cal-press w-full max-w-[520px]"
                 style={{
                   height: 188,
@@ -855,8 +929,8 @@ export function MereniScreen({
                   background: "var(--teal-500)",
                   color: "#fff",
                   boxShadow: "var(--shadow-primary)",
-                  opacity: casStartu ? 1 : 0.45,
-                  cursor: casStartu ? "pointer" : "not-allowed",
+                  opacity: casStartu && !zamknuto ? 1 : 0.45,
+                  cursor: casStartu && !zamknuto ? "pointer" : "not-allowed",
                 }}
               >
                 <span
