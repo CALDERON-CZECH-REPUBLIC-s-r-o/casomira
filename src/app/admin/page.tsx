@@ -36,6 +36,12 @@ export default async function AdminPage() {
             >
               Vývoj časů
             </Link>
+            <Link
+              href="/admin/obsah"
+              className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
+            >
+              Obsah webu
+            </Link>
             <form
               action={async () => {
                 "use server";

@@ -39,12 +39,12 @@ export default async function PrihlaseniPage({
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
           <Image
-            src="/casomir-teal-dark.png"
+            src="/casomir-logo-dark.png"
             alt="Časomír"
-            width={340}
-            height={255}
+            width={1384}
+            height={506}
             priority
-            className="h-auto w-full max-w-[260px]"
+            className="h-auto w-full max-w-[240px]"
           />
           <div className="cal-eyebrow text-teal-300">Administrace závodů</div>
         </div>

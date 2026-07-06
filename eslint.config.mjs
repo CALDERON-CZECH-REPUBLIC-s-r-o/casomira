@@ -12,8 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Design reference prototype (HTML/JS handoff, ne aplikační kód).
+    // Design reference prototypy (HTML/JS handoff, ne aplikační kód).
     "design_handoff_mereni/**",
+    "UX/**",
   ]),
 ]);
 

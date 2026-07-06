@@ -6,4 +6,5 @@ export * from "./zavodnik";
 export * from "./merici-bod";
 export * from "./cilovy-zaznam";
 export * from "./uprava-log";
+export * from "./obsah";
 export * from "./relations";
