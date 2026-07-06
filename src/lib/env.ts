@@ -18,6 +18,11 @@ const schema = z.object({
   // Na lokální instanci: kam publikovat. Na cloud instanci: token, který přijímá.
   CLOUD_SYNC_URL: z.preprocess(prazdnyJakoUndefined, z.string().url().optional()),
   SYNC_TOKEN: z.preprocess(prazdnyJakoUndefined, z.string().optional()),
+
+  // Cloudflare Turnstile (volitelné) — ochrana veřejného přihlašovacího formuláře.
+  // Když nejsou obě nastavené, CAPTCHA se přeskočí (jede jen lehká ochrana).
+  TURNSTILE_SITE_KEY: z.preprocess(prazdnyJakoUndefined, z.string().optional()),
+  TURNSTILE_SECRET: z.preprocess(prazdnyJakoUndefined, z.string().optional()),
 });
 
 export const env = schema.parse(process.env);

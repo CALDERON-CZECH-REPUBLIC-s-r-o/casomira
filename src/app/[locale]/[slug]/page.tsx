@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { nactiVerejnaData } from "@/lib/verejna-data";
+import { turnstileSiteKey } from "@/lib/turnstile";
 import { VerejnaAkce } from "./verejna-akce";
 
 export const dynamic = "force-dynamic";
@@ -28,5 +29,11 @@ export default async function VerejnaAkcePage({
   const data = await nactiVerejnaData(slug);
   if (!data) notFound();
 
-  return <VerejnaAkce slug={slug} initial={data} />;
+  return (
+    <VerejnaAkce
+      slug={slug}
+      initial={data}
+      turnstileSiteKey={turnstileSiteKey()}
+    />
+  );
 }

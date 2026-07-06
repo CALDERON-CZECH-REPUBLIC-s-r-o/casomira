@@ -11,8 +11,10 @@ import {
   zamitnoutPrihlasku,
   oznacitZaplaceno,
   smazatPrihlasku,
+  smazatSpamPrihlasky,
 } from "@/server/prihlasky";
 import { Btn, Card, EmptyState, PageHeader, Pill } from "../../../_components/ui";
+import { ConfirmDialog } from "@/app/[locale]/admin/_components/ui-client";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +60,9 @@ export default async function PrihlaskyPage({
   }
 
   const cekajici = prihlasky.filter((p) => p.stav === "nova").length;
+  const spamPocet = prihlasky.filter(
+    (p) => p.stav === "nova" && !p.zaplaceno,
+  ).length;
 
   return (
     <SpravaShell akceId={id} nazev={akce.nazev}>
@@ -70,6 +75,19 @@ export default async function PrihlaskyPage({
               {prihlasky.length} celkem
               {cekajici > 0 ? ` · ${cekajici} čeká na schválení` : ""}
             </span>
+          }
+          actions={
+            spamPocet > 0 ? (
+              <ConfirmDialog
+                title="Smazat nové nezaplacené?"
+                message={`Smaže se ${spamPocet} přihlášek se stavem „Nová" a bez úhrady (typicky spam). Schválené a zaplacené zůstanou.`}
+                slovo="SMAZAT"
+                confirmLabel={`Smazat ${spamPocet}`}
+                action={smazatSpamPrihlasky.bind(null, id)}
+                triggerLabel={`Smazat nové nezaplacené (${spamPocet})`}
+                triggerClassName="cal-press rounded-[10px] border border-ink-200 bg-white px-3 py-1.5 text-[13px] font-medium text-error hover:bg-error-bg"
+              />
+            ) : undefined
           }
         />
 

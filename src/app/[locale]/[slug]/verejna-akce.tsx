@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cistyCas, ztrata, casDneKratky, uplynulyCas } from "@/lib/cas";
 import { Btn, Card, Pill, PoweredBy } from "@/app/[locale]/admin/_components/ui";
@@ -56,12 +56,23 @@ function useTema(): [Tema, (t: Tema) => void] {
   return [tema, set];
 }
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+      remove: (id: string) => void;
+    };
+  }
+}
+
 export function VerejnaAkce({
   slug,
   initial,
+  turnstileSiteKey,
 }: {
   slug: string;
   initial: VerejnaData;
+  turnstileSiteKey: string | null;
 }) {
   const [data, setData] = useState<VerejnaData>(initial);
   const [tab, setTab] = useState<"vysledky" | "startovka">("vysledky");
@@ -276,6 +287,7 @@ export function VerejnaAkce({
           slug={slug}
           open={prihlaskaOpen}
           startovne={a.startovne}
+          turnstileSiteKey={turnstileSiteKey}
           onClose={() => setPrihlaskaOpen(false)}
         />
       </main>
@@ -289,11 +301,13 @@ function PrihlaskaDialog({
   slug,
   open,
   startovne,
+  turnstileSiteKey,
   onClose,
 }: {
   slug: string;
   open: boolean;
   startovne: number | null;
+  turnstileSiteKey: string | null;
   onClose: () => void;
 }) {
   const t = useTranslations("prihlaska");
@@ -301,6 +315,63 @@ function PrihlaskaDialog({
     prihlasitSeNaAkci.bind(null, slug),
     { stav: "idle" },
   );
+  // Časová past — čas otevření formuláře (do skrytého pole `ts`).
+  const [otevreno, setOtevreno] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const widgetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (open) setOtevreno(Date.now());
+  }, [open]);
+
+  // Turnstile widget (jen když je nakonfigurovaný site key).
+  useEffect(() => {
+    if (!turnstileSiteKey || !open) return;
+    let widgetId: string | undefined;
+    let iv: ReturnType<typeof setInterval> | undefined;
+    const render = () => {
+      const el = widgetRef.current;
+      if (window.turnstile && el && el.childElementCount === 0) {
+        widgetId = window.turnstile.render(el, {
+          sitekey: turnstileSiteKey,
+          callback: (tok: string) => setTurnstileToken(tok),
+          "error-callback": () => setTurnstileToken(""),
+          "expired-callback": () => setTurnstileToken(""),
+        });
+      }
+    };
+    if (window.turnstile) render();
+    else {
+      const id = "cf-turnstile-script";
+      if (!document.getElementById(id)) {
+        const s = document.createElement("script");
+        s.id = id;
+        s.src =
+          "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        s.async = true;
+        s.onload = render;
+        document.head.appendChild(s);
+      } else {
+        iv = setInterval(() => {
+          if (window.turnstile) {
+            clearInterval(iv);
+            render();
+          }
+        }, 200);
+      }
+    }
+    return () => {
+      if (iv) clearInterval(iv);
+      if (window.turnstile && widgetId) {
+        try {
+          window.turnstile.remove(widgetId);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+  }, [turnstileSiteKey, open]);
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -363,6 +434,8 @@ function PrihlaskaDialog({
             aria-hidden="true"
             className="absolute left-[-9999px] h-0 w-0 opacity-0"
           />
+          {/* Časová past — čas otevření formuláře. */}
+          <input type="hidden" name="ts" value={otevreno} />
 
           <div className="mt-5 flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -417,13 +490,22 @@ function PrihlaskaDialog({
               </label>
             </div>
 
+            {/* Cloudflare Turnstile (jen když je nakonfigurováno). */}
+            {turnstileSiteKey && (
+              <div ref={widgetRef} className="flex justify-center" />
+            )}
+
             {state.stav === "chyba" && (
               <p className="rounded-[10px] bg-error-bg px-3 py-2 text-sm font-medium text-error">
                 {state.zprava}
               </p>
             )}
 
-            <Btn type="submit" disabled={pending} className="mt-1 w-full">
+            <Btn
+              type="submit"
+              disabled={pending || (!!turnstileSiteKey && !turnstileToken)}
+              className="mt-1 w-full"
+            >
               {pending ? t("submitting") : t("submit")}
             </Btn>
             <p className="text-center text-[11px] text-ink-400">

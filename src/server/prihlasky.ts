@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import {
@@ -15,6 +15,8 @@ import { zaradit } from "@/domain/zarazeni";
 import { odhadniPohlaviZeJmena, type Pohlavi } from "@/lib/pohlavi";
 import { ucetNaIban, spayd } from "@/lib/platba";
 import { qrSvgDataUri } from "@/lib/qr";
+import { klientskaIp, pod_limitem } from "@/lib/rate-limit";
+import { overitTurnstile, turnstileZapnuto } from "@/lib/turnstile";
 
 /* ---------- Sdílené ---------- */
 
@@ -66,7 +68,12 @@ async function zalozZavodnikaZPrihlasky(p: {
 
 const prihlaskaSchema = z.object({
   jmeno: z.string().trim().max(80).default(""),
-  prijmeni: z.string().trim().min(1, "Zadejte příjmení.").max(80),
+  prijmeni: z
+    .string()
+    .trim()
+    .min(2, "Zadejte příjmení.")
+    .max(80)
+    .regex(/\p{L}/u, "Zadejte platné příjmení."),
   rokNarozeni: z.preprocess(
     (v) => (v === "" || v == null ? undefined : v),
     z.coerce.number().int().min(1900).max(2100).optional(),
@@ -106,9 +113,42 @@ export async function prihlasitSeNaAkci(
   _prev: PrihlaskaState,
   formData: FormData,
 ): Promise<PrihlaskaState> {
-  // Honeypot: skryté pole `web` vyplní jen bot → tvař se úspěšně, ale nic neukládej.
-  if ((formData.get("web") as string)?.trim()) {
-    return { stav: "ok", vs: "", castka: null, ucet: null, qrDataUri: null };
+  const tichyOk: PrihlaskaState = {
+    stav: "ok",
+    vs: "",
+    castka: null,
+    ucet: null,
+    qrDataUri: null,
+  };
+
+  // 1) Honeypot: skryté pole `web` vyplní jen bot → tvař se úspěšně, ale neukládej.
+  if ((formData.get("web") as string)?.trim()) return tichyOk;
+
+  // 2) Časová past: formulář odeslaný do 3 s od otevření = bot.
+  const ts = Number(formData.get("ts"));
+  if (!Number.isFinite(ts) || Date.now() - ts < 3000) return tichyOk;
+
+  // 3) Rate-limit dle IP (5 přihlášek / 10 min).
+  const ip = await klientskaIp();
+  if (!pod_limitem(`prihlaska:${ip}`, 5, 10 * 60 * 1000)) {
+    return {
+      stav: "chyba",
+      zprava: "Příliš mnoho pokusů. Zkuste to prosím za chvíli.",
+    };
+  }
+
+  // 4) Cloudflare Turnstile (jen když je nakonfigurováno).
+  if (turnstileZapnuto()) {
+    const ok = await overitTurnstile(
+      formData.get("cf-turnstile-response") as string | null,
+      ip,
+    );
+    if (!ok) {
+      return {
+        stav: "chyba",
+        zprava: "Ověření se nezdařilo. Zkuste to prosím znovu.",
+      };
+    }
   }
 
   const parsed = prihlaskaSchema.safeParse({
@@ -264,4 +304,22 @@ export async function smazatPrihlasku(id: string) {
   if (!nacteno) return;
   await db.delete(prihT).where(eq(prihT.id, id));
   revalidatePrihlasky(nacteno.p.akceId, nacteno.slug);
+}
+
+/**
+ * Hromadně smaže nové nezaplacené přihlášky akce (úklid spamu). Schválené
+ * i zaplacené zůstávají. Vrací počet smazaných.
+ */
+export async function smazatSpamPrihlasky(akceId: string): Promise<void> {
+  await vyzadujPrihlaseni();
+  await db
+    .delete(prihT)
+    .where(
+      and(
+        eq(prihT.akceId, akceId),
+        eq(prihT.stav, "nova"),
+        eq(prihT.zaplaceno, false),
+      ),
+    );
+  revalidatePrihlasky(akceId);
 }

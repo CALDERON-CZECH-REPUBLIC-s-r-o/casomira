@@ -20,6 +20,7 @@ automatické; web nastartuje až po zdravé DB a doběhlé migraci.
 | `APP_BASE_URL` | doporučeno | veřejná adresa instance (odkazy, QR) |
 | `POSTGRES_USER/PASSWORD/DB` | ne | default `casomira` |
 | `SYNC_TOKEN` | ne | jen pro režim cloud zrcadla (`/api/sync`) |
+| `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET` | ne | Cloudflare Turnstile na veřejném přihlašovacím formuláři. Když obě nastaveny, přihláška vyžaduje CAPTCHA; jinak jede jen lehká ochrana (honeypot + časová past + rate-limit). Klíče zdarma na dash.cloudflare.com → Turnstile. |
 
 ¹ Compose ho složí z `POSTGRES_*`. Vlastní externí DB → nastav `DATABASE_URL`.
 
