@@ -30,7 +30,9 @@ automatické; web nastartuje až po zdravé DB a doběhlé migraci.
 2. Doména: **`casomir.cz`** (DNS A/AAAA na Coolify server; Traefik + TLS).
    `APP_BASE_URL` má tuto doménu už jako default v compose — netřeba nastavovat.
 3. Environment Variables: `AUTH_SECRET` (povinné), `ADMIN_EMAIL` + `ADMIN_PASSWORD`
-   (auto-založí org účet), příp. `POSTGRES_PASSWORD`.
+   (auto-založí org účet), příp. `POSTGRES_PASSWORD`. Volitelně proti spamu přihlášek
+   `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET` (Cloudflare → Turnstile, doména `casomir.cz`).
+   Po přidání proměnných **Redeploy**.
 4. Deploy. Traefik vystaví `web` (interní port 3000) na doméně; host porty se neřeší.
 5. Health: Coolify čte `/api/health` (v compose healthcheck už je).
 

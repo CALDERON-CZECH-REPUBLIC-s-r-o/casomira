@@ -29,6 +29,10 @@ x-app: &app
     # server ho nepotřebuje → volitelný.
     SYNC_TOKEN: ${SYNC_TOKEN:-}
     APP_BASE_URL: ${APP_BASE_URL:-https://casomir.cz}
+    # Cloudflare Turnstile (volitelné) — ochrana veřejného přihlašovacího formuláře.
+    # Když obě nastaveny, přihláška vyžaduje CAPTCHA; jinak jede lehká ochrana.
+    TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+    TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
   restart: unless-stopped
 
 services:
