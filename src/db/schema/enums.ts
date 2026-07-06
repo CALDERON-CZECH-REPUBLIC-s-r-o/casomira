@@ -24,3 +24,10 @@ export const cilovyStavEnum = pgEnum("cilovy_stav", [
   "smazany",
   "DNF",
 ]);
+
+/** Stav veřejné přihlášky na akci (rozcestník: nová → schválená / zamítnutá). */
+export const prihlaskaStavEnum = pgEnum("prihlaska_stav", [
+  "nova",
+  "schvalena",
+  "zamitnuta",
+]);

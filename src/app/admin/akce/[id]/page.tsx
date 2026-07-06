@@ -6,9 +6,12 @@ import {
   kategorie as katT,
   zavodnik as zavT,
   cilovyZaznam as czT,
+  prihlaska as prihT,
 } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
-import { BtnLink, MetricCard } from "../../_components/ui";
+import { verejnyOdkaz } from "@/lib/verejna-url";
+import { qrSvgDataUri } from "@/lib/qr";
+import { BtnLink, Card, MetricCard } from "../../_components/ui";
 import { SpravaShell } from "../../_components/sprava-shell";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +47,13 @@ export default async function AkceDetailPage({
     czT,
     and(eq(czT.akceId, id), eq(czT.stav, "platny")),
   );
+  const novePrihlasky = await db.$count(
+    prihT,
+    and(eq(prihT.akceId, id), eq(prihT.stav, "nova")),
+  );
+
+  const profilUrl = verejnyOdkaz(akce.slug);
+  const profilQr = await qrSvgDataUri(profilUrl);
 
   return (
     <SpravaShell akceId={id} nazev={akce.nazev}>
@@ -90,8 +100,47 @@ export default async function AkceDetailPage({
           />
         </div>
 
+        {/* Veřejný profil — QR na stránku akce */}
+        <Card className="mb-8 flex flex-wrap items-center gap-5 p-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={profilQr}
+            alt={`QR na ${profilUrl}`}
+            className="h-28 w-28 flex-none rounded-[10px] border border-ink-150 bg-white p-1.5"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="cal-eyebrow text-teal-600">Veřejný profil akce</div>
+            <div className="mt-1 font-technical text-sm break-all text-ink-900">
+              {profilUrl}
+            </div>
+            <p className="mt-1.5 text-[13px] text-ink-500">
+              Vytiskněte QR na plakát nebo do cíle — diváci naskenují a vidí
+              startovku i živé výsledky.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={profilQr}
+                download={`qr-${akce.slug}.svg`}
+                className="cal-press rounded-[10px] border border-ink-200 bg-white px-3 py-1.5 text-[13px] font-medium text-ink-700 hover:bg-ink-100"
+              >
+                Stáhnout QR (SVG)
+              </a>
+              <a
+                href={`/${akce.slug}`}
+                target="_blank"
+                className="cal-press rounded-[10px] px-3 py-1.5 text-[13px] font-medium text-teal-600 hover:bg-teal-50"
+              >
+                Otevřít profil ↗
+              </a>
+            </div>
+          </div>
+        </Card>
+
         {/* Rychlé akce */}
         <div className="mb-10 flex flex-wrap gap-2">
+          <BtnLink href={`/admin/akce/${id}/prihlasky`} variant="ghost">
+            Přihlášky{novePrihlasky > 0 ? ` (${novePrihlasky})` : ""}
+          </BtnLink>
           <BtnLink href={`/admin/akce/${id}/import`} variant="ghost">
             Importovat závodníky
           </BtnLink>

@@ -34,6 +34,17 @@ export const akce = pgTable("akce", {
   delkaM: integer("delka_m"),
   // Historická akce — výsledky naimportované z PDF, ne měřené živě.
   historicka: boolean("historicka").notNull().default(false),
+  // --- Veřejné přihlášky + platby ---
+  // Přihlašování z veřejné stránky /{slug} zapnuté.
+  registraceOtevrena: boolean("registrace_otevrena").notNull().default(false),
+  // Přihláška musí být schválena organizátorem, než jde do startovní listiny.
+  registraceSchvalovani: boolean("registrace_schvalovani")
+    .notNull()
+    .default(true),
+  // Bankovní účet pro QR platbu startovného: `19-2000145399/0800`, `2000145399/0800` nebo IBAN.
+  ucet: text("ucet"),
+  // Startovné v celých Kč (NULL = neuvedeno / zdarma).
+  startovne: integer("startovne"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

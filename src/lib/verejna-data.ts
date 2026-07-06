@@ -54,6 +54,8 @@ export interface VerejnaData {
     slug: string;
     bezi: boolean; // start nastaven
     aktualizovano: string; // ISO
+    registraceOtevrena: boolean; // veřejné přihlašování zapnuté
+    startovne: number | null; // Kč (jen k zobrazení; QR skládá server akce)
   };
   vysledky: {
     celkova: VerejnaSkupina;
@@ -137,6 +139,8 @@ export async function nactiVerejnaData(
       slug: data.akce.slug,
       bezi: data.akce.casStartu !== null,
       aktualizovano: new Date().toISOString(),
+      registraceOtevrena: akce.registraceOtevrena,
+      startovne: akce.startovne,
     },
     vysledky: {
       celkova: skupinaSerial(vys.celkova),

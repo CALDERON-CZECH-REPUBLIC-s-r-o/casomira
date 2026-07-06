@@ -4,7 +4,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { akce as akceT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
-import { upravitAkci, ulozitNastaveni, smazatAkci } from "@/server/akce";
+import {
+  upravitAkci,
+  ulozitNastaveni,
+  ulozitPrihlasky,
+  smazatAkci,
+} from "@/server/akce";
 import { Btn, BtnLink, Card, PageHeader } from "@/app/admin/_components/ui";
 import { ConfirmDialog } from "@/app/admin/_components/ui-client";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
@@ -128,7 +133,84 @@ export default async function NastaveniPage({
           </form>
         </Card>
 
-        {/* 3. Záloha */}
+        {/* 3. Přihlášky a platby */}
+        <Card className="mb-6 p-5">
+          <div className="cal-eyebrow mb-4 text-teal-600">
+            Přihlášky &amp; platby
+          </div>
+          <form action={ulozitPrihlasky.bind(null, id)}>
+            <div className="flex flex-col gap-5">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  name="registraceOtevrena"
+                  defaultChecked={akce.registraceOtevrena}
+                  className="mt-0.5 h-4 w-4 flex-none accent-teal-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-ink-900">
+                    Přihlašování otevřené
+                  </span>
+                  <span className="mt-0.5 block text-ink-500">
+                    Na veřejné stránce akce se zobrazí formulář „Přihlásit se na
+                    závod“.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  name="registraceSchvalovani"
+                  defaultChecked={akce.registraceSchvalovani}
+                  className="mt-0.5 h-4 w-4 flex-none accent-teal-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-ink-900">
+                    Přihlášky schvaluji ručně
+                  </span>
+                  <span className="mt-0.5 block text-ink-500">
+                    Přihlášený se dostane do startovní listiny až po vašem
+                    potvrzení. Vypnuto = rovnou do startovky.
+                  </span>
+                </span>
+              </label>
+
+              <label className="cal-label">
+                Bankovní účet pro startovné
+                <input
+                  name="ucet"
+                  defaultValue={akce.ucet ?? ""}
+                  placeholder="19-2000145399/0800"
+                  className="cal-input font-technical"
+                />
+                <span className="text-xs text-ink-400">
+                  Formát účtu, nebo IBAN. Z něj se skládá QR platba.
+                </span>
+              </label>
+
+              <label className="cal-label">
+                Startovné (Kč)
+                <input
+                  type="number"
+                  name="startovne"
+                  min={0}
+                  defaultValue={akce.startovne ?? ""}
+                  placeholder="0"
+                  className="cal-input"
+                />
+                <span className="text-xs text-ink-400">
+                  Prázdné nebo 0 = bez platby (QR se nezobrazí).
+                </span>
+              </label>
+            </div>
+            <div className="mt-5">
+              <Btn type="submit">Uložit přihlášky</Btn>
+            </div>
+          </form>
+        </Card>
+
+        {/* 4. Záloha */}
         <Card className="mb-6 p-5">
           <div className="cal-eyebrow mb-4 text-teal-600">Záloha</div>
           <BtnLink variant="ghost" href={`/admin/akce/${id}/zaloha`}>

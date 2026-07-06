@@ -9,10 +9,12 @@ export function PublishPanel({
   akceId,
   nakonfigurovano,
   slug,
+  qrDataUri,
 }: {
   akceId: string;
   nakonfigurovano: boolean;
   slug: string;
+  qrDataUri: string;
 }) {
   const [stav, setStav] = useState<string | null>(null);
   const [chyba, setChyba] = useState<string | null>(null);
@@ -91,10 +93,22 @@ export function PublishPanel({
       {chyba && <p className="text-sm text-error">{chyba}</p>}
     </div>
 
-      <div className="flex aspect-square w-32 flex-none items-center justify-center rounded-[10px] border border-ink-200 bg-ink-50 text-center">
-        <span className="font-technical text-[10px] text-ink-400">
-          QR — /{slug}
-        </span>
+      <div className="flex-none text-center">
+        {qrDataUri ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={qrDataUri}
+            alt={`QR na /${slug}`}
+            className="h-32 w-32 rounded-[10px] border border-ink-200 bg-white p-1.5"
+          />
+        ) : (
+          <div className="flex aspect-square w-32 items-center justify-center rounded-[10px] border border-ink-200 bg-ink-50">
+            <span className="font-technical text-[10px] text-ink-400">
+              QR — /{slug}
+            </span>
+          </div>
+        )}
+        <div className="mt-1 cal-eyebrow text-ink-400">veřejná adresa</div>
       </div>
     </div>
   );

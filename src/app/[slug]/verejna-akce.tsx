@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { cistyCas, ztrata, casDneKratky } from "@/lib/cas";
 import { Btn, Card, MedalCircle, Pill, PoweredBy } from "@/app/admin/_components/ui";
 import { Dialog, SegmentedToggle } from "@/app/admin/_components/ui-client";
+import { prihlasitSeNaAkci, type PrihlaskaState } from "@/server/prihlasky";
 import type {
   VerejnaData,
   VerejnaSkupina,
@@ -37,6 +38,7 @@ export function VerejnaAkce({
   const [rozsah, setRozsah] = useState<"kategorie" | "celkova">("kategorie");
   const [zive, setZive] = useState(true);
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [prihlaskaOpen, setPrihlaskaOpen] = useState(false);
 
   // Polling à 5 s, jen když je akce „živá" (běží měření).
   useEffect(() => {
@@ -86,6 +88,15 @@ export function VerejnaAkce({
           <p className="mt-3 font-technical text-[11px] text-ink-400">
             aktualizováno {casDneKratky(a.aktualizovano)}
           </p>
+        )}
+        {a.registraceOtevrena && (
+          <Btn
+            onClick={() => setPrihlaskaOpen(true)}
+            className="mt-4 w-full sm:w-auto"
+          >
+            Přihlásit se na závod
+            {a.startovne ? ` · ${a.startovne} Kč` : ""}
+          </Btn>
         )}
       </header>
 
@@ -161,7 +172,170 @@ export function VerejnaAkce({
         bezi={a.bezi}
         onClose={() => setDetail(null)}
       />
+
+      <PrihlaskaDialog
+        slug={slug}
+        open={prihlaskaOpen}
+        startovne={a.startovne}
+        onClose={() => setPrihlaskaOpen(false)}
+      />
     </main>
+  );
+}
+
+/* ---------- Přihláška na závod ---------- */
+
+function PrihlaskaDialog({
+  slug,
+  open,
+  startovne,
+  onClose,
+}: {
+  slug: string;
+  open: boolean;
+  startovne: number | null;
+  onClose: () => void;
+}) {
+  const [state, formAction, pending] = useActionState<PrihlaskaState, FormData>(
+    prihlasitSeNaAkci.bind(null, slug),
+    { stav: "idle" },
+  );
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      {state.stav === "ok" ? (
+        <div className="text-center">
+          <div className="cal-dots-dark -mx-5 -mt-4 rounded-t-[22px] bg-ink-950 px-6 py-6 text-white">
+            <div className="cal-eyebrow text-teal-300">Přihláška odeslána</div>
+            <div className="mt-1 font-display text-xl font-bold">
+              Děkujeme, jste přihlášeni!
+            </div>
+          </div>
+
+          {state.qrDataUri ? (
+            <div className="mt-5">
+              <p className="text-sm text-ink-600">
+                Zaplaťte prosím startovné naskenováním QR platby ve své bance.
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={state.qrDataUri}
+                alt="QR platba za startovné"
+                className="mx-auto mt-4 h-48 w-48"
+              />
+              <div className="mx-auto mt-4 max-w-xs divide-y divide-ink-150 text-left">
+                {state.castka != null && (
+                  <RadekDetailu label="Startovné" hodnota={`${state.castka} Kč`} />
+                )}
+                <RadekDetailu label="Variabilní symbol" hodnota={state.vs} />
+                {state.ucet && <RadekDetailu label="Účet" hodnota={state.ucet} />}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-ink-600">
+              {startovne
+                ? "Údaje k platbě startovného vám sdělí pořadatel."
+                : "Uvidíme se na startu."}
+            </p>
+          )}
+
+          <Btn variant="ghost" className="mt-6 w-full" onClick={onClose}>
+            Zavřít
+          </Btn>
+        </div>
+      ) : (
+        <form action={formAction}>
+          <div className="cal-dots-dark -mx-5 -mt-4 rounded-t-[22px] bg-ink-950 px-6 py-6 text-center text-white">
+            <div className="cal-eyebrow text-teal-300">Přihláška na závod</div>
+            <div className="mt-1 font-display text-xl font-bold">
+              Vyplňte své údaje
+            </div>
+            {startovne ? (
+              <div className="mt-2 font-technical text-[12px] text-ink-300">
+                Startovné {startovne} Kč
+              </div>
+            ) : null}
+          </div>
+
+          {/* Honeypot proti botům — skryté, lidé nevyplní. */}
+          <input
+            type="text"
+            name="web"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute left-[-9999px] h-0 w-0 opacity-0"
+          />
+
+          <div className="mt-5 flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="cal-label">
+                Jméno
+                <input name="jmeno" autoComplete="given-name" className="cal-input" />
+              </label>
+              <label className="cal-label">
+                Příjmení *
+                <input
+                  name="prijmeni"
+                  required
+                  autoComplete="family-name"
+                  className="cal-input"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="cal-label">
+                Rok narození
+                <input
+                  type="number"
+                  name="rokNarozeni"
+                  inputMode="numeric"
+                  placeholder="1990"
+                  className="cal-input"
+                />
+              </label>
+              <label className="cal-label">
+                Oddíl / město
+                <input name="oddil" className="cal-input" />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="cal-label">
+                Telefon
+                <input
+                  type="tel"
+                  name="telefon"
+                  autoComplete="tel"
+                  className="cal-input"
+                />
+              </label>
+              <label className="cal-label">
+                E-mail
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  className="cal-input"
+                />
+              </label>
+            </div>
+
+            {state.stav === "chyba" && (
+              <p className="rounded-[10px] bg-error-bg px-3 py-2 text-sm font-medium text-error">
+                {state.zprava}
+              </p>
+            )}
+
+            <Btn type="submit" disabled={pending} className="mt-1 w-full">
+              {pending ? "Odesílám…" : "Odeslat přihlášku"}
+            </Btn>
+            <p className="text-center text-[11px] text-ink-400">
+              Kontaktní údaje slouží jen pořadateli akce.
+            </p>
+          </div>
+        </form>
+      )}
+    </Dialog>
   );
 }
 

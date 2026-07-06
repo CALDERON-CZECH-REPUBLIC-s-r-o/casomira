@@ -99,15 +99,15 @@ export async function smazatAkci(id: string) {
   redirect("/admin/akce");
 }
 
+const prazdneUndef = (v: unknown) =>
+  v === "" || v === null || v === undefined ? undefined : v;
+
 const nastaveniSchema = z.object({
   slug: z.string().trim().optional(),
   verejna: z.boolean(),
   autoPublikace: z.boolean(),
   presnostCasu: z.enum(["sekundy", "desetiny", "setiny"]),
-  delkaM: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined ? undefined : v),
-    z.coerce.number().int().positive().optional(),
-  ),
+  delkaM: z.preprocess(prazdneUndef, z.coerce.number().int().positive().optional()),
 });
 
 /** Uloží nastavení akce (10a) — odkaz (slug), viditelnost, auto-publikace, přesnost, délka. */
@@ -148,6 +148,46 @@ export async function ulozitNastaveni(id: string, formData: FormData) {
   // Veřejná cesta pod starým i novým slugem.
   if (stara?.slug) revalidatePath(`/${stara.slug}`);
   revalidatePath(`/${novySlug}`);
+}
+
+const prihlaskySchema = z.object({
+  registraceOtevrena: z.boolean(),
+  registraceSchvalovani: z.boolean(),
+  ucet: z.preprocess(prazdneUndef, z.string().trim().optional()),
+  startovne: z.preprocess(
+    prazdneUndef,
+    z.coerce.number().int().nonnegative().optional(),
+  ),
+});
+
+/** Uloží nastavení veřejných přihlášek a plateb (toggly, bankovní účet, startovné). */
+export async function ulozitPrihlasky(id: string, formData: FormData) {
+  await vyzadujPrihlaseni();
+  const d = prihlaskySchema.parse({
+    registraceOtevrena: formData.get("registraceOtevrena") === "on",
+    registraceSchvalovani: formData.get("registraceSchvalovani") === "on",
+    ucet: formData.get("ucet"),
+    startovne: formData.get("startovne"),
+  });
+
+  const stara = await db.query.akce.findFirst({
+    where: eq(akce.id, id),
+    columns: { slug: true },
+  });
+
+  await db
+    .update(akce)
+    .set({
+      registraceOtevrena: d.registraceOtevrena,
+      registraceSchvalovani: d.registraceSchvalovani,
+      ucet: d.ucet ?? null,
+      startovne: d.startovne ?? null,
+    })
+    .where(eq(akce.id, id));
+
+  revalidatePath(`/admin/akce/${id}/nastaveni`);
+  revalidatePath(`/admin/akce/${id}`);
+  if (stara?.slug) revalidatePath(`/${stara.slug}`);
 }
 
 /** Nastaví/posune čas hromadného startu akce (měřicí obrazovka i ruční úprava). */

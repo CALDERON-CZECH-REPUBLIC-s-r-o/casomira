@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { akce as akceT } from "@/db/schema";
 import { env } from "@/lib/env";
 import { vyzadujPrihlaseni } from "@/auth/guard";
+import { qrSvgDataUri } from "@/lib/qr";
 import { BtnLink, Card, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/admin/_components/sprava-shell";
 import { PublishPanel, ObnovaForm } from "./publish-panel";
@@ -26,6 +27,7 @@ export default async function PublikovatPage({
   const cloudUrl = env.CLOUD_SYNC_URL
     ? `${env.CLOUD_SYNC_URL.replace(/\/$/, "")}/${akce.slug}`
     : null;
+  const qrDataUri = cloudUrl ? await qrSvgDataUri(cloudUrl) : "";
 
   return (
     <SpravaShell akceId={id} nazev={akce.nazev}>
@@ -55,6 +57,7 @@ export default async function PublikovatPage({
               akceId={id}
               nakonfigurovano={nakonfigurovano}
               slug={akce.slug}
+              qrDataUri={qrDataUri}
             />
           </>
         ) : (
