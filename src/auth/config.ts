@@ -16,7 +16,9 @@ export const authConfig = {
   providers: [],
   callbacks: {
     authorized({ request, auth }) {
-      const isAdmin = request.nextUrl.pathname.startsWith("/admin");
+      // Cesta může nést locale prefix (/en/admin…) — před testem ho odřízni.
+      const path = request.nextUrl.pathname.replace(/^\/(cs|en)(?=\/|$)/, "");
+      const isAdmin = path.startsWith("/admin");
       if (isAdmin) return !!auth?.user;
       return true;
     },
