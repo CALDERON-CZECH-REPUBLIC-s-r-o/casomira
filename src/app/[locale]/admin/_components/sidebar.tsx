@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
+import { LangToggle } from "@/components/lang-toggle";
 import {
   LayoutDashboard,
   Tags,
@@ -20,25 +21,25 @@ import {
 } from "lucide-react";
 
 interface NavPolozka {
-  label: string;
+  klic: string; // klíč do messages admin.nav.*
   segment: string; // "" = detail akce
   icon: LucideIcon;
   externi?: boolean; // mimo sidebar chrome (focus/kiosk)
 }
 
 const NAV: NavPolozka[] = [
-  { label: "Detail akce", segment: "", icon: LayoutDashboard },
-  { label: "Kategorie", segment: "kategorie", icon: Tags },
-  { label: "Závodníci", segment: "zavodnici", icon: Users },
-  { label: "Přihlášky", segment: "prihlasky", icon: ClipboardList },
-  { label: "Měření", segment: "mereni", icon: Timer, externi: true },
-  { label: "Měřicí body", segment: "brany", icon: MapPin },
-  { label: "Opravy", segment: "opravy", icon: Wrench },
-  { label: "Konflikty", segment: "konflikty", icon: AlertTriangle },
-  { label: "Listiny", segment: "listiny", icon: FileText },
-  { label: "Moderátor", segment: "moderator", icon: Mic, externi: true },
-  { label: "Publikování", segment: "publikovat", icon: UploadCloud },
-  { label: "Nastavení", segment: "nastaveni", icon: Settings },
+  { klic: "detail", segment: "", icon: LayoutDashboard },
+  { klic: "kategorie", segment: "kategorie", icon: Tags },
+  { klic: "zavodnici", segment: "zavodnici", icon: Users },
+  { klic: "prihlasky", segment: "prihlasky", icon: ClipboardList },
+  { klic: "mereni", segment: "mereni", icon: Timer, externi: true },
+  { klic: "brany", segment: "brany", icon: MapPin },
+  { klic: "opravy", segment: "opravy", icon: Wrench },
+  { klic: "konflikty", segment: "konflikty", icon: AlertTriangle },
+  { klic: "listiny", segment: "listiny", icon: FileText },
+  { klic: "moderator", segment: "moderator", icon: Mic, externi: true },
+  { klic: "publikovat", segment: "publikovat", icon: UploadCloud },
+  { klic: "nastaveni", segment: "nastaveni", icon: Settings },
 ];
 
 /**
@@ -55,6 +56,7 @@ export function AkceSidebar({
   uzivatel?: string;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("admin");
   const base = `/admin/akce/${akceId}`;
 
   return (
@@ -77,7 +79,7 @@ export function AkceSidebar({
         href="/admin"
         className="mx-3 mb-2 block rounded-[10px] px-3 py-2 transition-colors hover:bg-white/5"
       >
-        <div className="cal-eyebrow text-teal-400">Akce</div>
+        <div className="cal-eyebrow text-teal-400">{t("eventEyebrow")}</div>
         <div className="mt-0.5 truncate text-[13.5px] font-semibold text-white">
           {nazev}
         </div>
@@ -93,7 +95,7 @@ export function AkceSidebar({
           const Ikona = p.icon;
           return (
             <Link
-              key={p.label}
+              key={p.klic}
               href={href}
               className={`flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13.5px] transition-colors ${
                 aktivni
@@ -102,21 +104,26 @@ export function AkceSidebar({
               }`}
             >
               <Ikona size={16} strokeWidth={2} />
-              {p.label}
+              {t(`nav.${p.klic}`)}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto flex items-center gap-2.5 border-t border-white/8 px-5 py-4">
-        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-teal-600 text-[12px] font-semibold text-white">
-          {(uzivatel ?? "O").slice(0, 1).toUpperCase()}
-        </span>
-        <div className="min-w-0">
-          <div className="truncate text-[12.5px] font-medium text-white">
-            {uzivatel ?? "Organizátor"}
+      <div className="mt-auto border-t border-white/8">
+        <div className="flex items-center gap-2.5 px-5 pb-2 pt-4">
+          <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-teal-600 text-[12px] font-semibold text-white">
+            {(uzivatel ?? "O").slice(0, 1).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-[12.5px] font-medium text-white">
+              {uzivatel ?? t("organizer")}
+            </div>
+            <div className="cal-eyebrow text-ink-500">{t("organizer")}</div>
           </div>
-          <div className="cal-eyebrow text-ink-500">Pořadatel</div>
+        </div>
+        <div className="px-5 pb-4">
+          <LangToggle variant="dark" />
         </div>
       </div>
     </aside>

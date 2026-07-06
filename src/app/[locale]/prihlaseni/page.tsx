@@ -1,8 +1,10 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { AuthError } from "next-auth";
 import { auth, signIn } from "@/auth/nextauth";
 import { Btn, PoweredBy } from "../admin/_components/ui";
+import { LangToggle } from "@/components/lang-toggle";
 
 /**
  * Přihlášení organizátora (Credentials). Po úspěchu redirect na callbackUrl nebo /admin.
@@ -15,6 +17,7 @@ export default async function PrihlaseniPage({
   const sp = await searchParams;
   const session = await auth();
   if (session?.user) redirect(sp.callbackUrl ?? "/admin");
+  const t = await getTranslations("admin.login");
 
   async function prihlasit(formData: FormData) {
     "use server";
@@ -46,16 +49,16 @@ export default async function PrihlaseniPage({
             priority
             className="h-auto w-full max-w-[240px]"
           />
-          <div className="cal-eyebrow text-teal-300">Administrace závodů</div>
+          <div className="cal-eyebrow text-teal-300">{t("eyebrow")}</div>
         </div>
 
         <div className="cal-card rounded-[22px] p-6 shadow-xl">
           <h1 className="mb-5 text-center text-[15px] font-semibold text-ink-500">
-            Přihlášení organizátora
+            {t("title")}
           </h1>
           {sp.chyba && (
             <p className="mb-4 rounded-[10px] bg-error-bg p-3 text-sm font-medium text-error">
-              Nesprávný e-mail nebo heslo.
+              {t("error")}
             </p>
           )}
           <form action={prihlasit} className="flex flex-col gap-4">
@@ -65,7 +68,7 @@ export default async function PrihlaseniPage({
               value={sp.callbackUrl ?? "/admin"}
             />
             <label className="cal-label">
-              E-mail
+              {t("email")}
               <input
                 name="email"
                 type="email"
@@ -75,7 +78,7 @@ export default async function PrihlaseniPage({
               />
             </label>
             <label className="cal-label">
-              Heslo
+              {t("password")}
               <input
                 name="heslo"
                 type="password"
@@ -85,12 +88,13 @@ export default async function PrihlaseniPage({
               />
             </label>
             <Btn type="submit" className="mt-1 w-full">
-              Přihlásit se
+              {t("submit")}
             </Btn>
           </form>
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <LangToggle variant="dark" />
           <PoweredBy variant="dark" />
         </div>
       </div>

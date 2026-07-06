@@ -3,6 +3,47 @@
     "poweredResults": "Časomír · výsledky online",
     "close": "Zavřít"
   },
+  "admin": {
+    "eventEyebrow": "Akce",
+    "organizer": "Pořadatel",
+    "administration": "Administrace",
+    "nav": {
+      "detail": "Detail akce",
+      "kategorie": "Kategorie",
+      "zavodnici": "Závodníci",
+      "prihlasky": "Přihlášky",
+      "mereni": "Měření",
+      "brany": "Měřicí body",
+      "opravy": "Opravy",
+      "konflikty": "Konflikty",
+      "listiny": "Listiny",
+      "moderator": "Moderátor",
+      "publikovat": "Publikování",
+      "nastaveni": "Nastavení"
+    },
+    "login": {
+      "eyebrow": "Administrace závodů",
+      "title": "Přihlášení organizátora",
+      "email": "E-mail",
+      "password": "Heslo",
+      "submit": "Přihlásit se",
+      "error": "Nesprávný e-mail nebo heslo."
+    },
+    "dash": {
+      "yourRaces": "Vaše závody",
+      "vyvoj": "Vývoj časů",
+      "obsah": "Obsah webu",
+      "logout": "Odhlásit",
+      "newEvent": "+ Nová akce",
+      "emptyTitle": "Zatím žádné akce",
+      "emptyDesc": "Založte svůj první závod a začněte přijímat přihlášky.",
+      "emptyCta": "Založit první akci",
+      "done": "Dokončeno",
+      "ready": "Připraveno",
+      "entries": "Přihlášky",
+      "publicPage": "veřejná stránka ↗"
+    }
+  },
   "results": {
     "poweredResults": "Časomír · výsledky online",
     "raceTime": "Čas závodu",

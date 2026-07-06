@@ -3,6 +3,47 @@
     "poweredResults": "Časomír · results online",
     "close": "Close"
   },
+  "admin": {
+    "eventEyebrow": "Event",
+    "organizer": "Organizer",
+    "administration": "Administration",
+    "nav": {
+      "detail": "Event detail",
+      "kategorie": "Categories",
+      "zavodnici": "Athletes",
+      "prihlasky": "Registrations",
+      "mereni": "Timing",
+      "brany": "Timing points",
+      "opravy": "Corrections",
+      "konflikty": "Conflicts",
+      "listiny": "Sheets",
+      "moderator": "Announcer",
+      "publikovat": "Publishing",
+      "nastaveni": "Settings"
+    },
+    "login": {
+      "eyebrow": "Race administration",
+      "title": "Organizer sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "error": "Wrong email or password."
+    },
+    "dash": {
+      "yourRaces": "Your races",
+      "vyvoj": "Time trends",
+      "obsah": "Website content",
+      "logout": "Sign out",
+      "newEvent": "+ New event",
+      "emptyTitle": "No events yet",
+      "emptyDesc": "Create your first race and start collecting registrations.",
+      "emptyCta": "Create first event",
+      "done": "Finished",
+      "ready": "Ready",
+      "entries": "Registrations",
+      "publicPage": "public page ↗"
+    }
+  },
   "results": {
     "poweredResults": "Časomír · results online",
     "raceTime": "Race time",

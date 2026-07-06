@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { Calendar } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { signOut } from "@/auth/nextauth";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { db } from "@/db/client";
 import { BtnLink, Card, EmptyState, Pill, PoweredBy } from "./_components/ui";
+import { LangToggle } from "@/components/lang-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function AdminPage() {
   await vyzadujPrihlaseni();
+  const t = await getTranslations("admin");
   const akce = await db.query.akce.findMany({
     orderBy: (a, { desc }) => [desc(a.datum)],
   });
@@ -24,9 +27,11 @@ export default async function AdminPage() {
       <div className="cal-dots border-b border-ink-200 bg-[rgba(248,250,249,.92)]">
         <div className="mx-auto flex max-w-3xl flex-wrap items-end justify-between gap-4 p-6">
           <div className="min-w-0">
-            <div className="cal-eyebrow mb-1 text-teal-600">Administrace</div>
+            <div className="cal-eyebrow mb-1 text-teal-600">
+              {t("administration")}
+            </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-ink-900">
-              Vaše závody
+              {t("dash.yourRaces")}
             </h1>
           </div>
           <div className="flex flex-none items-center gap-4">
@@ -34,13 +39,13 @@ export default async function AdminPage() {
               href="/admin/vyvoj"
               className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
             >
-              Vývoj časů
+              {t("dash.vyvoj")}
             </Link>
             <Link
               href="/admin/obsah"
               className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
             >
-              Obsah webu
+              {t("dash.obsah")}
             </Link>
             <form
               action={async () => {
@@ -49,10 +54,11 @@ export default async function AdminPage() {
               }}
             >
               <button className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800">
-                Odhlásit
+                {t("dash.logout")}
               </button>
             </form>
-            <BtnLink href="/admin/akce/nova">+ Nová akce</BtnLink>
+            <LangToggle />
+            <BtnLink href="/admin/akce/nova">{t("dash.newEvent")}</BtnLink>
           </div>
         </div>
       </div>
@@ -61,10 +67,10 @@ export default async function AdminPage() {
         {akce.length === 0 ? (
           <EmptyState
             icon={<Calendar size={28} strokeWidth={1.75} />}
-            title="Zatím žádné akce"
-            desc="Založte svůj první závod a začněte přijímat přihlášky."
+            title={t("dash.emptyTitle")}
+            desc={t("dash.emptyDesc")}
             actions={
-              <BtnLink href="/admin/akce/nova">Založit první akci</BtnLink>
+              <BtnLink href="/admin/akce/nova">{t("dash.emptyCta")}</BtnLink>
             }
           />
         ) : (
@@ -73,13 +79,13 @@ export default async function AdminPage() {
               const start = a.casStartu ? new Date(a.casStartu) : null;
               const stav =
                 start && start.getTime() < nowMs ? (
-                  <Pill ton="ink">Dokončeno</Pill>
+                  <Pill ton="ink">{t("dash.done")}</Pill>
                 ) : start ? (
                   <Pill ton="teal" dot>
-                    Připraveno
+                    {t("dash.ready")}
                   </Pill>
                 ) : (
-                  <Pill ton="info">Přihlášky</Pill>
+                  <Pill ton="info">{t("dash.entries")}</Pill>
                 );
               return (
                 <div
@@ -105,7 +111,7 @@ export default async function AdminPage() {
                     className="flex-none text-[13px] font-medium text-teal-600 hover:text-teal-700"
                     target="_blank"
                   >
-                    veřejná stránka ↗
+                    {t("dash.publicPage")}
                   </Link>
                 </div>
               );
