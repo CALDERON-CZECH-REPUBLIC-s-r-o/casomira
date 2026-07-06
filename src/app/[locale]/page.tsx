@@ -10,9 +10,14 @@ export const dynamic = "force-dynamic";
  * Texty jsou editovatelné z administrace (/admin/obsah); seznam „živých závodů"
  * se plní z reálných akcí v DB.
  */
-export default async function HomePage() {
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const [obsah, akce] = await Promise.all([
-    nactiLandingObsah(),
+    nactiLandingObsah(locale),
     db.query.akce.findMany({
       where: (a, { eq }) => eq(a.verejna, true),
       orderBy: (a, { desc }) => [desc(a.datum)],

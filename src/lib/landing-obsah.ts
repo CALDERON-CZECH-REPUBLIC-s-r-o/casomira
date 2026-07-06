@@ -239,6 +239,182 @@ export const VYCHOZI_OBSAH: LandingObsah = {
   },
 };
 
+/** Výchozí anglické texty landing (ceny zůstávají v Kč). */
+export const VYCHOZI_OBSAH_EN: LandingObsah = {
+  kontaktEmail: "info@casomir.cz",
+  nav: {
+    funkce: "Features",
+    jak: "How it works",
+    cenik: "Pricing",
+    divaci: "For spectators",
+    prihlasit: "Sign in",
+    cta: "Create a race for free",
+  },
+  hero: {
+    eyebrow: "Running race timing",
+    h1a: "Time your race.",
+    h1b: "All you need is a laptop.",
+    sub: "Upload entries from Excel, clock the finish with a single tap and spectators watch the standings live on their phones. No expensive hardware — and it works without signal.",
+    ctaPrimary: "Create a race for free",
+    ctaSecondary: "Live results demo",
+    note: "Runs in the browser, no install. Free for races up to 200 starters.",
+    mockEyebrow: "Finish-line screen",
+    mockTitul: "Spring Run Lipová · 1.5 km",
+    mockPaticka: "6/10 finished · tap a bib — the time is saved",
+  },
+  dukazy: [
+    { cislo: "0", popis: "lost passings — the timestamp is stored on the device and is immutable" },
+    { cislo: "20 s", popis: "from finish to public results — publishing runs automatically" },
+    { cislo: "3 min", popis: "from an Excel of entries to a start list with bibs and categories" },
+  ],
+  funkce: {
+    eyebrow: "Features",
+    h2: "Everything a race needs. Nothing more.",
+    karty: [
+      {
+        titul: "Timing with a single tap",
+        popis: "A bib number pad or a big button for the referee. The timestamp is immutable — edits change only the assignment, never the time.",
+      },
+      {
+        titul: "Import from Excel",
+        popis: "Upload entries just as they arrived. We map the columns, assign bibs in bulk and derive categories from the birth year.",
+      },
+      {
+        titul: "Works offline",
+        popis: "On a field with no signal, timing keeps going. Passings queue on the device and send themselves once you're back online.",
+      },
+      {
+        titul: "Sheets in one click",
+        popis: "Start list, results by category and an awards sheet — A4 for print or PDF and XLSX to download.",
+      },
+    ],
+  },
+  jak: {
+    eyebrow: "How it works",
+    h2: "Three steps to results",
+    kroky: [
+      {
+        cislo: "01",
+        titul: "Upload entries",
+        popis: "An Excel with surnames and birth years is enough. We assign bibs and derive categories.",
+      },
+      {
+        cislo: "02",
+        titul: "Clock the finish by tapping",
+        popis: "A number pad or a big button. Every tap = an immutable timestamp. Even offline.",
+      },
+      {
+        cislo: "03",
+        titul: "Share the results",
+        popis: "A link or QR — spectators follow the standings live. Print the sheets on A4.",
+      },
+    ],
+  },
+  divaci: {
+    eyebrow: "For spectators",
+    h2: "Family at the course sees more than the finish camera",
+    popis: "Live standings, categories and split times — on the phone, no login. A big screen with a QR code runs in the finish area.",
+    urlPill: "casomir.cz/jarni-beh-lipova-2026",
+  },
+  cenik: {
+    eyebrow: "Pricing",
+    h2: "Pay only as your race grows",
+    uvod: "Every tier has full timing and live results. No features behind a paywall for small races.",
+    tarify: [
+      {
+        nazev: "Free",
+        cena: "0 Kč",
+        obdobi: "/ race",
+        popis: "For local runs and school races.",
+        badge: "",
+        polozky: [
+          "up to 200 starters",
+          "timing, Excel import, corrections",
+          "live public results",
+          "PDF / XLSX sheets",
+        ],
+        cta: "Create a race",
+      },
+      {
+        nazev: "Race",
+        cena: "1 990 Kč",
+        obdobi: "/ race",
+        popis: "For big races with split times.",
+        badge: "Most popular",
+        polozky: [
+          "up to 1 000 starters",
+          "split gates and intermediate times",
+          "big screen + announcer view",
+          "race-day support",
+        ],
+        cta: "Choose Race",
+      },
+      {
+        nazev: "Season",
+        cena: "9 900 Kč",
+        obdobi: "/ year",
+        popis: "For organizers of several events.",
+        badge: "",
+        polozky: [
+          "unlimited races and devices",
+          "your logo on public pages",
+          "cross-season statistics",
+          "priority support",
+        ],
+        cta: "Arrange a season",
+      },
+    ],
+    poznamka: "Prices exclude VAT. Non-profit and school races over 200 starters — write to us, we'll work it out.",
+  },
+  faq: {
+    eyebrow: "FAQ",
+    h2: "What organizers ask",
+    popis: "Didn't find an answer? Write to us — we reply by the next day.",
+    cta: "Ask a question",
+    polozky: [
+      {
+        otazka: "What do I need to time a race?",
+        odpoved: "A laptop or tablet with a browser. No chips, gates or installs — the time is stamped by the referee's tap at the finish. For bigger races you can add split gates from more devices.",
+      },
+      {
+        otazka: "What if the internet drops at the finish?",
+        odpoved: "Nothing happens. Timing keeps running offline, passings are stored on the device and send themselves once the connection is back. No data loss — the timestamp is immutable.",
+      },
+      {
+        otazka: "How do I get entries into the system?",
+        odpoved: "Upload the Excel just as it arrived. Map the columns in two steps, we assign bib numbers in bulk and categories are derived from the birth year.",
+      },
+      {
+        otazka: "How much does it cost?",
+        odpoved: "Up to 200 starters free, with no feature limits. Over 200 starters we'll arrange it individually — write to us.",
+      },
+      {
+        otazka: "Do spectators see results right away?",
+        odpoved: "Yes. Standings are published automatically every 20 seconds to the public race page — just share the link or QR code. No login.",
+      },
+      {
+        otazka: "Can I fix results?",
+        odpoved: "Yes, anytime. A bib change, DNF or deleting a passing is saved to history — the original timestamp stays, only the assignment changes.",
+      },
+    ],
+  },
+  ctaFinal: {
+    h2: "Time your next race with Časomír",
+    popis: "Setting up takes a minute. Free up to 200 starters.",
+    cta: "Create a race for free",
+  },
+  paticka: {
+    dokumentace: "Documentation",
+    kontakt: "Contact",
+    podminky: "Terms",
+  },
+};
+
+/** Výchozí obsah pro daný jazyk. */
+export function vychoziObsah(locale: string): LandingObsah {
+  return locale === "en" ? VYCHOZI_OBSAH_EN : VYCHOZI_OBSAH;
+}
+
 /* ---------- Zod validace (ukládání z administrace) ---------- */
 
 const dukazSchema = z.object({ cislo: z.string(), popis: z.string() });
@@ -354,7 +530,7 @@ function sluc<T>(zaklad: T, prepis: unknown): T {
   return prepis as T;
 }
 
-/** Sloučí uložený (částečný) obsah přes výchozí → kompletní `LandingObsah`. */
-export function slouciObsah(ulozeny: unknown): LandingObsah {
-  return sluc(VYCHOZI_OBSAH, ulozeny);
+/** Sloučí uložený (částečný) obsah přes výchozí (dle jazyka) → kompletní `LandingObsah`. */
+export function slouciObsah(ulozeny: unknown, locale = "cs"): LandingObsah {
+  return sluc(vychoziObsah(locale), ulozeny);
 }

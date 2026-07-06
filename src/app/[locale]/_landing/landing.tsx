@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import { Link } from "@/i18n/navigation";
+import { LangToggle } from "@/components/lang-toggle";
 import {
   Timer,
   Upload,
@@ -141,18 +142,22 @@ export function Landing({
             >
               {obsah.nav.prihlasit}
             </Link>
+            <LangToggle />
             <Cta href="/prihlaseni" glow={false}>
               {obsah.nav.cta}
             </Cta>
           </nav>
-          <button
-            type="button"
-            aria-label="Menu"
-            onClick={() => setMenuOtevrene((v) => !v)}
-            className="cal-press flex h-9 w-9 items-center justify-center rounded-[10px] border border-ink-200 text-ink-700 md:hidden"
-          >
-            {menuOtevrene ? <X size={18} /> : <Menu size={18} />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <LangToggle />
+            <button
+              type="button"
+              aria-label="Menu"
+              onClick={() => setMenuOtevrene((v) => !v)}
+              className="cal-press flex h-9 w-9 items-center justify-center rounded-[10px] border border-ink-200 text-ink-700"
+            >
+              {menuOtevrene ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
         </div>
         {menuOtevrene && (
           <div className="border-t border-ink-200 bg-white px-5 py-4 md:hidden">

@@ -70,7 +70,13 @@ function Sekce({ titul, children }: { titul: string; children: ReactNode }) {
 
 /* ---------- Formulář ---------- */
 
-export function ObsahForm({ vychozi }: { vychozi: LandingObsah }) {
+export function ObsahForm({
+  vychozi,
+  locale,
+}: {
+  vychozi: LandingObsah;
+  locale: string;
+}) {
   const [o, setO] = useState<LandingObsah>(vychozi);
   const [ulozeno, setUlozeno] = useState(false);
   const [chyba, setChyba] = useState<string | null>(null);
@@ -90,7 +96,7 @@ export function ObsahForm({ vychozi }: { vychozi: LandingObsah }) {
     setChyba(null);
     startTransition(async () => {
       try {
-        await ulozitLandingObsah(o);
+        await ulozitLandingObsah(locale, o);
         setUlozeno(true);
       } catch {
         setChyba("Uložení se nezdařilo. Zkuste to znovu.");

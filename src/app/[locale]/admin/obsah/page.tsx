@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { nactiLandingObsah } from "@/server/obsah";
 import { BackLink } from "../_components/ui";
@@ -6,12 +7,23 @@ import { ObsahForm } from "./obsah-form";
 export const dynamic = "force-dynamic";
 
 /**
- * Editace textů veřejné landing page (`/`). Formulář drží celý obsahový model;
- * po uložení se JSON zapíše do `web_obsah` a landing se revaliduje.
+ * Editace textů veřejné landing page (`/`) per jazyk (cs/en). Jazyk se volí přes
+ * `?jazyk=`; formulář drží celý obsahový model a ukládá do `web_obsah`.
  */
-export default async function ObsahPage() {
+export default async function ObsahPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ jazyk?: string }>;
+}) {
   await vyzadujPrihlaseni();
-  const obsah = await nactiLandingObsah();
+  const { jazyk } = await searchParams;
+  const locale = jazyk === "en" ? "en" : "cs";
+  const obsah = await nactiLandingObsah(locale);
+
+  const tabCls = (aktivni: boolean) =>
+    `rounded-full px-3 py-1 font-technical text-[11px] font-semibold uppercase tracking-[.08em] transition-colors ${
+      aktivni ? "bg-teal-500 text-white" : "bg-ink-100 text-ink-500 hover:text-ink-900"
+    }`;
 
   return (
     <main className="min-h-screen bg-ink-50">
@@ -28,11 +40,19 @@ export default async function ObsahPage() {
             Upravte texty marketingové landing page. Struktura, ikony a barvy
             zůstávají dle designu — měníte jen znění.
           </p>
+          <div className="mt-4 inline-flex gap-1 rounded-full bg-white p-1 shadow-[var(--shadow-xs)]">
+            <Link href="/admin/obsah" className={tabCls(locale === "cs")}>
+              Čeština
+            </Link>
+            <Link href="/admin/obsah?jazyk=en" className={tabCls(locale === "en")}>
+              English
+            </Link>
+          </div>
         </div>
       </div>
 
       <section className="mx-auto max-w-3xl px-6 py-6">
-        <ObsahForm vychozi={obsah} />
+        <ObsahForm key={locale} vychozi={obsah} locale={locale} />
       </section>
     </main>
   );
