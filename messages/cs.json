@@ -1,1 +1,67 @@
-{}
+{
+  "common": {
+    "poweredResults": "Časomír · výsledky online",
+    "close": "Zavřít"
+  },
+  "results": {
+    "poweredResults": "Časomír · výsledky online",
+    "tabResults": "Výsledky",
+    "tabStartlist": "Startovní listina",
+    "scopeByCategory": "po kategoriích",
+    "scopeOverall": "celkově",
+    "live": "Živě",
+    "offline": "offline",
+    "beforeStart": "před startem",
+    "updated": "aktualizováno {cas}",
+    "noResults": "Zatím žádné výsledky.",
+    "noStarters": "Žádní přihlášení.",
+    "raceNotStarted": "Závod ještě nezačal",
+    "resultsWhenTiming": "Výsledky se zobrazí, jakmile bude spuštěno měření.",
+    "showStartlist": "Zobrazit startovní listinu",
+    "onCourse": "na trati",
+    "overall": "Celkově",
+    "classifiedShort": "{n} klas.",
+    "dnfShort": "{n} DNF",
+    "colPos": "Poř.",
+    "colBib": "Číslo",
+    "colName": "Jméno",
+    "colYear": "Ročník",
+    "colClub": "Oddíl",
+    "colTime": "Čas",
+    "colGap": "Ztráta",
+    "yearAbbrev": "roč."
+  },
+  "athlete": {
+    "inCategory": "V kategorii",
+    "overall": "Celkově",
+    "gap": "Ztráta",
+    "clubCity": "Oddíl / Město",
+    "share": "Sdílet",
+    "ofN": "{poradi}. z {celkem}"
+  },
+  "prihlaska": {
+    "signUp": "Přihlásit se na závod",
+    "title": "Přihláška na závod",
+    "fillIn": "Vyplňte své údaje",
+    "fee": "Startovné {castka} Kč",
+    "firstName": "Jméno",
+    "lastName": "Příjmení",
+    "year": "Rok narození",
+    "clubTown": "Oddíl / město",
+    "phone": "Telefon",
+    "email": "E-mail",
+    "submit": "Odeslat přihlášku",
+    "submitting": "Odesílám…",
+    "privacy": "Kontaktní údaje slouží jen pořadateli akce.",
+    "thanksTitle": "Přihláška odeslána",
+    "thanksSub": "Děkujeme, jste přihlášeni!",
+    "payPrompt": "Zaplaťte prosím startovné naskenováním QR platby ve své bance.",
+    "amount": "Startovné",
+    "vs": "Variabilní symbol",
+    "account": "Účet",
+    "contactOrganizer": "Údaje k platbě startovného vám sdělí pořadatel.",
+    "seeYou": "Uvidíme se na startu.",
+    "genericError": "Zkontrolujte údaje.",
+    "close": "Zavřít"
+  }
+}

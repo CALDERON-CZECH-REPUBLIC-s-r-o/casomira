@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { cistyCas, ztrata, casDneKratky } from "@/lib/cas";
 import { Btn, Card, MedalCircle, Pill, PoweredBy } from "@/app/[locale]/admin/_components/ui";
 import { Dialog, SegmentedToggle } from "@/app/[locale]/admin/_components/ui-client";
+import { LangToggle } from "@/components/lang-toggle";
 import { prihlasitSeNaAkci, type PrihlaskaState } from "@/server/prihlasky";
 import type {
   VerejnaData,
@@ -18,9 +20,9 @@ const STAV_LABEL: Record<string, string> = {
   DSQ: "DSQ",
 };
 
-function casBunka(r: VerejnyRadek, bezi: boolean): string {
+function casBunka(r: VerejnyRadek, bezi: boolean, onCourse: string): string {
   if (r.stav === "klasifikovan" && r.casMs !== null) return cistyCas(r.casMs);
-  if (r.stav === "bez_casu") return bezi ? "na trati" : "—";
+  if (r.stav === "bez_casu") return bezi ? onCourse : "—";
   return STAV_LABEL[r.stav] ?? "—";
 }
 
@@ -39,6 +41,8 @@ export function VerejnaAkce({
   const [zive, setZive] = useState(true);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [prihlaskaOpen, setPrihlaskaOpen] = useState(false);
+  const t = useTranslations("results");
+  const tp = useTranslations("prihlaska");
 
   // Polling à 5 s, jen když je akce „živá" (běží měření).
   useEffect(() => {
@@ -82,11 +86,14 @@ export function VerejnaAkce({
               {a.misto ? ` · ${a.misto}` : ""}
             </p>
           </div>
-          <ZiveChip bezi={a.bezi} zive={zive} />
+          <div className="flex flex-none items-center gap-2">
+            <LangToggle variant="dark" />
+            <ZiveChip bezi={a.bezi} zive={zive} />
+          </div>
         </div>
         {a.bezi && (
           <p className="mt-3 font-technical text-[11px] text-ink-400">
-            aktualizováno {casDneKratky(a.aktualizovano)}
+            {t("updated", { cas: casDneKratky(a.aktualizovano) })}
           </p>
         )}
         {a.registraceOtevrena && (
@@ -94,7 +101,7 @@ export function VerejnaAkce({
             onClick={() => setPrihlaskaOpen(true)}
             className="mt-4 w-full sm:w-auto"
           >
-            Přihlásit se na závod
+            {tp("signUp")}
             {a.startovne ? ` · ${a.startovne} Kč` : ""}
           </Btn>
         )}
@@ -107,16 +114,16 @@ export function VerejnaAkce({
           defaultValue={tab}
           onChange={(v) => setTab(v as typeof tab)}
           options={[
-            { value: "vysledky", label: "Výsledky" },
-            { value: "startovka", label: "Startovní listina" },
+            { value: "vysledky", label: t("tabResults") },
+            { value: "startovka", label: t("tabStartlist") },
           ]}
         />
         <SegmentedToggle
           defaultValue={rozsah}
           onChange={(v) => setRozsah(v as typeof rozsah)}
           options={[
-            { value: "kategorie", label: "po kategoriích" },
-            { value: "celkova", label: "celkově" },
+            { value: "kategorie", label: t("scopeByCategory") },
+            { value: "celkova", label: t("scopeOverall") },
           ]}
         />
       </div>
@@ -136,7 +143,7 @@ export function VerejnaAkce({
               onDetail={setDetail}
             />
           ) : data.vysledky.kategorie.length === 0 ? (
-            <Prazdno text="Zatím žádné výsledky." />
+            <Prazdno text={t("noResults")} />
           ) : (
             data.vysledky.kategorie.map((sk) => (
               <VysledkySkupina
@@ -150,7 +157,7 @@ export function VerejnaAkce({
         ) : rozsah === "celkova" ? (
           <StartTabulka zavodnici={data.startovni.celkova} sKategorii />
         ) : data.startovni.kategorie.length === 0 ? (
-          <Prazdno text="Žádní přihlášení." />
+          <Prazdno text={t("noStarters")} />
         ) : (
           data.startovni.kategorie.map((k) => (
             <section key={k.kod ?? k.nazev} className="mb-6">
@@ -162,7 +169,7 @@ export function VerejnaAkce({
       </div>
 
       <footer className="mt-10 flex flex-col items-center gap-1.5 text-center font-technical text-[11px] text-ink-400">
-        <span>Časomíra · výsledky online</span>
+        <span>{t("poweredResults")}</span>
         <PoweredBy />
       </footer>
 
@@ -196,6 +203,7 @@ function PrihlaskaDialog({
   startovne: number | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("prihlaska");
   const [state, formAction, pending] = useActionState<PrihlaskaState, FormData>(
     prihlasitSeNaAkci.bind(null, slug),
     { stav: "idle" },
@@ -206,53 +214,49 @@ function PrihlaskaDialog({
       {state.stav === "ok" ? (
         <div className="text-center">
           <div className="cal-dots-dark -mx-5 -mt-4 rounded-t-[22px] bg-ink-950 px-6 py-6 text-white">
-            <div className="cal-eyebrow text-teal-300">Přihláška odeslána</div>
+            <div className="cal-eyebrow text-teal-300">{t("thanksTitle")}</div>
             <div className="mt-1 font-display text-xl font-bold">
-              Děkujeme, jste přihlášeni!
+              {t("thanksSub")}
             </div>
           </div>
 
           {state.qrDataUri ? (
             <div className="mt-5">
-              <p className="text-sm text-ink-600">
-                Zaplaťte prosím startovné naskenováním QR platby ve své bance.
-              </p>
+              <p className="text-sm text-ink-600">{t("payPrompt")}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={state.qrDataUri}
-                alt="QR platba za startovné"
+                alt="QR"
                 className="mx-auto mt-4 h-48 w-48"
               />
               <div className="mx-auto mt-4 max-w-xs divide-y divide-ink-150 text-left">
                 {state.castka != null && (
-                  <RadekDetailu label="Startovné" hodnota={`${state.castka} Kč`} />
+                  <RadekDetailu label={t("amount")} hodnota={`${state.castka} Kč`} />
                 )}
-                <RadekDetailu label="Variabilní symbol" hodnota={state.vs} />
-                {state.ucet && <RadekDetailu label="Účet" hodnota={state.ucet} />}
+                <RadekDetailu label={t("vs")} hodnota={state.vs} />
+                {state.ucet && <RadekDetailu label={t("account")} hodnota={state.ucet} />}
               </div>
             </div>
           ) : (
             <p className="mt-5 text-sm text-ink-600">
-              {startovne
-                ? "Údaje k platbě startovného vám sdělí pořadatel."
-                : "Uvidíme se na startu."}
+              {startovne ? t("contactOrganizer") : t("seeYou")}
             </p>
           )}
 
           <Btn variant="ghost" className="mt-6 w-full" onClick={onClose}>
-            Zavřít
+            {t("close")}
           </Btn>
         </div>
       ) : (
         <form action={formAction}>
           <div className="cal-dots-dark -mx-5 -mt-4 rounded-t-[22px] bg-ink-950 px-6 py-6 text-center text-white">
-            <div className="cal-eyebrow text-teal-300">Přihláška na závod</div>
+            <div className="cal-eyebrow text-teal-300">{t("title")}</div>
             <div className="mt-1 font-display text-xl font-bold">
-              Vyplňte své údaje
+              {t("fillIn")}
             </div>
             {startovne ? (
               <div className="mt-2 font-technical text-[12px] text-ink-300">
-                Startovné {startovne} Kč
+                {t("fee", { castka: startovne })}
               </div>
             ) : null}
           </div>
@@ -270,11 +274,11 @@ function PrihlaskaDialog({
           <div className="mt-5 flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="cal-label">
-                Jméno
+                {t("firstName")}
                 <input name="jmeno" autoComplete="given-name" className="cal-input" />
               </label>
               <label className="cal-label">
-                Příjmení *
+                {t("lastName")} *
                 <input
                   name="prijmeni"
                   required
@@ -285,7 +289,7 @@ function PrihlaskaDialog({
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="cal-label">
-                Rok narození
+                {t("year")}
                 <input
                   type="number"
                   name="rokNarozeni"
@@ -295,13 +299,13 @@ function PrihlaskaDialog({
                 />
               </label>
               <label className="cal-label">
-                Oddíl / město
+                {t("clubTown")}
                 <input name="oddil" className="cal-input" />
               </label>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="cal-label">
-                Telefon
+                {t("phone")}
                 <input
                   type="tel"
                   name="telefon"
@@ -310,7 +314,7 @@ function PrihlaskaDialog({
                 />
               </label>
               <label className="cal-label">
-                E-mail
+                {t("email")}
                 <input
                   type="email"
                   name="email"
@@ -327,10 +331,10 @@ function PrihlaskaDialog({
             )}
 
             <Btn type="submit" disabled={pending} className="mt-1 w-full">
-              {pending ? "Odesílám…" : "Odeslat přihlášku"}
+              {pending ? t("submitting") : t("submit")}
             </Btn>
             <p className="text-center text-[11px] text-ink-400">
-              Kontaktní údaje slouží jen pořadateli akce.
+              {t("privacy")}
             </p>
           </div>
         </form>
@@ -342,24 +346,25 @@ function PrihlaskaDialog({
 /* ---------- Živá plaketa ---------- */
 
 function ZiveChip({ bezi, zive }: { bezi: boolean; zive: boolean }) {
+  const t = useTranslations("results");
   if (!bezi) {
     return (
       <span className="flex-none rounded-full bg-white/10 px-2.5 py-1 font-technical text-[10.5px] font-medium uppercase tracking-[.06em] text-ink-300">
-        před startem
+        {t("beforeStart")}
       </span>
     );
   }
   if (!zive) {
     return (
       <span className="flex-none rounded-full bg-warning-bg px-2.5 py-1 font-technical text-[10.5px] font-medium uppercase tracking-[.06em] text-warning">
-        offline
+        {t("offline")}
       </span>
     );
   }
   return (
     <span className="flex-none inline-flex items-center gap-1.5 rounded-full bg-teal-500/15 px-2.5 py-1 font-technical text-[10.5px] font-medium uppercase tracking-[.06em] text-teal-300">
       <span className="cal-livedot h-1.5 w-1.5 rounded-full bg-teal-400" />
-      Živě
+      {t("live")}
     </span>
   );
 }
@@ -373,17 +378,18 @@ function PredStartem({
   datumText: string;
   onStartovka: () => void;
 }) {
+  const t = useTranslations("results");
   return (
     <Card className="cal-dots flex flex-col items-center px-6 py-14 text-center">
       <h2 className="font-display text-xl font-bold text-ink-900">
-        Závod ještě nezačal
+        {t("raceNotStarted")}
       </h2>
       <p className="mt-2 font-technical text-[13px] text-ink-500">{datumText}</p>
       <p className="mt-1 max-w-sm text-sm text-ink-500">
-        Výsledky se zobrazí, jakmile bude spuštěno měření.
+        {t("resultsWhenTiming")}
       </p>
       <Btn className="mt-6" onClick={onStartovka}>
-        Zobrazit startovní listinu
+        {t("showStartlist")}
       </Btn>
     </Card>
   );
@@ -428,10 +434,11 @@ function VysledkySkupina({
   celkova?: boolean;
   onDetail: (d: Detail) => void;
 }) {
+  const t = useTranslations("results");
   if (skupina.radky.length === 0) return null;
   const souhrn =
-    `${skupina.klasifikovano} klas.` +
-    (skupina.dnf ? ` · ${skupina.dnf} DNF` : "");
+    t("classifiedShort", { n: skupina.klasifikovano }) +
+    (skupina.dnf ? ` · ${t("dnfShort", { n: skupina.dnf })}` : "");
   return (
     <section className="mb-6">
       {!celkova && (
@@ -443,13 +450,13 @@ function VysledkySkupina({
       )}
       {/* Hlavička tabulky — jen desktop; zrcadlí šířky sloupců řádku */}
       <div className="hidden items-center gap-4 border-b border-ink-150 pb-1.5 font-technical text-[11px] uppercase tracking-[.06em] text-ink-400 lg:flex">
-        <span className="w-[34px] flex-none text-center">Poř.</span>
-        <span className="w-[56px] flex-none">Číslo</span>
-        <span className="min-w-0 flex-[2]">Jméno</span>
-        <span className="w-[64px] flex-none">Ročník</span>
-        <span className="min-w-0 flex-1">Oddíl</span>
-        <span className="w-[84px] flex-none text-right">Čas</span>
-        <span className="w-[90px] flex-none text-right">Ztráta</span>
+        <span className="w-[34px] flex-none text-center">{t("colPos")}</span>
+        <span className="w-[56px] flex-none">{t("colBib")}</span>
+        <span className="min-w-0 flex-[2]">{t("colName")}</span>
+        <span className="w-[64px] flex-none">{t("colYear")}</span>
+        <span className="min-w-0 flex-1">{t("colClub")}</span>
+        <span className="w-[84px] flex-none text-right">{t("colTime")}</span>
+        <span className="w-[90px] flex-none text-right">{t("colGap")}</span>
       </div>
       <div className="divide-y divide-ink-150">
         {skupina.radky.map((r) => (
@@ -474,6 +481,7 @@ function VysledekRadek({
   bezi: boolean;
   onClick: () => void;
 }) {
+  const t = useTranslations("results");
   const nedobehl = r.stav !== "klasifikovan";
   const jeMedaile = r.stav === "klasifikovan" && !!r.poradi && r.poradi <= 3;
   return (
@@ -519,7 +527,7 @@ function VysledekRadek({
         <span
           className={`block font-technical font-semibold tabular-nums ${nedobehl ? "text-ink-400" : "text-ink-900"}`}
         >
-          {casBunka(r, bezi)}
+          {casBunka(r, bezi, t("onCourse"))}
         </span>
         {/* ztráta pod časem jen na mobilu; na desktopu je vlastní sloupec */}
         {r.stav === "klasifikovan" && (
@@ -549,6 +557,8 @@ function DetailDialog({
   bezi: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("results");
+  const ta = useTranslations("athlete");
   const r = detail?.radek;
   const skupina = detail?.skupina;
   const celkovePoradi =
@@ -570,38 +580,38 @@ function DetailDialog({
               {r.prijmeni} {r.jmeno}
             </div>
             <div className="mt-3 font-technical text-4xl font-bold tabular-nums">
-              {casBunka(r, bezi)}
+              {casBunka(r, bezi, t("onCourse"))}
             </div>
           </div>
 
           {/* Světlé tělo — umístění + detaily */}
           <div className="mt-5 divide-y divide-ink-150">
             <RadekDetailu
-              label="V kategorii"
+              label={ta("inCategory")}
               hodnota={
                 r.stav === "klasifikovan" && r.poradi
-                  ? `${r.poradi}. z ${skupina.klasifikovano}`
+                  ? ta("ofN", { poradi: r.poradi, celkem: skupina.klasifikovano })
                   : STAV_LABEL[r.stav] ?? "—"
               }
             />
             <RadekDetailu
-              label="Celkově"
+              label={ta("overall")}
               hodnota={
                 celkovePoradi
-                  ? `${celkovePoradi}. z ${celkova.klasifikovano}`
+                  ? ta("ofN", { poradi: celkovePoradi, celkem: celkova.klasifikovano })
                   : "—"
               }
             />
             <RadekDetailu
-              label="Ztráta"
+              label={ta("gap")}
               hodnota={r.stav === "klasifikovan" ? ztrata(r.ztrataMs) : "—"}
             />
-            <RadekDetailu label="Oddíl / Město" hodnota={r.oddil || "—"} />
+            <RadekDetailu label={ta("clubCity")} hodnota={r.oddil || "—"} />
           </div>
 
           {url && (
             <div className="mt-5 rounded-[10px] bg-ink-50 px-3 py-2.5">
-              <div className="cal-eyebrow text-ink-400">Sdílet</div>
+              <div className="cal-eyebrow text-ink-400">{ta("share")}</div>
               <div className="mt-0.5 truncate font-technical text-[12px] text-ink-600">
                 {url}
               </div>
@@ -639,6 +649,7 @@ function StartTabulka({
   zavodnici: VerejnyStartRadek[];
   sKategorii?: boolean;
 }) {
+  const t = useTranslations("results");
   return (
     <div className="mb-4 divide-y divide-ink-150">
       {zavodnici.map((z) => (
@@ -652,7 +663,7 @@ function StartTabulka({
             </span>
             {/* dvouřádkový subtext jen na mobilu; na desktopu vlastní sloupce */}
             <span className="block truncate font-technical text-[11px] text-ink-400 lg:hidden">
-              {z.rocnik ? `roč. ${z.rocnik}` : ""}
+              {z.rocnik ? `${t("yearAbbrev")} ${z.rocnik}` : ""}
               {z.rocnik && z.oddil ? " · " : ""}
               {z.oddil || (z.rocnik ? "" : "—")}
             </span>

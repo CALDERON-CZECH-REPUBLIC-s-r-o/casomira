@@ -1,1 +1,67 @@
-{}
+{
+  "common": {
+    "poweredResults": "Časomír · results online",
+    "close": "Close"
+  },
+  "results": {
+    "poweredResults": "Časomír · results online",
+    "tabResults": "Results",
+    "tabStartlist": "Start list",
+    "scopeByCategory": "by category",
+    "scopeOverall": "overall",
+    "live": "Live",
+    "offline": "offline",
+    "beforeStart": "before start",
+    "updated": "updated {cas}",
+    "noResults": "No results yet.",
+    "noStarters": "No entries yet.",
+    "raceNotStarted": "The race hasn't started yet",
+    "resultsWhenTiming": "Results appear as soon as timing starts.",
+    "showStartlist": "Show start list",
+    "onCourse": "on course",
+    "overall": "Overall",
+    "classifiedShort": "{n} clf.",
+    "dnfShort": "{n} DNF",
+    "colPos": "Pos.",
+    "colBib": "Bib",
+    "colName": "Name",
+    "colYear": "Year",
+    "colClub": "Club",
+    "colTime": "Time",
+    "colGap": "Gap",
+    "yearAbbrev": "yr."
+  },
+  "athlete": {
+    "inCategory": "In category",
+    "overall": "Overall",
+    "gap": "Gap",
+    "clubCity": "Club / City",
+    "share": "Share",
+    "ofN": "{poradi} of {celkem}"
+  },
+  "prihlaska": {
+    "signUp": "Sign up for the race",
+    "title": "Race registration",
+    "fillIn": "Fill in your details",
+    "fee": "Entry fee {castka} CZK",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "year": "Year of birth",
+    "clubTown": "Club / town",
+    "phone": "Phone",
+    "email": "Email",
+    "submit": "Submit registration",
+    "submitting": "Submitting…",
+    "privacy": "Your contact details are used only by the race organizer.",
+    "thanksTitle": "Registration submitted",
+    "thanksSub": "Thank you, you're registered!",
+    "payPrompt": "Please pay the entry fee by scanning the QR payment in your banking app.",
+    "amount": "Entry fee",
+    "vs": "Reference (VS)",
+    "account": "Account",
+    "contactOrganizer": "The organizer will send you the payment details.",
+    "seeYou": "See you at the start.",
+    "genericError": "Please check your details.",
+    "close": "Close"
+  }
+}
