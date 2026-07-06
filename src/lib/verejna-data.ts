@@ -53,6 +53,7 @@ export interface VerejnaData {
     misto: string | null;
     slug: string;
     bezi: boolean; // start nastaven
+    casStartu: string | null; // ISO čas startu (pro běžící čas na tabuli)
     aktualizovano: string; // ISO
     registraceOtevrena: boolean; // veřejné přihlašování zapnuté
     startovne: number | null; // Kč (jen k zobrazení; QR skládá server akce)
@@ -138,6 +139,7 @@ export async function nactiVerejnaData(
       misto: data.akce.misto,
       slug: data.akce.slug,
       bezi: data.akce.casStartu !== null,
+      casStartu: data.akce.casStartu ? data.akce.casStartu.toISOString() : null,
       aktualizovano: new Date().toISOString(),
       registraceOtevrena: akce.registraceOtevrena,
       startovne: akce.startovne,

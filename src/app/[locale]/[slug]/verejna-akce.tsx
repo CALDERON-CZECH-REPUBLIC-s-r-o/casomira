@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { cistyCas, ztrata, casDneKratky } from "@/lib/cas";
-import { Btn, Card, MedalCircle, Pill, PoweredBy } from "@/app/[locale]/admin/_components/ui";
+import { cistyCas, ztrata, casDneKratky, uplynulyCas } from "@/lib/cas";
+import { Btn, Card, Pill, PoweredBy } from "@/app/[locale]/admin/_components/ui";
 import { Dialog, SegmentedToggle } from "@/app/[locale]/admin/_components/ui-client";
 import { LangToggle } from "@/components/lang-toggle";
 import { prihlasitSeNaAkci, type PrihlaskaState } from "@/server/prihlasky";
@@ -27,6 +27,34 @@ function casBunka(r: VerejnyRadek, bezi: boolean, onCourse: string): string {
 }
 
 type Detail = { radek: VerejnyRadek; skupina: VerejnaSkupina };
+type Tema = "dark" | "light";
+
+/** Běžící čas závodu (od startu), tiká po 100 ms. null před startem. */
+function useBezciCas(casStartuISO: string | null, bezi: boolean): string | null {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    if (!bezi || !casStartuISO) return;
+    const i = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(i);
+  }, [bezi, casStartuISO]);
+  if (!casStartuISO || now === null) return null;
+  return uplynulyCas(now - new Date(casStartuISO).getTime());
+}
+
+/** Perzistentní vzhled výsledků (tmavá tabule / světlý protokol). */
+function useTema(): [Tema, (t: Tema) => void] {
+  const [tema, setTema] = useState<Tema>("dark");
+  useEffect(() => {
+    const ul = localStorage.getItem("casomir-vysledky-tema");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (ul === "light" || ul === "dark") setTema(ul);
+  }, []);
+  const set = (t: Tema) => {
+    setTema(t);
+    localStorage.setItem("casomir-vysledky-tema", t);
+  };
+  return [tema, set];
+}
 
 export function VerejnaAkce({
   slug,
@@ -43,6 +71,8 @@ export function VerejnaAkce({
   const [prihlaskaOpen, setPrihlaskaOpen] = useState(false);
   const t = useTranslations("results");
   const tp = useTranslations("prihlaska");
+  const [tema, setTema] = useTema();
+  const clock = useBezciCas(data.akce.casStartu, data.akce.bezi);
 
   // Polling à 5 s, jen když je akce „živá" (běží měření).
   useEffect(() => {
@@ -71,64 +101,123 @@ export function VerejnaAkce({
   const a = data.akce;
   const d = new Date(a.datum + "T00:00:00");
   const datumText = `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
+  const dobehlo = data.vysledky.celkova.klasifikovano;
+  const naTrati = data.vysledky.celkova.radky.filter(
+    (r) => r.stav === "bez_casu",
+  ).length;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-6 lg:max-w-5xl">
-      {/* Hero hlavička akce */}
-      <header className="cal-dots-dark rounded-[16px] bg-ink-950 px-5 py-5 text-white">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-2xl font-bold leading-tight">
-              {a.nazev}
-            </h1>
-            <p className="mt-1 font-technical text-[12px] text-ink-300">
-              {datumText}
-              {a.misto ? ` · ${a.misto}` : ""}
-            </p>
+    <div
+      data-vysledky-tema={tema}
+      className="min-h-screen"
+      style={{ background: "var(--p-bg)", color: "var(--p-txt)" }}
+    >
+      <main className="mx-auto w-full max-w-2xl px-4 py-6 lg:max-w-5xl">
+        {/* ===== Hlavička — světelná tabule ===== */}
+        <header
+          className={tema === "dark" ? "cal-dots-dark rounded-[16px] px-5 py-5" : "rounded-[16px] px-5 py-5"}
+          style={{
+            background: tema === "dark" ? "#101317" : "var(--ink-50)",
+            border: `1px solid var(--p-line)`,
+          }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1
+                className="font-display text-2xl font-bold leading-tight"
+                style={{ color: "var(--p-txt)" }}
+              >
+                {a.nazev}
+              </h1>
+              <p
+                className="mt-1 font-technical text-[12px]"
+                style={{ color: "var(--p-mut)" }}
+              >
+                {datumText}
+                {a.misto ? ` · ${a.misto}` : ""}
+              </p>
+            </div>
+            <StavPill bezi={a.bezi} zive={zive} />
           </div>
-          <div className="flex flex-none items-center gap-2">
-            <LangToggle variant="dark" />
-            <ZiveChip bezi={a.bezi} zive={zive} />
+
+          {/* Dominantní běžící čas + metriky */}
+          {a.bezi && (
+            <div className="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3">
+              <div>
+                <div className="cal-eyebrow" style={{ color: "var(--p-mut)" }}>
+                  {t("raceTime")}
+                </div>
+                <div
+                  className="font-technical font-bold tabular-nums"
+                  style={{
+                    fontSize: 38,
+                    lineHeight: 1,
+                    color: "var(--p-clock)",
+                    textShadow: "var(--p-glow)",
+                  }}
+                >
+                  {clock ?? "0:00.0"}
+                </div>
+              </div>
+              <Metrika label={t("finished")} hodnota={dobehlo} />
+              <Metrika label={t("onCourseMetric")} hodnota={naTrati} />
+            </div>
+          )}
+
+          {a.registraceOtevrena && (
+            <Btn
+              onClick={() => setPrihlaskaOpen(true)}
+              className="mt-4 w-full sm:w-auto"
+            >
+              {tp("signUp")}
+              {a.startovne ? ` · ${a.startovne} Kč` : ""}
+            </Btn>
+          )}
+        </header>
+
+        {/* ===== Přepínače: obsah + rozsah + vzhled/jazyk ===== */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <SegmentedToggle
+            key={tab}
+            defaultValue={tab}
+            onChange={(v) => setTab(v as typeof tab)}
+            options={[
+              { value: "vysledky", label: t("tabResults") },
+              { value: "startovka", label: t("tabStartlist") },
+            ]}
+          />
+          <SegmentedToggle
+            defaultValue={rozsah}
+            onChange={(v) => setRozsah(v as typeof rozsah)}
+            options={[
+              { value: "kategorie", label: t("scopeByCategory") },
+              { value: "celkova", label: t("scopeOverall") },
+            ]}
+          />
+          <div className="ml-auto flex items-center gap-2">
+            <SegmentedToggle
+              key={tema}
+              defaultValue={tema}
+              onChange={(v) => setTema(v as Tema)}
+              options={[
+                { value: "dark", label: t("themeDark") },
+                { value: "light", label: t("themeLight") },
+              ]}
+            />
+            <LangToggle variant={tema === "dark" ? "dark" : "light"} />
           </div>
         </div>
+
         {a.bezi && (
-          <p className="mt-3 font-technical text-[11px] text-ink-400">
+          <p
+            className="mt-3 font-technical text-[11px]"
+            style={{ color: "var(--p-mut)" }}
+          >
             {t("updated", { cas: casDneKratky(a.aktualizovano) })}
           </p>
         )}
-        {a.registraceOtevrena && (
-          <Btn
-            onClick={() => setPrihlaskaOpen(true)}
-            className="mt-4 w-full sm:w-auto"
-          >
-            {tp("signUp")}
-            {a.startovne ? ` · ${a.startovne} Kč` : ""}
-          </Btn>
-        )}
-      </header>
 
-      {/* Přepínače */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <SegmentedToggle
-          key={tab}
-          defaultValue={tab}
-          onChange={(v) => setTab(v as typeof tab)}
-          options={[
-            { value: "vysledky", label: t("tabResults") },
-            { value: "startovka", label: t("tabStartlist") },
-          ]}
-        />
-        <SegmentedToggle
-          defaultValue={rozsah}
-          onChange={(v) => setRozsah(v as typeof rozsah)}
-          options={[
-            { value: "kategorie", label: t("scopeByCategory") },
-            { value: "celkova", label: t("scopeOverall") },
-          ]}
-        />
-      </div>
-
-      <div className="mt-5">
+        <div className="mt-5">
         {tab === "vysledky" ? (
           !a.bezi ? (
             <PredStartem
@@ -168,25 +257,29 @@ export function VerejnaAkce({
         )}
       </div>
 
-      <footer className="mt-10 flex flex-col items-center gap-1.5 text-center font-technical text-[11px] text-ink-400">
-        <span>{t("poweredResults")}</span>
-        <PoweredBy />
-      </footer>
+        <footer
+          className="mt-10 flex flex-col items-center gap-1.5 text-center font-technical text-[11px]"
+          style={{ color: "var(--p-mut)" }}
+        >
+          <span>{t("poweredResults")}</span>
+          <PoweredBy variant={tema === "dark" ? "dark" : "light"} />
+        </footer>
 
-      <DetailDialog
-        detail={detail}
-        celkova={data.vysledky.celkova}
-        bezi={a.bezi}
-        onClose={() => setDetail(null)}
-      />
+        <DetailDialog
+          detail={detail}
+          celkova={data.vysledky.celkova}
+          bezi={a.bezi}
+          onClose={() => setDetail(null)}
+        />
 
-      <PrihlaskaDialog
-        slug={slug}
-        open={prihlaskaOpen}
-        startovne={a.startovne}
-        onClose={() => setPrihlaskaOpen(false)}
-      />
-    </main>
+        <PrihlaskaDialog
+          slug={slug}
+          open={prihlaskaOpen}
+          startovne={a.startovne}
+          onClose={() => setPrihlaskaOpen(false)}
+        />
+      </main>
+    </div>
   );
 }
 
@@ -345,25 +438,63 @@ function PrihlaskaDialog({
 
 /* ---------- Živá plaketa ---------- */
 
-function ZiveChip({ bezi, zive }: { bezi: boolean; zive: boolean }) {
+function Metrika({ label, hodnota }: { label: string; hodnota: number }) {
+  return (
+    <div>
+      <div className="cal-eyebrow" style={{ color: "var(--p-mut)" }}>
+        {label}
+      </div>
+      <div
+        className="font-technical font-bold tabular-nums"
+        style={{ fontSize: 26, lineHeight: 1, color: "var(--p-txt)" }}
+      >
+        {hodnota}
+      </div>
+    </div>
+  );
+}
+
+function StavPill({ bezi, zive }: { bezi: boolean; zive: boolean }) {
   const t = useTranslations("results");
+  const base =
+    "flex-none inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-technical text-[10.5px] font-semibold uppercase tracking-[.06em]";
   if (!bezi) {
     return (
-      <span className="flex-none rounded-full bg-white/10 px-2.5 py-1 font-technical text-[10.5px] font-medium uppercase tracking-[.06em] text-ink-300">
+      <span
+        className={base}
+        style={{
+          background: "var(--p-ofbg)",
+          border: "1px solid var(--p-ofb)",
+          color: "var(--p-offg)",
+        }}
+      >
         {t("beforeStart")}
       </span>
     );
   }
   if (!zive) {
     return (
-      <span className="flex-none rounded-full bg-warning-bg px-2.5 py-1 font-technical text-[10.5px] font-medium uppercase tracking-[.06em] text-warning">
+      <span
+        className={base}
+        style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
+      >
         {t("offline")}
       </span>
     );
   }
   return (
-    <span className="flex-none inline-flex items-center gap-1.5 rounded-full bg-teal-500/15 px-2.5 py-1 font-technical text-[10.5px] font-medium uppercase tracking-[.06em] text-teal-300">
-      <span className="cal-livedot h-1.5 w-1.5 rounded-full bg-teal-400" />
+    <span
+      className={base}
+      style={{
+        background: "var(--p-lvbg)",
+        border: "1px solid var(--p-lvb)",
+        color: "var(--p-lvfg)",
+      }}
+    >
+      <span
+        className="cal-livedot h-1.5 w-1.5 rounded-full"
+        style={{ background: "var(--p-lvfg)" }}
+      />
       {t("live")}
     </span>
   );
@@ -407,13 +538,23 @@ function KategorieHlavicka({
   souhrn?: string;
 }) {
   return (
-    <div className="mb-2 flex items-baseline gap-2 border-b border-ink-150 pb-1.5">
+    <div
+      className="mb-2 flex items-baseline gap-2 pb-1.5"
+      style={{ borderBottom: "1px solid var(--p-line)" }}
+    >
       {kod && (
-        <span className="font-technical font-bold text-teal-600">{kod}</span>
+        <span className="font-technical font-bold" style={{ color: "var(--p-tkl)" }}>
+          {kod}
+        </span>
       )}
-      <span className="font-medium text-ink-900">{nazev}</span>
+      <span className="font-medium" style={{ color: "var(--p-txt)" }}>
+        {nazev}
+      </span>
       {souhrn && (
-        <span className="ml-auto flex-none font-technical text-[11px] text-ink-400">
+        <span
+          className="ml-auto flex-none font-technical text-[11px]"
+          style={{ color: "var(--p-mut)" }}
+        >
           {souhrn}
         </span>
       )}
@@ -449,16 +590,19 @@ function VysledkySkupina({
         />
       )}
       {/* Hlavička tabulky — jen desktop; zrcadlí šířky sloupců řádku */}
-      <div className="hidden items-center gap-4 border-b border-ink-150 pb-1.5 font-technical text-[11px] uppercase tracking-[.06em] text-ink-400 lg:flex">
-        <span className="w-[34px] flex-none text-center">{t("colPos")}</span>
-        <span className="w-[56px] flex-none">{t("colBib")}</span>
+      <div
+        className="hidden items-center gap-4 pb-1.5 font-technical text-[11px] uppercase tracking-[.06em] lg:flex"
+        style={{ color: "var(--p-mut)", borderBottom: "1px solid var(--p-line)" }}
+      >
+        <span className="w-[30px] flex-none text-center">{t("colPos")}</span>
+        <span className="w-[40px] flex-none">{t("colBib")}</span>
         <span className="min-w-0 flex-[2]">{t("colName")}</span>
         <span className="w-[64px] flex-none">{t("colYear")}</span>
         <span className="min-w-0 flex-1">{t("colClub")}</span>
         <span className="w-[84px] flex-none text-right">{t("colTime")}</span>
         <span className="w-[90px] flex-none text-right">{t("colGap")}</span>
       </div>
-      <div className="divide-y divide-ink-150">
+      <div>
         {skupina.radky.map((r) => (
           <VysledekRadek
             key={r.id}
@@ -483,61 +627,81 @@ function VysledekRadek({
 }) {
   const t = useTranslations("results");
   const nedobehl = r.stav !== "klasifikovan";
-  const jeMedaile = r.stav === "klasifikovan" && !!r.poradi && r.poradi <= 3;
+  const topRank = !!r.poradi && r.poradi <= 3;
   return (
     <button
       type="button"
       onClick={onClick}
       className="cal-press flex w-full items-center gap-3 py-2.5 text-left lg:gap-4"
+      style={{ borderTop: "1px solid var(--p-line)" }}
     >
-      <span className="flex w-[34px] flex-none justify-center">
-        {jeMedaile ? (
-          <MedalCircle poradi={r.poradi} />
-        ) : (
-          <span className="font-technical text-[15px] tabular-nums text-ink-500">
-            {r.poradi ?? "—"}
-          </span>
-        )}
+      <span
+        className="flex w-[30px] flex-none justify-center font-technical text-[15px] font-bold tabular-nums"
+        style={{ color: topRank ? "var(--p-rhi)" : "var(--p-rlo)" }}
+      >
+        {r.poradi ?? "—"}
       </span>
-      {/* číslo — samostatný sloupec jen na desktopu */}
-      <span className="hidden w-[56px] flex-none font-technical text-[14px] tabular-nums text-ink-400 lg:block">
-        č.{r.cislo ?? "—"}
+      {/* startovní číslo jako plotýnka */}
+      <span
+        className="flex-none rounded-[6px] px-1.5 py-0.5 font-technical text-[13px] font-bold tabular-nums"
+        style={{
+          background: "var(--p-plbg)",
+          color: "var(--p-plfg)",
+          border: "var(--p-plb)",
+          minWidth: 30,
+          textAlign: "center",
+        }}
+      >
+        {r.cislo ?? "—"}
       </span>
       <span className="min-w-0 flex-1 lg:flex-[2]">
         <span
-          className={`block truncate font-medium ${nedobehl ? "text-ink-400" : "text-ink-900"}`}
+          className="block truncate font-medium"
+          style={{ color: nedobehl ? "var(--p-mut)" : "var(--p-txt)" }}
         >
           {r.prijmeni} {r.jmeno}
         </span>
-        {/* dvouřádkový subtext jen na mobilu; na desktopu jsou č./oddíl vlastní sloupce */}
-        <span className="block truncate font-technical text-[11px] text-ink-400 lg:hidden">
-          č.{r.cislo ?? "—"}
-          {r.oddil ? ` · ${r.oddil}` : ""}
+        <span
+          className="block truncate font-technical text-[11px] lg:hidden"
+          style={{ color: "var(--p-mut)" }}
+        >
+          {r.oddil || ""}
         </span>
       </span>
       {/* ročník — jen desktop */}
-      <span className="hidden w-[64px] flex-none font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+      <span
+        className="hidden w-[64px] flex-none font-technical text-[14px] tabular-nums lg:block"
+        style={{ color: "var(--p-mut)" }}
+      >
         {r.rocnik ?? "—"}
       </span>
       {/* oddíl — jen desktop */}
-      <span className="hidden min-w-0 flex-1 truncate font-technical text-[14px] text-ink-400 lg:block">
+      <span
+        className="hidden min-w-0 flex-1 truncate font-technical text-[14px] lg:block"
+        style={{ color: "var(--p-mut)" }}
+      >
         {r.oddil || "—"}
       </span>
       <span className="flex-none text-right lg:w-[84px]">
         <span
-          className={`block font-technical font-semibold tabular-nums ${nedobehl ? "text-ink-400" : "text-ink-900"}`}
+          className="block font-technical font-semibold tabular-nums"
+          style={{ color: nedobehl ? "var(--p-mut)" : "var(--p-time)" }}
         >
           {casBunka(r, bezi, t("onCourse"))}
         </span>
-        {/* ztráta pod časem jen na mobilu; na desktopu je vlastní sloupec */}
         {r.stav === "klasifikovan" && (
-          <span className="block font-technical text-[11px] tabular-nums text-ink-400 lg:hidden">
+          <span
+            className="block font-technical text-[11px] tabular-nums lg:hidden"
+            style={{ color: "var(--p-mut)" }}
+          >
             {ztrata(r.ztrataMs)}
           </span>
         )}
       </span>
-      {/* ztráta — samostatný sloupec jen na desktopu */}
-      <span className="hidden w-[90px] flex-none text-right font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+      <span
+        className="hidden w-[90px] flex-none text-right font-technical text-[14px] tabular-nums lg:block"
+        style={{ color: "var(--p-mut)" }}
+      >
         {r.stav === "klasifikovan" ? ztrata(r.ztrataMs) : "—"}
       </span>
     </button>
@@ -651,29 +815,47 @@ function StartTabulka({
 }) {
   const t = useTranslations("results");
   return (
-    <div className="mb-4 divide-y divide-ink-150">
+    <div className="mb-4">
       {zavodnici.map((z) => (
-        <div key={z.id} className="flex items-center gap-3 py-2.5 lg:gap-4">
-          <span className="w-[34px] flex-none text-center font-technical text-[15px] tabular-nums text-ink-500">
+        <div
+          key={z.id}
+          className="flex items-center gap-3 py-2.5 lg:gap-4"
+          style={{ borderTop: "1px solid var(--p-line)" }}
+        >
+          <span
+            className="flex-none rounded-[6px] px-1.5 py-0.5 text-center font-technical text-[13px] font-bold tabular-nums"
+            style={{
+              background: "var(--p-plbg)",
+              color: "var(--p-plfg)",
+              border: "var(--p-plb)",
+              minWidth: 30,
+            }}
+          >
             {z.cislo ?? "—"}
           </span>
           <span className="min-w-0 flex-1 lg:flex-[2]">
-            <span className="block truncate font-medium text-ink-900">
+            <span className="block truncate font-medium" style={{ color: "var(--p-txt)" }}>
               {z.prijmeni} {z.jmeno}
             </span>
-            {/* dvouřádkový subtext jen na mobilu; na desktopu vlastní sloupce */}
-            <span className="block truncate font-technical text-[11px] text-ink-400 lg:hidden">
+            <span
+              className="block truncate font-technical text-[11px] lg:hidden"
+              style={{ color: "var(--p-mut)" }}
+            >
               {z.rocnik ? `${t("yearAbbrev")} ${z.rocnik}` : ""}
               {z.rocnik && z.oddil ? " · " : ""}
               {z.oddil || (z.rocnik ? "" : "—")}
             </span>
           </span>
-          {/* ročník — jen desktop */}
-          <span className="hidden w-[64px] flex-none font-technical text-[14px] tabular-nums text-ink-400 lg:block">
+          <span
+            className="hidden w-[64px] flex-none font-technical text-[14px] tabular-nums lg:block"
+            style={{ color: "var(--p-mut)" }}
+          >
             {z.rocnik ?? "—"}
           </span>
-          {/* oddíl — jen desktop */}
-          <span className="hidden min-w-0 flex-1 truncate font-technical text-[14px] text-ink-400 lg:block">
+          <span
+            className="hidden min-w-0 flex-1 truncate font-technical text-[14px] lg:block"
+            style={{ color: "var(--p-mut)" }}
+          >
             {z.oddil || "—"}
           </span>
           {sKategorii && (
@@ -689,6 +871,11 @@ function StartTabulka({
 
 function Prazdno({ text }: { text: string }) {
   return (
-    <p className="py-12 text-center text-sm text-ink-400">{text}</p>
+    <p
+      className="py-12 text-center text-sm"
+      style={{ color: "var(--p-mut)" }}
+    >
+      {text}
+    </p>
   );
 }

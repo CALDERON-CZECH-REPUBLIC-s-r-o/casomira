@@ -244,3 +244,94 @@ body {
   );
   animation: shimmer 1.4s var(--ease-inout) infinite;
 }
+
+/* ============================================================
+   Veřejné výsledky — dvě kůže (LED „tabule" / světlý „protokol").
+   Jeden strom, přepínač jen mění data-vysledky-tema → celá plocha se
+   přeskinuje přes --p-* tokeny. Hexy dle prototypu (handoff v4).
+   ============================================================ */
+[data-vysledky-tema="dark"] {
+  --p-bg: #0c0d0f;
+  --p-clock: #ffb000;
+  --p-glow: 0 0 22px rgba(255, 176, 0, 0.35);
+  --p-time: var(--teal-300);
+  --p-rhi: var(--teal-300);
+  --p-rlo: #8e8b84;
+  --p-txt: #f4f2ed;
+  --p-mut: #8e8b84;
+  --p-sub: #b5b0a6;
+  --p-plbg: #f2efe8;
+  --p-plfg: #16130e;
+  --p-plb: none;
+  --p-lvbg: rgba(53, 197, 110, 0.12);
+  --p-lvb: rgba(53, 197, 110, 0.3);
+  --p-lvfg: #35c56e;
+  --p-ofbg: rgba(255, 255, 255, 0.06);
+  --p-ofb: rgba(255, 255, 255, 0.22);
+  --p-offg: #f4f2ed;
+  --p-tkbg: rgba(80, 176, 144, 0.08);
+  --p-tkb: rgba(80, 176, 144, 0.45);
+  --p-tkl: var(--teal-300);
+  --p-tabbg: rgba(255, 255, 255, 0.05);
+  --p-line: rgba(255, 255, 255, 0.08);
+  --p-card: rgba(255, 255, 255, 0.04);
+  --p-zeb: rgba(255, 255, 255, 0.025);
+  --p-inbg: rgba(255, 255, 255, 0.05);
+  --p-inb: rgba(255, 255, 255, 0.14);
+}
+[data-vysledky-tema="light"] {
+  --p-bg: #ffffff;
+  --p-clock: var(--ink-900);
+  --p-glow: none;
+  --p-time: var(--ink-900);
+  --p-rhi: var(--teal-700);
+  --p-rlo: var(--ink-400);
+  --p-txt: var(--ink-900);
+  --p-mut: var(--ink-500);
+  --p-sub: var(--ink-500);
+  --p-plbg: #ffffff;
+  --p-plfg: var(--ink-900);
+  --p-plb: 1.5px solid var(--ink-900);
+  --p-lvbg: var(--success-bg);
+  --p-lvb: rgba(31, 157, 91, 0.3);
+  --p-lvfg: #1b7344;
+  --p-ofbg: var(--ink-100);
+  --p-ofb: var(--ink-200);
+  --p-offg: var(--ink-700);
+  --p-tkbg: var(--teal-50);
+  --p-tkb: var(--teal-200);
+  --p-tkl: var(--teal-700);
+  --p-tabbg: var(--ink-100);
+  --p-line: var(--ink-150);
+  --p-card: var(--ink-50);
+  --p-zeb: var(--ink-50);
+  --p-inbg: #ffffff;
+  --p-inb: var(--ink-200);
+}
+
+/* Nový finisher v žebříčku — slide-in + jantarové zvýraznění (fade). */
+@keyframes slideFlash {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+    background: rgba(80, 176, 144, 0.3);
+  }
+  40% {
+    opacity: 1;
+    background: rgba(80, 176, 144, 0.28);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    background: transparent;
+  }
+}
+.pub-flash {
+  animation: slideFlash 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pub-flash,
+  .cal-livedot {
+    animation: none;
+  }
+}
