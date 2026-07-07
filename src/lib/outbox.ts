@@ -81,6 +81,26 @@ export async function nactiDirty(akceId: string): Promise<OutboxPruchod[]> {
   return vse.filter((p) => p.dirty);
 }
 
+/** Smaže všechny lokální průchody akce (vymazání průběhu závodu). */
+export async function smazVseProAkci(akceId: string): Promise<void> {
+  const db = await otevri();
+  await new Promise<void>((resolve, reject) => {
+    const store = tx(db, "readwrite");
+    const idx = store.index("akceId");
+    const req = idx.openCursor(IDBKeyRange.only(akceId));
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      } else {
+        resolve();
+      }
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
 /** Označí potvrzené průchody jako synchronizované. */
 export async function oznacCisté(clientIds: string[]): Promise<void> {
   if (clientIds.length === 0) return;

@@ -10,12 +10,13 @@ import {
   nactiProAkci,
   nactiDirty,
   oznacCisté,
+  smazVseProAkci,
   type OutboxPruchod,
 } from "@/lib/outbox";
-import { ulozitPruchody, nastavitStart } from "@/server/mereni";
+import { ulozitPruchody, nastavitStart, smazatPrubeh } from "@/server/mereni";
 import { spustSyncWorker } from "@/lib/mereni-sync";
 import { PoweredBy } from "@/app/[locale]/admin/_components/ui";
-import { ConfirmDialog } from "@/app/[locale]/admin/_components/ui-client";
+import { ConfirmDialog, Dialog } from "@/app/[locale]/admin/_components/ui-client";
 
 interface ZavodnikInfo {
   startovniCislo: number | null;
@@ -297,6 +298,24 @@ export function MereniScreen({
   async function zrusitStart() {
     setCasStartu(null);
     await nastavitStart(akceId, null);
+  }
+
+  // Vymazání dosavadního průběhu — server + lokální outbox + stav obrazovky.
+  const [smazatOpen, setSmazatOpen] = useState(false);
+  const [smazatSlovo, setSmazatSlovo] = useState("");
+  const [mazani, setMazani] = useState(false);
+  async function smazatPrubehNyni() {
+    setMazani(true);
+    try {
+      await smazatPrubeh(akceId);
+      await smazVseProAkci(akceId).catch(() => {});
+      setZaznamy([]);
+      poradiRef.current = 0;
+      setSmazatOpen(false);
+      setSmazatSlovo("");
+    } finally {
+      setMazani(false);
+    }
   }
 
   // --- odvozené ---
@@ -751,7 +770,67 @@ export function MereniScreen({
               })
             )}
           </div>
+
+          {/* Vymazání dosavadního průběhu — destruktivní, s pojistkou */}
+          <div
+            className="flex-none px-[18px] py-3"
+            style={{ borderTop: "1px solid var(--ink-150)" }}
+          >
+            <button
+              onClick={() => {
+                setSmazatSlovo("");
+                setSmazatOpen(true);
+              }}
+              className="cal-press"
+              style={{ font: "500 11px var(--cal-font-sans)", color: "var(--error)" }}
+            >
+              Smazat průběh závodu…
+            </button>
+          </div>
         </aside>
+
+        <Dialog
+          open={smazatOpen}
+          onClose={() => setSmazatOpen(false)}
+          title="Smazat dosavadní průběh závodu?"
+        >
+          <p className="text-sm text-ink-600">
+            Nevratně se smažou <strong>všechny dosud zaznamenané průchody</strong>{" "}
+            této akce (na serveru i v tomto zařízení). Závodníci, kategorie a čas
+            startu zůstanou.
+          </p>
+          <ul className="mt-3 space-y-1 rounded-[10px] bg-error-bg p-3 text-[13px] text-error">
+            <li>• Smaže se {viditelne.length} zaznamenaných průchodů</li>
+            <li>• Akci nelze vzít zpět</li>
+          </ul>
+          <label className="cal-label mt-4">
+            Pro potvrzení opiš <strong className="text-ink-900">SMAZAT</strong>
+            <input
+              value={smazatSlovo}
+              onChange={(e) => setSmazatSlovo(e.target.value)}
+              autoComplete="off"
+              className="cal-input"
+            />
+          </label>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setSmazatOpen(false)}
+              className="cal-press rounded-[10px] border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100"
+            >
+              Zrušit
+            </button>
+            <button
+              type="button"
+              disabled={smazatSlovo.trim().toUpperCase() !== "SMAZAT" || mazani}
+              onClick={smazatPrubehNyni}
+              className="cal-press rounded-[10px] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: "var(--error)" }}
+            >
+              {mazani ? "Mažu…" : "Smazat průběh"}
+            </button>
+          </div>
+        </Dialog>
 
         {/* Hlavní plocha */}
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">

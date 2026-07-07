@@ -99,3 +99,17 @@ export async function nastavitStart(akceId: string, casISO: string | null) {
     .set({ casStartu: casISO ? new Date(casISO) : null })
     .where(eq(akceT.id, akceId));
 }
+
+/**
+ * Nevratně smaže dosavadní průběh závodu — všechny cílové záznamy (průchody)
+ * akce. Závodníci, kategorie a čas startu zůstávají. Používá se k vyčištění
+ * měření (např. testovací průchody před ostrým startem). Vrací počet smazaných.
+ */
+export async function smazatPrubeh(akceId: string): Promise<number> {
+  await vyzadujPrihlaseni();
+  const smazane = await db
+    .delete(cilovyZaznam)
+    .where(eq(cilovyZaznam.akceId, akceId))
+    .returning({ id: cilovyZaznam.id });
+  return smazane.length;
+}
