@@ -9,13 +9,14 @@ import {
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { casNaInput, casDneKratky } from "@/lib/cas";
 import {
-  vlozitRucniPruchod,
   upravitCasZaznamu,
   upravitCisloZaznamu,
   zmenitStavZaznamu,
+  nastavitStartRucne,
 } from "@/server/opravy";
 import { Btn, Card, PageHeader, Pill } from "../../../_components/ui";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
+import { RucniPruchodForm } from "./rucni-pruchod-form";
 
 export const dynamic = "force-dynamic";
 
@@ -78,34 +79,44 @@ export default async function OpravyPage({
         </p>
       )}
 
+      {/* Čas startu */}
+      <section className="mb-6">
+        <div className="cal-eyebrow mb-3">Čas startu</div>
+        <Card className="p-5">
+          <form
+            action={nastavitStartRucne.bind(null, id)}
+            className="flex flex-wrap items-end gap-4"
+          >
+            <label className="cal-label">
+              Start akce (HH:mm:ss.SSS)
+              <input
+                name="cas"
+                defaultValue={akce.casStartu ? casNaInput(akce.casStartu) : ""}
+                placeholder="10:00:00.000"
+                className="cal-input w-44 font-technical tabular-nums"
+              />
+            </label>
+            <Btn type="submit" variant="ghost">
+              Uložit start
+            </Btn>
+            <span className="text-[12px] text-ink-500">
+              {akce.casStartu
+                ? "Změna startu automaticky přepočítá čisté časy všech průchodů. Prázdné pole = zrušit start."
+                : "Start zatím nenastaven. Nastav ho i pro zadávání čistých časů."}
+            </span>
+          </form>
+        </Card>
+      </section>
+
       {/* Ruční vložení */}
       <section className="mb-6">
         <div className="cal-eyebrow mb-3">Vložit vynechaný průchod</div>
         <Card className="p-5">
-          <form
-            action={vlozitRucniPruchod.bind(null, id)}
-            className="flex flex-wrap items-end gap-4"
-          >
-            <input type="hidden" name="datum" value={akce.datum} />
-            <label className="cal-label">
-              Čas (HH:mm:ss.SSS)
-              <input
-                name="cas"
-                required
-                placeholder="14:03:27.480"
-                className="cal-input w-44 font-technical tabular-nums"
-              />
-            </label>
-            <label className="cal-label">
-              Číslo (volitelně)
-              <input
-                name="cislo"
-                inputMode="numeric"
-                className="cal-input w-28 font-technical tabular-nums"
-              />
-            </label>
-            <Btn type="submit">Vložit</Btn>
-          </form>
+          <RucniPruchodForm
+            akceId={id}
+            datum={akce.datum}
+            startNastaven={akce.casStartu !== null}
+          />
         </Card>
       </section>
 

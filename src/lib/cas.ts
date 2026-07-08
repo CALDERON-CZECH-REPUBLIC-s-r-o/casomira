@@ -50,6 +50,24 @@ export function ztrata(ms: number | null): string {
   return "+" + cistyCas(ms);
 }
 
+/**
+ * Parsuje čistý (uplynulý) čas na milisekundy. Přijímá `mm:ss(.f)`,
+ * `h:mm:ss(.f)` i `m:ss`; frakce 1–3 číslice (`.` nebo `,`). null = neplatný.
+ * Např. "17:42.30" → 1062300, "1:05:22.15" → 3922150, "5:30" → 330000.
+ */
+export function cistyCasNaMs(str: string): number | null {
+  const s = str.trim();
+  const m = s.match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/);
+  if (!m) return null;
+  const [, hh, mm, ss, frac] = m;
+  const hodiny = hh ? Number(hh) : 0;
+  const minuty = Number(mm);
+  const sekundy = Number(ss);
+  if (minuty > 59 || sekundy > 59) return null;
+  const ms = frac ? Number((frac + "000").slice(0, 3)) : 0;
+  return ((hodiny * 60 + minuty) * 60 + sekundy) * 1000 + ms;
+}
+
 /** Čas dne pro editační input: "HH:mm:ss.SSS" (lokální). */
 export function casNaInput(d: Date | string): string {
   const dt = typeof d === "string" ? DateTime.fromISO(d) : DateTime.fromJSDate(d);

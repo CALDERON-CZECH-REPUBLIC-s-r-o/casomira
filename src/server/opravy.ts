@@ -6,12 +6,13 @@ import { and, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/db/client";
 import {
+  akce as akceT,
   cilovyZaznam,
   zavodnik as zavT,
   upravaLog,
 } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
-import { inputNaCas, casDne } from "@/lib/cas";
+import { inputNaCas, casDne, casDneKratky, cistyCasNaMs } from "@/lib/cas";
 
 async function zapisLog(akceId: string, popis: string, zaznamId?: string) {
   await db.insert(upravaLog).values({ akceId, popis, zaznamId });
@@ -38,15 +39,38 @@ async function zavodnikDleCisla(akceId: string, cislo: number | null) {
   return z?.id ?? null;
 }
 
-/** Ruční vložení vynechaného průchodu (čas dne + volitelně číslo). */
+/**
+ * Ruční vložení vynechaného průchodu. Dva režimy zadání:
+ *  - `dne` (výchozí): čas dne (HH:mm:ss.SSS) — razítko přímo.
+ *  - `cisty`: čistý (uplynulý) čas (mm:ss.SS) → razítko = start + čas. Vyžaduje
+ *    nastavený čas startu akce.
+ */
 export async function vlozitRucniPruchod(akceId: string, formData: FormData) {
   await vyzadujPrihlaseni();
   const casStr = String(formData.get("cas") ?? "").trim();
   const cisloRaw = String(formData.get("cislo") ?? "").trim();
   const datum = String(formData.get("datum") ?? "").trim(); // YYYY-MM-DD akce
+  const rezim = String(formData.get("rezim") ?? "dne").trim();
 
-  const cas = inputNaCas(new Date(datum + "T00:00:00"), casStr);
-  if (!cas) chybaRedirect(akceId, "Neplatný čas (formát HH:mm:ss.SSS).");
+  let cas: Date | null;
+  let popisCas: string;
+  if (rezim === "cisty") {
+    const ms = cistyCasNaMs(casStr);
+    if (ms === null) chybaRedirect(akceId, "Neplatný čistý čas (formát mm:ss.SS).");
+    const ak = await db.query.akce.findFirst({
+      where: eq(akceT.id, akceId),
+      columns: { casStartu: true },
+    });
+    if (!ak?.casStartu) {
+      chybaRedirect(akceId, "Nejdřív nastav čas startu (čistý čas se počítá od něj).");
+    }
+    cas = new Date(new Date(ak.casStartu).getTime() + ms);
+    popisCas = `čistý čas ${casStr}`;
+  } else {
+    cas = inputNaCas(new Date(datum + "T00:00:00"), casStr);
+    if (!cas) chybaRedirect(akceId, "Neplatný čas (formát HH:mm:ss.SSS).");
+    popisCas = `v ${casDne(cas)}`;
+  }
 
   const cislo = cisloRaw ? parseInt(cisloRaw.replace(/\D/g, ""), 10) : null;
   const platneCislo = cislo !== null && Number.isFinite(cislo) ? cislo : null;
@@ -66,15 +90,48 @@ export async function vlozitRucniPruchod(akceId: string, formData: FormData) {
     zavodnikId,
     stav: platneCislo !== null ? "platny" : "neprirazeno",
     poradiDoteku: poradi,
-    poznamka: "ručně vloženo",
+    poznamka: rezim === "cisty" ? "ručně (čistý čas)" : "ručně vloženo",
     editedAt: new Date(),
   });
 
   await zapisLog(
     akceId,
-    `Ruční vložení průchodu v ${casDne(cas)}${platneCislo !== null ? `, číslo ${platneCislo}` : " (bez čísla)"}`,
+    `Ruční vložení průchodu ${popisCas}${platneCislo !== null ? `, číslo ${platneCislo}` : " (bez čísla)"}`,
   );
   revalid(akceId);
+}
+
+/**
+ * Nastaví (nebo zruší) přesný čas startu akce. Čisté časy všech živých průchodů
+ * se odvozují z `casCile − casStartu`, takže se změnou startu přepočítají samy.
+ */
+export async function nastavitStartRucne(akceId: string, formData: FormData) {
+  await vyzadujPrihlaseni();
+  const casStr = String(formData.get("cas") ?? "").trim();
+  const ak = await db.query.akce.findFirst({
+    where: eq(akceT.id, akceId),
+    columns: { datum: true, slug: true, casStartu: true },
+  });
+  if (!ak) chybaRedirect(akceId, "Akce nenalezena.");
+
+  let novy: Date | null = null;
+  if (casStr !== "") {
+    novy = inputNaCas(new Date(ak.datum + "T00:00:00"), casStr);
+    if (!novy) chybaRedirect(akceId, "Neplatný čas startu (formát HH:mm:ss.SSS).");
+  }
+
+  await db.update(akceT).set({ casStartu: novy }).where(eq(akceT.id, akceId));
+
+  await zapisLog(
+    akceId,
+    novy
+      ? `Změna času startu na ${casDneKratky(novy)} (přepočet čistých časů)`
+      : "Zrušení času startu",
+  );
+  revalid(akceId);
+  revalidatePath(`/admin/akce/${akceId}/listiny`);
+  revalidatePath(`/admin/akce/${akceId}`);
+  if (ak.slug) revalidatePath(`/${ak.slug}`);
 }
 
 /** Ruční oprava času průchodu (oprava překlepu). Mění razítko cíle. */
