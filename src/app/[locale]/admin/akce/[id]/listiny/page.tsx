@@ -95,8 +95,8 @@ export default async function ListinyHubPage({
             2× A5 na jednu stranu A4 (přeložit/rozstřihnout): logo, název akce,
             datum a QR kód s odkazem na živé výsledky.
           </p>
-          <Radek popis="Náhled / tisk">
-            <Tlac href={`${base}/letak`}>otevřít leták</Tlac>
+          <Radek popis="Stáhnout">
+            <Tlac href={exp("typ=letak&format=pdf")}>PDF</Tlac>
           </Radek>
         </Card>
       </section>

@@ -11,6 +11,9 @@ import {
   type VyslSekce,
 } from "@/lib/pdf/vysledkova-pdf";
 import { startovniXlsx, vysledkovaXlsx } from "@/lib/xlsx/listiny-xlsx";
+import { vykresliLetakPdf } from "@/lib/pdf/letak-pdf";
+import { verejnyOdkaz } from "@/lib/verejna-url";
+import { qrPngDataUri } from "@/lib/qr";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,6 +43,26 @@ export async function GET(
 
   const data = await nactiDataAkce(id);
   if (!data) return new Response("Akce nenalezena", { status: 404 });
+
+  // Leták (upoutávka na online výsledky) — 2× A5 na A4, ke stažení.
+  if (sp.get("typ") === "letak") {
+    const url = verejnyOdkaz(data.akce.slug);
+    const qr = await qrPngDataUri(url);
+    const pdf = await vykresliLetakPdf({
+      nazev: data.akce.nazev,
+      datum: data.akce.datum,
+      misto: data.akce.misto,
+      qr,
+      url: url.replace(/^https?:\/\//, ""),
+    });
+    return new Response(new Uint8Array(pdf), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${data.akce.slug}-letak.pdf"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
 
   const kategorieKod = new Map(
     data.kategorie.map((k) => [k.id, k.kod ?? k.nazev]),

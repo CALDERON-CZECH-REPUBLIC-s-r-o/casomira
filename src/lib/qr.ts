@@ -12,3 +12,14 @@ export async function qrSvgDataUri(text: string): Promise<string> {
   });
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+
+/**
+ * QR kód jako PNG data URL — pro PDF (@react-pdf `<Image>` neumí SVG).
+ */
+export async function qrPngDataUri(text: string): Promise<string> {
+  return QRCode.toDataURL(text, {
+    margin: 1,
+    width: 480,
+    errorCorrectionLevel: "M",
+  });
+}
