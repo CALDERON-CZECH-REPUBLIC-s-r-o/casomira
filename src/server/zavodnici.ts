@@ -210,9 +210,21 @@ export async function importovatHistorickeVysledky(
   vstup: unknown,
 ): Promise<{ ok: boolean; vlozeno: number; chyba?: string }> {
   await vyzadujPrihlaseni();
-  const parsed = z.array(historickyRadekSchema).safeParse(vstup);
-  if (!parsed.success || parsed.data.length === 0) {
-    return { ok: false, vlozeno: 0, chyba: "Neplatná nebo prázdná data." };
+  // Odolná validace: nevalidní řádky (např. nulový/špatný čas DNS) se přeskočí,
+  // nezruší celý import. `z.array().safeParse` je all-or-nothing, proto po řádcích.
+  if (!Array.isArray(vstup)) {
+    return { ok: false, vlozeno: 0, chyba: "Neplatná data importu." };
+  }
+  const platneRadky = vstup
+    .map((x) => historickyRadekSchema.safeParse(x))
+    .filter((r) => r.success)
+    .map((r) => r.data);
+  if (platneRadky.length === 0) {
+    return {
+      ok: false,
+      vlozeno: 0,
+      chyba: "Žádné platné výsledky — zkontroluj mapování Příjmení a Času.",
+    };
   }
   const ak = await db.query.akce.findFirst({
     where: eq(akceT.id, akceId),
@@ -231,7 +243,7 @@ export async function importovatHistorickeVysledky(
     existujici.map((z) => z.startovniCislo).filter((c): c is number => c !== null),
   );
 
-  const radky = parsed.data.map((r) => {
+  const radky = platneRadky.map((r) => {
     const pohlavi = odhadniPohlaviZeJmena(r.jmeno, r.prijmeni);
     let cislo = r.startovniCislo;
     if (cislo !== null && obsazena.has(cislo)) cislo = null; // kolize → bez čísla

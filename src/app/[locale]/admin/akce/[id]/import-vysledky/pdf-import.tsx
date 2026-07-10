@@ -246,7 +246,9 @@ function radekZMapovani(cols: string[], mapovani: (Field | "")[]): Radek {
 }
 
 function radekPlatny(r: Radek): boolean {
-  return r.prijmeni.trim() !== "" && parseCasNaMs(r.cas) !== null;
+  const ms = parseCasNaMs(r.cas);
+  // Nulový čas = DNS/DNF (v listinách 00:00:00,0) — bez výsledku, neimportuje se.
+  return r.prijmeni.trim() !== "" && ms !== null && ms > 0;
 }
 
 export function PdfImport({ akceId }: { akceId: string }) {
