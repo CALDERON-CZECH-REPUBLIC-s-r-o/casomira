@@ -87,6 +87,20 @@ export default async function ListinyHubPage({
         </Card>
       </section>
 
+      {/* Upoutávka na online výsledky */}
+      <section className="mt-8">
+        <div className="cal-eyebrow mb-3">Leták — upoutávka na online výsledky</div>
+        <Card className="flex flex-col gap-3 p-5">
+          <p className="text-sm text-ink-500">
+            2× A5 na jednu stranu A4 (přeložit/rozstřihnout): logo, název akce,
+            datum a QR kód s odkazem na živé výsledky.
+          </p>
+          <Radek popis="Náhled / tisk">
+            <Tlac href={`${base}/letak`}>otevřít leták</Tlac>
+          </Radek>
+        </Card>
+      </section>
+
       <section className="mt-8 border-t border-ink-200 pt-6">
         <div className="cal-eyebrow mb-3">Historická data</div>
         <BtnLink href={`/admin/akce/${id}/import-vysledky`} variant="ghost">
