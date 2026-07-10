@@ -43,7 +43,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  left: { flexGrow: 1, flexShrink: 1, paddingRight: 28 },
+  left: { width: 320, paddingRight: 20 },
   eyebrow: {
     fontSize: 9,
     fontWeight: "bold",
@@ -53,10 +53,21 @@ const s = StyleSheet.create({
   },
   nazev: { fontSize: 25, fontWeight: "bold", color: "#14201c", marginTop: 8 },
   instr: { fontSize: 12, color: "#41514b", marginTop: 10, lineHeight: 1.4 },
-  qrWrap: { alignItems: "center", flexShrink: 0 },
+  qrWrap: { width: 132, alignItems: "center" },
   qr: { width: 118, height: 118, border: "1pt solid #e1e7e4", padding: 4 },
-  url: { fontSize: 12, fontWeight: "bold", color: "#14201c", marginTop: 8 },
-  footer: { fontSize: 8, color: "#808e88", letterSpacing: 0.6 },
+  url: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#14201c",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  footer: {
+    fontSize: 8,
+    color: "#808e88",
+    letterSpacing: 0.6,
+    textAlign: "center",
+  },
 });
 
 function Letak({
@@ -97,11 +108,13 @@ function Letak({
         <View style={s.qrWrap}>
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={qr} style={s.qr} />
-          <Text style={s.url}>{url}</Text>
         </View>
       </View>
 
-      <Text style={s.footer}>POWERED BY ČASOMÍR · CASOMIR.CZ</Text>
+      <View>
+        <Text style={s.url}>{url}</Text>
+        <Text style={s.footer}>POWERED BY ČASOMÍR · CASOMIR.CZ</Text>
+      </View>
     </View>
   );
 }
