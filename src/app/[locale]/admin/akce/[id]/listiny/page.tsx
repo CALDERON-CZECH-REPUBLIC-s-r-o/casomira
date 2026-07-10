@@ -92,8 +92,8 @@ export default async function ListinyHubPage({
         <div className="cal-eyebrow mb-3">Leták — upoutávka na online výsledky</div>
         <Card className="flex flex-col gap-3 p-5">
           <p className="text-sm text-ink-500">
-            2× A5 na jednu stranu A4 (přeložit/rozstřihnout): logo, název akce,
-            datum a QR kód s odkazem na živé výsledky.
+            Plakát A4 na vyvěšení: logo, název akce, datum, velký QR kód a odkaz
+            na živé výsledky (upoutávka pro diváky).
           </p>
           <Radek popis="Stáhnout">
             <Tlac href={exp("typ=letak&format=pdf")}>PDF</Tlac>

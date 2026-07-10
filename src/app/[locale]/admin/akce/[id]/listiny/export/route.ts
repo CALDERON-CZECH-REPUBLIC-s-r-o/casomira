@@ -53,7 +53,7 @@ export async function GET(
       datum: data.akce.datum,
       misto: data.akce.misto,
       qr,
-      url: url.replace(/^https?:\/\//, ""),
+      url,
     });
     return new Response(new Uint8Array(pdf), {
       headers: {

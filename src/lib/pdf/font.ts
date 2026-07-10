@@ -17,6 +17,18 @@ export function registrujFonty() {
       { src: path.join(dir, "NotoSans-Bold.ttf"), fontWeight: "bold" },
     ],
   });
+  // Brand písmo Now (leták / plakát). Now Alt Black = displayový nadpis.
+  Font.register({
+    family: "Now",
+    fonts: [
+      { src: path.join(dir, "Now-Regular.otf") },
+      { src: path.join(dir, "Now-Bold.otf"), fontWeight: "bold" },
+    ],
+  });
+  Font.register({
+    family: "NowAlt",
+    fonts: [{ src: path.join(dir, "NowAlt-Black.otf"), fontWeight: 900 }],
+  });
   // Bez dělení slov (jinak react-pdf láme i jména s pomlčkou).
   Font.registerHyphenationCallback((slovo) => [slovo]);
   registrovano = true;
