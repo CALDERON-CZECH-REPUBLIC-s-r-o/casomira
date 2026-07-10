@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cistyCas, ztrata, uplynulyCas } from "@/lib/cas";
 import { MedalCircle, PoweredBy } from "@/app/[locale]/admin/_components/ui";
@@ -16,8 +16,22 @@ const STAV_LABEL: Record<string, string> = {
   DSQ: "DSQ",
 };
 
-/** Kolik řádků se vejde na jednu „stránku" tabule (okno pro auto-scroll). */
-const OKNO = 12;
+/** Ročník historie s vítězi M/Ž (strukturně shodné s lib/historie.ts). */
+interface HistorieRocnik {
+  rok: number;
+  akceNazev: string;
+  muz: { jmeno: string; casMs: number } | null;
+  zena: { jmeno: string; casMs: number } | null;
+}
+
+type Mode = "vse" | "kategorie" | "celkova";
+
+/** Odhad výšky jednoho řádku žebříčku (px) — raději nadhodnotit (bez scrollu). */
+const ROW_PX = 60;
+/** Výška hlavičky tabulky žebříčku (px). */
+const TABLE_HEAD_PX = 44;
+/** Výška nadpisu skupiny nad tabulkou (px). */
+const NADPIS_PX = 60;
 
 function casBunka(r: VerejnyRadek, onCourse: string): string {
   if (r.stav === "klasifikovan" && r.casMs !== null) return cistyCas(r.casMs);
@@ -25,20 +39,68 @@ function casBunka(r: VerejnyRadek, onCourse: string): string {
   return STAV_LABEL[r.stav] ?? "—";
 }
 
+/** Jedna „stránka" projekce (vejde se na displej, rotuje se mezi nimi). */
+type Stranka =
+  | {
+      typ: "vysledky";
+      skupina: VerejnaSkupina;
+      radky: VerejnyRadek[];
+      strana: number;
+      stran: number;
+    }
+  | { typ: "historie"; rocniky: HistorieRocnik[] };
+
+function sestavStranky(
+  data: VerejnaData,
+  mode: Mode,
+  historie: HistorieRocnik[],
+  perPage: number,
+): Stranka[] {
+  const stranky: Stranka[] = [];
+  const pp = Math.max(1, perPage);
+
+  const pridej = (sk: VerejnaSkupina) => {
+    if (sk.radky.length === 0) return;
+    const stran = Math.max(1, Math.ceil(sk.radky.length / pp));
+    for (let i = 0; i < stran; i++) {
+      stranky.push({
+        typ: "vysledky",
+        skupina: sk,
+        radky: sk.radky.slice(i * pp, i * pp + pp),
+        strana: i + 1,
+        stran,
+      });
+    }
+  };
+
+  if (mode !== "kategorie") pridej(data.vysledky.celkova);
+  if (mode !== "celkova") {
+    for (const sk of data.vysledky.kategorie) pridej(sk);
+  }
+  if (mode === "vse" && historie.length > 0) {
+    stranky.push({ typ: "historie", rocniky: historie });
+  }
+  return stranky;
+}
+
 export function Tabule({
   slug,
   initial,
   mode,
+  qr,
+  historie,
 }: {
   slug: string;
   initial: VerejnaData;
-  mode: "celkova" | "kategorie";
+  mode: Mode;
+  qr: string;
+  historie: HistorieRocnik[];
 }) {
   const [data, setData] = useState<VerejnaData>(initial);
   const [zive, setZive] = useState(true);
   const [nowMs, setNowMs] = useState<number | null>(null);
 
-  // Polling à 5 s, jen když akce „běží" (měření spuštěno) — zrcadlí verejna-akce.tsx.
+  // Polling à 5 s, jen když akce „běží" (měření spuštěno).
   useEffect(() => {
     if (!data.akce.bezi) return;
     let zruseno = false;
@@ -63,7 +125,6 @@ export function Tabule({
   }, [slug, data.akce.bezi]);
 
   const a = data.akce;
-  const kategorie = data.vysledky.kategorie.filter((sk) => sk.radky.length > 0);
 
   // Běžící čas závodu (LED) — z casStartu.
   useEffect(() => {
@@ -76,10 +137,44 @@ export function Tabule({
       ? uplynulyCas(nowMs - new Date(a.casStartu).getTime())
       : null;
 
+  // Kolik řádků se vejde do těla projekce (fit-to-screen, bez scrollu).
+  // Měříme vždy přítomný <main>, nezávisle na typu aktivní stránky.
+  const mainRef = useRef<HTMLElement>(null);
+  const [perPage, setPerPage] = useState(10);
+  useLayoutEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const prepocitej = () => {
+      const h = el.clientHeight - NADPIS_PX - TABLE_HEAD_PX;
+      const n = Math.max(1, Math.floor(h / ROW_PX));
+      setPerPage(n);
+    };
+    prepocitej();
+    const ro = new ResizeObserver(prepocitej);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const stranky = useMemo(
+    () => sestavStranky(data, mode, historie, perPage),
+    [data, mode, historie, perPage],
+  );
+
+  // Rotace stránek à 7 s.
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (stranky.length <= 1) return;
+    const i = setInterval(() => setIdx((o) => o + 1), 7000);
+    return () => clearInterval(i);
+  }, [stranky.length]);
+
+  const aktivni =
+    stranky.length > 0 ? stranky[idx % stranky.length] : null;
+
   return (
-    <div className="cal-dots-dark flex min-h-screen flex-col bg-ink-950 p-8 text-white">
+    <div className="cal-dots-dark flex h-screen flex-col overflow-hidden bg-ink-950 p-8 text-white">
       {/* Hlavička */}
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-none items-start justify-between gap-6">
         <div className="min-w-0">
           <h1 className="font-display text-4xl font-bold leading-tight">
             {a.nazev}
@@ -101,103 +196,95 @@ export function Tabule({
             </span>
           )}
           <ZiveChip bezi={a.bezi} zive={zive} />
-          <div className="flex w-28 aspect-square flex-col items-center justify-center rounded-[12px] border border-white/15 bg-white/5">
-            <span className="font-technical text-[10px] text-ink-400">
+          {/* QR na veřejné výsledky */}
+          <div className="flex w-28 flex-col items-center gap-1 rounded-[12px] bg-white p-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qr} alt="" className="h-full w-full" />
+            <span className="font-technical text-[10px] leading-none text-ink-700">
               /{slug}
             </span>
           </div>
         </div>
       </header>
 
-      {/* Tělo */}
-      {mode === "kategorie" ? (
-        <KategorieTabule kategorie={kategorie} />
-      ) : (
-        <CelkovaTabule skupina={data.vysledky.celkova} />
-      )}
+      {/* Tělo — jedna rotující stránka */}
+      <main ref={mainRef} className="mt-8 flex min-h-0 flex-1 flex-col">
+        {aktivni === null ? (
+          <PrazdnaTabule />
+        ) : aktivni.typ === "historie" ? (
+          <HistorieObrazovka rocniky={aktivni.rocniky} />
+        ) : (
+          <>
+            <SkupinaNadpis
+              kod={aktivni.skupina.kod}
+              nazev={aktivni.skupina.nazev}
+              strana={aktivni.strana}
+              stran={aktivni.stran}
+            />
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ZebricekTabulka radky={aktivni.radky} />
+            </div>
+          </>
+        )}
+      </main>
 
-      {/* Patička — nenápadně v rohu, neruší tabuli */}
-      <div className="mt-4 flex-none text-right opacity-70">
-        <PoweredBy variant="dark" />
+      {/* Patička */}
+      <div className="mt-4 flex flex-none items-center justify-between">
+        <StrankyIndikator pocet={stranky.length} aktivni={idx} />
+        <div className="opacity-70">
+          <PoweredBy variant="dark" />
+        </div>
       </div>
     </div>
   );
 }
 
-/* ---------- 13a: celková tabule s auto-scrollem ---------- */
+/* ---------- Obrazovka historie vítězů ---------- */
 
-function CelkovaTabule({ skupina }: { skupina: VerejnaSkupina }) {
-  const [okno, setOkno] = useState(0);
-  const radky = skupina.radky;
-  const poctiOken = Math.max(1, Math.ceil(radky.length / OKNO));
-
-  // Posun okna à 4 s (jen když se seznam nevejde najednou).
-  useEffect(() => {
-    if (poctiOken <= 1) return; // jedno okno → není co posouvat (okno % poctiOken=0)
-    const i = setInterval(() => setOkno((o) => (o + 1) % poctiOken), 4000);
-    return () => clearInterval(i);
-  }, [poctiOken]);
-
-  if (radky.length === 0) return <PrazdnaTabule />;
-
-  const aktivni = okno % poctiOken;
-  const vyrez = radky.slice(aktivni * OKNO, aktivni * OKNO + OKNO);
-
+function HistorieObrazovka({ rocniky }: { rocniky: HistorieRocnik[] }) {
   return (
-    <main className="mt-8 flex flex-1 flex-col">
-      <SkupinaNadpis kod={skupina.kod} nazev={skupina.nazev} />
-      <ZebricekTabulka radky={vyrez} />
-    </main>
+    <>
+      <h2 className="mb-4 flex-none font-display text-3xl font-bold">
+        <span className="text-teal-300">Historie</span> — vítězové po ročnících
+      </h2>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="grid grid-cols-[120px_1fr_1fr] items-center gap-4 border-b border-white/15 pb-2 font-technical text-sm uppercase tracking-[.08em] text-ink-400">
+          <span>Ročník</span>
+          <span>Muži</span>
+          <span>Ženy</span>
+        </div>
+        <div className="divide-y divide-white/10">
+          {rocniky.map((r) => (
+            <div
+              key={`${r.akceNazev}-${r.rok}`}
+              className="grid grid-cols-[120px_1fr_1fr] items-center gap-4 py-3 text-2xl"
+            >
+              <span className="font-technical font-bold tabular-nums text-teal-200">
+                {r.rok}
+              </span>
+              <VitezBunka vitez={r.muz} />
+              <VitezBunka vitez={r.zena} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
-/* ---------- 13b: cyklující tabule po kategoriích ---------- */
-
-function KategorieTabule({ kategorie }: { kategorie: VerejnaSkupina[] }) {
-  const t = useTranslations("results");
-  const [idx, setIdx] = useState(0);
-  const N = kategorie.length;
-
-  // Cyklování à 10 s (jen když je kategorií víc než jedna).
-  useEffect(() => {
-    if (N <= 1) return; // jedna kategorie → necyklovat (idx % N=0)
-    const i = setInterval(() => setIdx((x) => (x + 1) % N), 10000);
-    return () => clearInterval(i);
-  }, [N]);
-
-  if (N === 0) return <PrazdnaTabule />;
-
-  const aktivni = idx % N;
-  const skupina = kategorie[aktivni];
-  const dalsi = kategorie[(aktivni + 1) % N];
-
+function VitezBunka({
+  vitez,
+}: {
+  vitez: { jmeno: string; casMs: number } | null;
+}) {
+  if (!vitez) return <span className="text-ink-500">—</span>;
   return (
-    <main className="mt-8 flex flex-1 flex-col">
-      <SkupinaNadpis kod={skupina.kod} nazev={skupina.nazev} />
-      <ZebricekTabulka radky={skupina.radky} />
-
-      {N > 1 && (
-        <div className="mt-auto flex items-center gap-6 pt-6">
-          <div className="flex flex-1 gap-1.5">
-            {kategorie.map((sk, i) => (
-              <span
-                key={sk.kod ?? sk.nazev}
-                className={`h-1.5 flex-1 rounded-full ${
-                  i === aktivni ? "bg-teal-400" : "bg-white/15"
-                }`}
-              />
-            ))}
-          </div>
-          <span className="flex-none font-technical text-sm text-ink-400">
-            {t("next")} {dalsi.kod ? `${dalsi.kod} ` : ""}
-            {dalsi.nazev}
-          </span>
-          <span className="flex-none font-technical text-sm tabular-nums text-ink-300">
-            {aktivni + 1} / {N}
-          </span>
-        </div>
-      )}
-    </main>
+    <span className="flex min-w-0 items-baseline gap-3">
+      <span className="min-w-0 truncate font-medium">{vitez.jmeno}</span>
+      <span className="flex-none font-technical font-semibold tabular-nums text-ink-300">
+        {cistyCas(vitez.casMs)}
+      </span>
+    </span>
   );
 }
 
@@ -206,19 +293,29 @@ function KategorieTabule({ kategorie }: { kategorie: VerejnaSkupina[] }) {
 function SkupinaNadpis({
   kod,
   nazev,
+  strana,
+  stran,
 }: {
   kod: string | null;
   nazev: string;
+  strana: number;
+  stran: number;
 }) {
   return (
-    <h2 className="mb-4 flex items-baseline gap-3 font-display text-3xl font-bold">
+    <h2 className="mb-4 flex flex-none items-baseline gap-3 font-display text-3xl font-bold">
       {kod && <span className="text-teal-300">{kod}</span>}
       <span>{nazev}</span>
+      {stran > 1 && (
+        <span className="font-technical text-lg font-medium tabular-nums text-ink-400">
+          {strana}/{stran}
+        </span>
+      )}
     </h2>
   );
 }
 
-const GRID = "grid grid-cols-[80px_1fr_100px_minmax(0,1fr)_180px_150px] items-center gap-4";
+const GRID =
+  "grid grid-cols-[80px_1fr_100px_minmax(0,1fr)_180px_150px] items-center gap-4";
 
 function ZebricekTabulka({ radky }: { radky: VerejnyRadek[] }) {
   const t = useTranslations("results");
@@ -277,6 +374,29 @@ function ZebricekRadek({ r }: { r: VerejnyRadek }) {
   );
 }
 
+function StrankyIndikator({
+  pocet,
+  aktivni,
+}: {
+  pocet: number;
+  aktivni: number;
+}) {
+  if (pocet <= 1) return <span />;
+  const a = aktivni % pocet;
+  return (
+    <div className="flex flex-1 gap-1.5 pr-6">
+      {Array.from({ length: pocet }).map((_, i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-6 rounded-full ${
+            i === a ? "bg-teal-400" : "bg-white/15"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 function ZiveChip({ bezi, zive }: { bezi: boolean; zive: boolean }) {
   const t = useTranslations("results");
   if (!bezi || !zive) {
@@ -296,10 +416,10 @@ function ZiveChip({ bezi, zive }: { bezi: boolean; zive: boolean }) {
 
 function PrazdnaTabule() {
   return (
-    <main className="flex flex-1 items-center justify-center">
+    <div className="flex flex-1 items-center justify-center">
       <p className="font-display text-4xl font-bold text-ink-400">
         Výsledky se objeví po startu
       </p>
-    </main>
+    </div>
   );
 }

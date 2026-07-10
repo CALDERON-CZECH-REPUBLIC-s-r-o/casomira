@@ -22,6 +22,7 @@ import {
   type MericiBodDomain,
 } from "@/domain/splity";
 import { cistyCas } from "@/lib/cas";
+import { nactiHistoriiZavodnika } from "@/lib/historie";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
 import {
   BackLink,
@@ -65,6 +66,12 @@ export default async function ZavodnikDetailPage({
     with: { kategorie: true },
   });
   if (!zavodnik) notFound();
+
+  const historie = await nactiHistoriiZavodnika({
+    prijmeni: zavodnik.prijmeni,
+    jmeno: zavodnik.jmeno,
+    rokNarozeni: zavodnik.rokNarozeni,
+  });
 
   const [zavodniciDb, kategorieDb, zaznamyDb, bodyDb] = await Promise.all([
     db.query.zavodnik.findMany({ where: eq(zavT.akceId, id) }),
@@ -267,6 +274,45 @@ export default async function ZavodnikDetailPage({
                     </td>
                     <td className="px-5 py-3 text-right font-technical tabular-nums text-ink-500">
                       {s.poziceVBode ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+
+        {/* Historické výsledky (shoda dle jména + roku narození) */}
+        {historie.length > 0 && (
+          <Card className="mt-6 overflow-hidden">
+            <div className="cal-eyebrow border-b border-ink-200 px-5 py-3 text-teal-600">
+              Historické výsledky
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="cal-eyebrow border-b border-ink-150 text-left text-ink-400">
+                  <th className="px-5 py-2 font-medium">Ročník</th>
+                  <th className="px-5 py-2 font-medium">Akce</th>
+                  <th className="px-5 py-2 font-medium">Kategorie</th>
+                  <th className="px-5 py-2 text-right font-medium">Pořadí</th>
+                  <th className="px-5 py-2 text-right font-medium">Čas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-150">
+                {historie.map((h, i) => (
+                  <tr key={`${h.rok}-${i}`}>
+                    <td className="px-5 py-3 font-technical tabular-nums text-ink-900">
+                      {h.rok}
+                    </td>
+                    <td className="px-5 py-3 text-ink-700">{h.akceNazev}</td>
+                    <td className="px-5 py-3 text-ink-500">
+                      {h.kategorie ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-right font-technical tabular-nums text-ink-500">
+                      {h.poradi ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-right font-technical font-semibold tabular-nums text-ink-900">
+                      {cistyCas(h.casMs)}
                     </td>
                   </tr>
                 ))}

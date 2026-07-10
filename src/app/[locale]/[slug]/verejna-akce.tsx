@@ -929,6 +929,14 @@ function VysledekRadek({
 
 /* ---------- Detail závodníka (sdílitelná karta) ---------- */
 
+interface HistorieItem {
+  rok: number;
+  akceNazev: string;
+  kategorie: string | null;
+  poradi: number | null;
+  casMs: number;
+}
+
 function DetailDialog({
   detail,
   celkova,
@@ -947,6 +955,30 @@ function DetailDialog({
   const celkovePoradi =
     r && celkova.radky.find((x) => x.id === r.id)?.poradi;
   const url = typeof window !== "undefined" ? window.location.href : "";
+
+  // Historické výsledky (lazy-fetch při otevření detailu; shoda dle jména + roku).
+  const [historie, setHistorie] = useState<HistorieItem[] | null>(null);
+  const osobaId = r?.id;
+  useEffect(() => {
+    if (!r) return;
+    let zruseno = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHistorie(null);
+    const q = new URLSearchParams({ p: r.prijmeni, j: r.jmeno });
+    if (r.rocnik != null) q.set("r", String(r.rocnik));
+    fetch(`/api/historie?${q.toString()}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: HistorieItem[]) => {
+        if (!zruseno) setHistorie(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!zruseno) setHistorie([]);
+      });
+    return () => {
+      zruseno = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [osobaId]);
 
   return (
     <Dialog open={!!detail} onClose={onClose}>
@@ -991,6 +1023,32 @@ function DetailDialog({
             />
             <RadekDetailu label={ta("clubCity")} hodnota={r.oddil || "—"} />
           </div>
+
+          {historie && historie.length > 0 && (
+            <div className="mt-5">
+              <div className="cal-eyebrow mb-2 text-ink-400">
+                {ta("history")}
+              </div>
+              <div className="divide-y divide-ink-150 overflow-hidden rounded-[10px] border border-ink-150">
+                {historie.map((h, i) => (
+                  <div
+                    key={`${h.rok}-${i}`}
+                    className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                  >
+                    <span className="font-technical tabular-nums text-ink-500">
+                      {h.rok}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-ink-600">
+                      {h.akceNazev}
+                    </span>
+                    <span className="flex-none font-technical font-semibold tabular-nums text-ink-900">
+                      {cistyCas(h.casMs)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {url && (
             <div className="mt-5 rounded-[10px] bg-ink-50 px-3 py-2.5">

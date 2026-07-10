@@ -115,7 +115,9 @@ export default async function PublikovatPage({
         </div>
         <p className="mb-4 text-sm text-ink-600">
           Tmavá tabule pro projektor / LED stěnu s živými výsledky (aktualizace à
-          5 s). Otevři na plátně a přepni prohlížeč na celou obrazovku (F11).
+          5 s). „Spustit tabuli“ automaticky střídá obrazovky — celkové pořadí,
+          kategorie i historii vítězů — a vždy se vejde na displej (bez
+          rolování). Otevři na plátně a přepni prohlížeč na celou obrazovku (F11).
         </p>
         <div className="flex flex-wrap gap-2">
           <BtnLink href={`/${akce.slug}/tabule`} target="_blank">
@@ -126,7 +128,14 @@ export default async function PublikovatPage({
             variant="ghost"
             target="_blank"
           >
-            Po kategoriích (střídá) ↗
+            Jen kategorie ↗
+          </BtnLink>
+          <BtnLink
+            href={`/${akce.slug}/tabule?dle=celkova`}
+            variant="ghost"
+            target="_blank"
+          >
+            Jen celkové ↗
           </BtnLink>
           <BtnLink
             href={`/admin/akce/${id}/moderator`}

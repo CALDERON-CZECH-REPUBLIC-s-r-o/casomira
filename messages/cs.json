@@ -32,6 +32,7 @@
     "dash": {
       "yourRaces": "Vaše závody",
       "vyvoj": "Vývoj časů",
+      "historie": "Historie",
       "obsah": "Obsah webu",
       "sms": "SMS brána",
       "logout": "Odhlásit",
@@ -91,6 +92,7 @@
     "gap": "Ztráta",
     "clubCity": "Oddíl / Město",
     "share": "Sdílet",
+    "history": "Historie",
     "ofN": "{poradi}. z {celkem}"
   },
   "prihlaska": {

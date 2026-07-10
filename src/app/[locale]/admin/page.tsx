@@ -42,6 +42,12 @@ export default async function AdminPage() {
               {t("dash.vyvoj")}
             </Link>
             <Link
+              href="/admin/historie"
+              className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
+            >
+              {t("dash.historie")}
+            </Link>
+            <Link
               href="/admin/obsah"
               className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
             >

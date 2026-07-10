@@ -8,4 +8,5 @@ export * from "./merici-bod";
 export * from "./cilovy-zaznam";
 export * from "./uprava-log";
 export * from "./obsah";
+export * from "./historicky-vysledek";
 export * from "./relations";

@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { parseCasNaMs } from "@/lib/import-helpers";
-import { importovatHistorickeVysledky } from "@/server/zavodnici";
-import { Btn, BtnLink, Card, Pill, Stepper } from "../../../_components/ui";
+import { importovatHistorii } from "@/server/historie";
+import { Btn, BtnLink, Card, Pill, Stepper } from "../../_components/ui";
 
 type Field =
   | "poradi"
@@ -13,6 +13,7 @@ type Field =
   | "prijmeniJmeno"
   | "rocnik"
   | "oddil"
+  | "kategorie"
   | "cas";
 
 const POLE: { v: Field | ""; label: string }[] = [
@@ -24,6 +25,7 @@ const POLE: { v: Field | ""; label: string }[] = [
   { v: "prijmeniJmeno", label: "Příjmení a jméno" },
   { v: "rocnik", label: "Ročník" },
   { v: "oddil", label: "Oddíl / Město" },
+  { v: "kategorie", label: "Kategorie" },
   { v: "cas", label: "Čas" },
 ];
 
@@ -34,6 +36,7 @@ type Radek = {
   jmeno: string;
   rocnik: string;
   oddil: string;
+  kategorie: string;
   cas: string;
 };
 
@@ -179,7 +182,8 @@ function autoMapovani(
     else if (/číslo|cislo|st\.?č|č\./.test(l)) map[i] = "cislo";
     else if (/poř|pořadí|poradi/.test(l)) map[i] = "poradi";
     else if (/oddíl|oddil|klub|město|mesto/.test(l)) map[i] = "oddil";
-    // kategorie / pohlaví → nepoužít (necháme prázdné)
+    else if (/kategorie|kat\./.test(l)) map[i] = "kategorie";
+    // pohlaví → nepoužít (necháme prázdné)
   }
 
   // Doplň z obsahu, co label neurčil.
@@ -220,6 +224,7 @@ const prazdny = (): Radek => ({
   jmeno: "",
   rocnik: "",
   oddil: "",
+  kategorie: "",
   cas: "",
 });
 
@@ -251,7 +256,9 @@ function radekPlatny(r: Radek): boolean {
   return r.prijmeni.trim() !== "" && ms !== null && ms > 0;
 }
 
-export function PdfImport({ akceId }: { akceId: string }) {
+export function PdfImportHistorie() {
+  const [rok, setRok] = useState("");
+  const [akceNazev, setAkceNazev] = useState("");
   const [mrizka, setMrizka] = useState<string[][]>([]);
   const [labely, setLabely] = useState<string[] | null>(null);
   const [mapovani, setMapovani] = useState<(Field | "")[]>([]);
@@ -269,6 +276,11 @@ export function PdfImport({ akceId }: { akceId: string }) {
   const maCas = mapovani.includes("cas");
   const maPrijmeni =
     mapovani.includes("prijmeni") || mapovani.includes("prijmeniJmeno");
+
+  const rokN = parseInt(rok, 10);
+  const rokPlatny = Number.isInteger(rokN) && rokN >= 1900 && rokN <= 2100;
+  const nazevPlatny = akceNazev.trim() !== "";
+  const metaOk = rokPlatny && nazevPlatny;
 
   // Naparsované řádky dle aktuálního mapování.
   const radky = useMemo(
@@ -327,22 +339,25 @@ export function PdfImport({ akceId }: { akceId: string }) {
   }
 
   function ulozit() {
+    // Startovní číslo se do historie neukládá (statistika, ne startovka).
     const data = platne.map((r) => {
-      const cislo = r.cislo.trim() === "" ? null : parseInt(r.cislo, 10);
       const rocnik = r.rocnik.trim() === "" ? null : parseInt(r.rocnik, 10);
+      const poradi = r.poradi.trim() === "" ? null : parseInt(r.poradi, 10);
       return {
         prijmeni: r.prijmeni.trim(),
         jmeno: r.jmeno.trim(),
-        rokNarozeni:
-          rocnik !== null && Number.isFinite(rocnik) ? rocnik : null,
-        startovniCislo:
-          cislo !== null && Number.isFinite(cislo) && cislo > 0 ? cislo : null,
+        rokNarozeni: rocnik !== null && Number.isFinite(rocnik) ? rocnik : null,
         oddil: r.oddil.trim() === "" ? null : r.oddil.trim(),
+        kategorie: r.kategorie.trim() === "" ? null : r.kategorie.trim(),
+        poradi:
+          poradi !== null && Number.isFinite(poradi) && poradi > 0
+            ? poradi
+            : null,
         casMs: parseCasNaMs(r.cas)!,
       };
     });
     startUkladani(async () => {
-      const r = await importovatHistorickeVysledky(akceId, data);
+      const r = await importovatHistorii(rokN, akceNazev.trim(), data);
       setVysledek(r);
     });
   }
@@ -352,13 +367,39 @@ export function PdfImport({ akceId }: { akceId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <Stepper
-        kroky={["Nahrát PDF", "Mapování sloupců", "Uložit"]}
+        kroky={["Ročník + PDF", "Mapování sloupců", "Uložit"]}
         aktivni={aktivni}
       />
 
-      {/* Krok 1 — nahrání */}
+      {/* Krok 1 — ročník + nahrání */}
       <Card className="p-5">
-        <label className="cal-label">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="cal-label">
+            Rok (ročník)
+            <input
+              type="number"
+              inputMode="numeric"
+              value={rok}
+              onChange={(e) => setRok(e.target.value)}
+              placeholder="např. 2024"
+              disabled={vysledek?.ok}
+              className="cal-input"
+            />
+          </label>
+          <label className="cal-label">
+            Název akce / ročníku
+            <input
+              type="text"
+              value={akceNazev}
+              onChange={(e) => setAkceNazev(e.target.value)}
+              placeholder="např. Žernosecký půlmaraton 2024"
+              disabled={vysledek?.ok}
+              className="cal-input"
+            />
+          </label>
+        </div>
+
+        <label className="cal-label mt-4">
           PDF výsledková listina
           <input
             type="file"
@@ -438,6 +479,11 @@ export function PdfImport({ akceId }: { akceId: string }) {
               jméno“) a <strong>Čas</strong> — bez nich nejde výsledek uložit.
             </p>
           )}
+          {!metaOk && (
+            <p className="mt-3 rounded-[10px] bg-warning-bg p-3 text-sm text-warning">
+              Vyplň nahoře <strong>Rok</strong> a <strong>Název akce</strong>.
+            </p>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <Pill ton={platne.length > 0 ? "success" : "warning"}>
@@ -446,7 +492,7 @@ export function PdfImport({ akceId }: { akceId: string }) {
             <Btn
               type="button"
               onClick={ulozit}
-              disabled={ukladam || platne.length === 0}
+              disabled={ukladam || platne.length === 0 || !metaOk}
             >
               {ukladam ? "Ukládám…" : `Uložit ${platne.length} výsledků`}
             </Btn>
@@ -471,11 +517,10 @@ export function PdfImport({ akceId }: { akceId: string }) {
             <strong className="font-technical tabular-nums">
               {vysledek.vlozeno}
             </strong>{" "}
-            historických výsledků. Akce byla označena jako historická.
+            historických výsledků ročníku {akceNazev.trim()}. Neovlivní startovní
+            listinu žádné akce.
           </p>
-          <BtnLink href={`/admin/akce/${akceId}/zavodnici`}>
-            Zobrazit závodníky
-          </BtnLink>
+          <BtnLink href="/admin/historie">Zpět na historii</BtnLink>
         </Card>
       )}
     </div>

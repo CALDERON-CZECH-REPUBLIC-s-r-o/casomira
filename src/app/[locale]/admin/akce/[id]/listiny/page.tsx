@@ -103,8 +103,12 @@ export default async function ListinyHubPage({
 
       <section className="mt-8 border-t border-ink-200 pt-6">
         <div className="cal-eyebrow mb-3">Historická data</div>
-        <BtnLink href={`/admin/akce/${id}/import-vysledky`} variant="ghost">
-          Import historických výsledků z PDF
+        <p className="mb-3 text-sm text-ink-500">
+          Výsledky minulých ročníků se spravují centrálně jako statistika —
+          nezasahují do startovní listiny této akce.
+        </p>
+        <BtnLink href="/admin/historie" variant="ghost">
+          Historické výsledky →
         </BtnLink>
       </section>
       </div>

@@ -32,6 +32,7 @@
     "dash": {
       "yourRaces": "Your races",
       "vyvoj": "Time trends",
+      "historie": "History",
       "obsah": "Website content",
       "sms": "SMS gateway",
       "logout": "Sign out",
@@ -91,6 +92,7 @@
     "gap": "Gap",
     "clubCity": "Club / City",
     "share": "Share",
+    "history": "History",
     "ofN": "{poradi} of {celkem}"
   },
   "prihlaska": {
