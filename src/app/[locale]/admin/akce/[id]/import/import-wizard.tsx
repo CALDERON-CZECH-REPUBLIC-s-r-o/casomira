@@ -21,7 +21,8 @@ type CileKlic =
   | "rok"
   | "pohlavi"
   | "oddil"
-  | "mesto";
+  | "mesto"
+  | "telefon";
 
 const NEMAPOVANO = -1;
 
@@ -51,6 +52,7 @@ export function ImportWizard({
     pohlavi: NEMAPOVANO,
     oddil: NEMAPOVANO,
     mesto: NEMAPOVANO,
+    telefon: NEMAPOVANO,
   });
   const [sliteJmeno, setSliteJmeno] = useState(true);
   const [poradiJmena, setPoradiJmena] = useState<"PJ" | "JP">("PJ");
@@ -116,12 +118,14 @@ export function ImportWizard({
     const pohl = najdi(["pohlaví", "pohlavi", "pohl"]);
     const oddil = najdi(["oddíl", "oddil", "klub", "tým", "tym"]);
     const mesto = najdi(["město", "mesto", "obec", "bydliště"]);
+    const telefon = najdi(["telefon", "tel.", "tel", "mobil", "phone"]);
     if (c >= 0) m.cislo = c;
     if (jmenoCele >= 0) m.jmenoCele = jmenoCele;
     if (rok >= 0) m.rok = rok;
     if (pohl >= 0) m.pohlavi = pohl;
     if (oddil >= 0) m.oddil = oddil;
     if (mesto >= 0) m.mesto = mesto;
+    if (telefon >= 0) m.telefon = telefon;
     setMapovani(m);
   }
 
@@ -175,6 +179,7 @@ export function ImportWizard({
 
       const oddil = get("oddil") || null;
       const mesto = get("mesto") || null;
+      const telefon = get("telefon") || null;
 
       const varovani: string[] = [];
       let chyba: string | null = null;
@@ -199,6 +204,7 @@ export function ImportWizard({
         pohlavi,
         oddil,
         mesto,
+        telefon,
         chyba,
         varovani,
       });
@@ -228,6 +234,7 @@ export function ImportWizard({
       pohlavi: r.pohlavi,
       oddil: r.oddil,
       mesto: r.mesto,
+      telefon: r.telefon,
     }));
     startTransition(async () => {
       const res = await importovatZavodniky(akceId, data);
@@ -413,6 +420,12 @@ export function ImportWizard({
                 value={mapovani.mesto}
                 sloupce={sloupce}
                 onChange={(v) => setMapovani((m) => ({ ...m, mesto: v }))}
+              />
+              <MapPole
+                label="Telefon"
+                value={mapovani.telefon}
+                sloupce={sloupce}
+                onChange={(v) => setMapovani((m) => ({ ...m, telefon: v }))}
               />
             </div>
           </Card>

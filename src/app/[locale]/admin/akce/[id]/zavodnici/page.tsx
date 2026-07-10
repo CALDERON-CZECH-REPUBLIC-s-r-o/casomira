@@ -7,9 +7,14 @@ import { akce as akceT, zavodnik as zavT } from "@/db/schema";
 import { vyzadujPrihlaseni } from "@/auth/guard";
 import { vekVRoce } from "@/domain/zarazeni";
 import { nastavitStavZavodnika } from "@/server/opravy";
-import { doplnitPohlaviDleJmen, nastavitPohlavi } from "@/server/zavodnici";
+import {
+  doplnitPohlaviDleJmen,
+  nastavitPohlavi,
+  smazatVsechnyZavodniky,
+} from "@/server/zavodnici";
 import { prepocitatZarazeni } from "@/server/kategorie";
 import { Btn, BtnLink, Card, EmptyState, PageHeader, Pill } from "../../../_components/ui";
+import { ConfirmDialog } from "@/app/[locale]/admin/_components/ui-client";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
 import { ZavodnikFormDialog } from "./zavodnik-form";
 
@@ -145,6 +150,11 @@ export default async function ZavodniciPage({
                         {z.prijmeni} {z.jmeno}
                       </>
                     )}
+                    {z.telefon && (
+                      <div className="font-technical text-[11px] tabular-nums text-ink-400">
+                        {z.telefon}
+                      </div>
+                    )}
                   </td>
                   <td className="p-3 font-technical tabular-nums text-ink-700">
                     {z.rokNarozeni ?? "—"}
@@ -195,6 +205,25 @@ export default async function ZavodniciPage({
             </tbody>
           </table>
         </Card>
+      )}
+
+      {zavodnici.length > 0 && (
+        <div className="mt-8 border-t border-ink-200 pt-6">
+          <div className="cal-eyebrow mb-3 text-error">Nebezpečná zóna</div>
+          <ConfirmDialog
+            title="Smazat všechny závodníky?"
+            message="Nevratně se smažou všichni závodníci této akce. Kategorie, čas startu a měření zůstávají; případné cílové záznamy se odpojí od závodníků."
+            dopady={[
+              `Smaže se ${zavodnici.length} závodníků`,
+              "Akci nelze vzít zpět",
+            ]}
+            slovo="SMAZAT"
+            confirmLabel="Smazat všechny"
+            action={smazatVsechnyZavodniky.bind(null, id)}
+            triggerLabel="Smazat všechny závodníky…"
+            triggerClassName="text-sm font-semibold text-error hover:underline"
+          />
+        </div>
       )}
       </div>
     </SpravaShell>

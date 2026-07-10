@@ -71,6 +71,13 @@
       "when": 1783368118579,
       "tag": "0009_fair_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783717451684,
+      "tag": "0010_slimy_dazzler",
+      "breakpoints": true
     }
   ]
 }

@@ -16,6 +16,7 @@ const importZavodnikSchema = z.object({
   pohlavi: z.enum(["M", "Z"]).nullable(),
   oddil: z.string().trim().nullable(),
   mesto: z.string().trim().nullable(),
+  telefon: z.string().trim().nullable(),
 });
 
 export type ImportZavodnik = z.infer<typeof importZavodnikSchema>;
@@ -110,6 +111,7 @@ export async function importovatZavodniky(
       startovniCislo: z.startovniCislo,
       oddil: z.oddil,
       mesto: z.mesto,
+      telefon: z.telefon,
       kategorieId,
     };
   });

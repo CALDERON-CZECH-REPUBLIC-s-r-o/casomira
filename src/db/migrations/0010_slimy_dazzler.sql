@@ -1,0 +1,1 @@
+ALTER TABLE "zavodnik" ADD COLUMN "telefon" text;

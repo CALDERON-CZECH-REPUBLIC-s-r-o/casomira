@@ -31,6 +31,8 @@ export const zavodnik = pgTable(
     oddil: text("oddil"),
     // Bydliště/město. Vzory „Oddíl“ fakticky plní městem → držíme zvlášť.
     mesto: text("mesto"),
+    // Telefon (pro SMS bránu). NULL = neuvedeno.
+    telefon: text("telefon"),
     kategorieId: uuid("kategorie_id").references(() => kategorie.id, {
       onDelete: "set null",
     }),

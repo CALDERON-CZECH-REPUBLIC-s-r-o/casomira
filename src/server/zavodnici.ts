@@ -30,6 +30,7 @@ const zavodnikSchema = z.object({
   startovniCislo: cisloNeboNull,
   oddil: textNeboNull,
   mesto: textNeboNull,
+  telefon: textNeboNull,
 });
 
 function parseForm(fd: FormData) {
@@ -41,6 +42,7 @@ function parseForm(fd: FormData) {
     startovniCislo: fd.get("startovniCislo"),
     oddil: fd.get("oddil"),
     mesto: fd.get("mesto"),
+    telefon: fd.get("telefon"),
   });
 }
 
@@ -91,6 +93,7 @@ export async function vytvoritZavodnika(akceId: string, formData: FormData) {
     startovniCislo: d.startovniCislo ?? null,
     oddil: d.oddil ?? null,
     mesto: d.mesto ?? null,
+    telefon: d.telefon ?? null,
     kategorieId,
   });
   revalidatePath(`/admin/akce/${akceId}/zavodnici`);
@@ -123,9 +126,18 @@ export async function upravitZavodnika(
       startovniCislo: d.startovniCislo ?? null,
       oddil: d.oddil ?? null,
       mesto: d.mesto ?? null,
+      telefon: d.telefon ?? null,
       kategorieId,
     })
     .where(eq(zavT.id, zavodnikId));
+  revalidatePath(`/admin/akce/${akceId}/zavodnici`);
+  revalidatePath(`/admin/akce/${akceId}`);
+}
+
+/** Nevratně smaže všechny závodníky akce (kategorie a měření zůstávají). */
+export async function smazatVsechnyZavodniky(akceId: string) {
+  await vyzadujPrihlaseni();
+  await db.delete(zavT).where(eq(zavT.akceId, akceId));
   revalidatePath(`/admin/akce/${akceId}/zavodnici`);
   revalidatePath(`/admin/akce/${akceId}`);
 }

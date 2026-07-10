@@ -47,6 +47,12 @@ export default async function AdminPage() {
             >
               {t("dash.obsah")}
             </Link>
+            <Link
+              href="/admin/sms"
+              className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
+            >
+              {t("dash.sms")}
+            </Link>
             <form
               action={async () => {
                 "use server";

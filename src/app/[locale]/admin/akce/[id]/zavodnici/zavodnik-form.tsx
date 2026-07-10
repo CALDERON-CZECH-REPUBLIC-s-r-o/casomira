@@ -14,6 +14,7 @@ type ZavodnikData = {
   startovniCislo: number | null;
   oddil: string | null;
   mesto: string | null;
+  telefon: string | null;
 };
 
 /**
@@ -121,14 +122,25 @@ export function ZavodnikFormDialog({
             />
           </label>
 
-          <label className="cal-label">
-            Město
-            <input
-              name="mesto"
-              defaultValue={zavodnik?.mesto ?? ""}
-              className="cal-input"
-            />
-          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="cal-label">
+              Město
+              <input
+                name="mesto"
+                defaultValue={zavodnik?.mesto ?? ""}
+                className="cal-input"
+              />
+            </label>
+            <label className="cal-label">
+              Telefon
+              <input
+                name="telefon"
+                type="tel"
+                defaultValue={zavodnik?.telefon ?? ""}
+                className="cal-input"
+              />
+            </label>
+          </div>
 
           <div className="flex items-center justify-end gap-2 pt-1">
             <Btn variant="ghost" type="button" onClick={() => setOpen(false)}>
