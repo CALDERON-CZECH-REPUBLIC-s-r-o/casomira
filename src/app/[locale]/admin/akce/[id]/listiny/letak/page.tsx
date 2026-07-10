@@ -36,17 +36,17 @@ export default async function LetakPage({
       <style>{`
         @page { size: A4 portrait; margin: 0; }
         @media print {
-          body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          html, body { margin: 0 !important; padding: 0 !important; background: #fff;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .letak-a4 { box-shadow: none !important; }
-          .letak { break-inside: avoid; }
         }
       `}</style>
 
       <TiskToolbar zpetHref={`/admin/akce/${id}/listiny`} titulek="Listiny" />
 
-      {/* A4 na výšku = dva letáky A5 nad sebou */}
+      {/* A4 na výšku = dva letáky A5 nad sebou (přesně půl na půl, bez přetečení) */}
       <div
-        className="letak-a4 mx-auto bg-white shadow-[var(--shadow-md)] print:shadow-none"
+        className="letak-a4 mx-auto flex flex-col overflow-hidden bg-white shadow-[var(--shadow-md)] print:shadow-none"
         style={{ width: "210mm", height: "297mm" }}
       >
         <Letak
@@ -88,7 +88,8 @@ function Letak({
     <section
       className="letak flex flex-col justify-between"
       style={{
-        height: "148.5mm",
+        flex: "1 1 0",
+        minHeight: 0,
         padding: "14mm 16mm",
         borderBottom: delici ? "1px dashed #b6c1bc" : undefined,
         color: "var(--ink-900)",
