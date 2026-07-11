@@ -126,16 +126,21 @@ export function Tabule({
 
   const a = data.akce;
 
-  // Běžící čas závodu (LED) — z casStartu.
+  // Běžící čas závodu (LED) — z casStartu; při ručním zastavení zmrazen.
   useEffect(() => {
-    if (!a.bezi || !a.casStartu) return;
+    if (!a.bezi || !a.casStartu || a.zastavenoAt) return;
     const i = setInterval(() => setNowMs(Date.now()), 100);
     return () => clearInterval(i);
-  }, [a.bezi, a.casStartu]);
+  }, [a.bezi, a.casStartu, a.zastavenoAt]);
+  const startMs = a.casStartu ? new Date(a.casStartu).getTime() : null;
   const clock =
-    a.casStartu && nowMs != null
-      ? uplynulyCas(nowMs - new Date(a.casStartu).getTime())
-      : null;
+    startMs === null
+      ? null
+      : a.zastavenoAt
+        ? uplynulyCas(new Date(a.zastavenoAt).getTime() - startMs)
+        : nowMs != null
+          ? uplynulyCas(nowMs - startMs)
+          : null;
 
   // Kolik řádků se vejde do těla projekce (fit-to-screen, bez scrollu).
   // Měříme vždy přítomný <main>, nezávisle na typu aktivní stránky.

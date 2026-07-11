@@ -8,7 +8,13 @@ import {
   useState,
 } from "react";
 import { useTranslations } from "next-intl";
-import { cistyCas, ztrata, casDneKratky, uplynulyCas } from "@/lib/cas";
+import {
+  cistyCas,
+  ztrata,
+  casDneKratky,
+  datumCasKratky,
+  uplynulyCas,
+} from "@/lib/cas";
 import { Btn, Card, Pill, PoweredBy } from "@/app/[locale]/admin/_components/ui";
 import { Dialog, SegmentedToggle } from "@/app/[locale]/admin/_components/ui-client";
 import { LangToggle } from "@/components/lang-toggle";
@@ -36,15 +42,25 @@ type Detail = { radek: VerejnyRadek; skupina: VerejnaSkupina };
 type Tema = "dark" | "light";
 
 /** Běžící čas závodu (od startu), tiká po 100 ms. null před startem. */
-function useBezciCas(casStartuISO: string | null, bezi: boolean): string | null {
+function useBezciCas(
+  casStartuISO: string | null,
+  bezi: boolean,
+  zastavenoAtISO: string | null,
+): string | null {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    if (!bezi || !casStartuISO) return;
+    if (!bezi || !casStartuISO || zastavenoAtISO) return;
     const i = setInterval(() => setNow(Date.now()), 100);
     return () => clearInterval(i);
-  }, [bezi, casStartuISO]);
-  if (!casStartuISO || now === null) return null;
-  return uplynulyCas(now - new Date(casStartuISO).getTime());
+  }, [bezi, casStartuISO, zastavenoAtISO]);
+  if (!casStartuISO) return null;
+  const startMs = new Date(casStartuISO).getTime();
+  // Ručně zastaveno → zmrazit na okamžiku zastavení.
+  if (zastavenoAtISO) {
+    return uplynulyCas(new Date(zastavenoAtISO).getTime() - startMs);
+  }
+  if (now === null) return null;
+  return uplynulyCas(now - startMs);
 }
 
 /** Perzistentní vzhled výsledků (tmavá tabule / světlý protokol). */
@@ -89,7 +105,11 @@ export function VerejnaAkce({
   const t = useTranslations("results");
   const tp = useTranslations("prihlaska");
   const [tema, setTema] = useTema();
-  const clock = useBezciCas(data.akce.casStartu, data.akce.bezi);
+  const clock = useBezciCas(
+    data.akce.casStartu,
+    data.akce.bezi,
+    data.akce.zastavenoAt,
+  );
 
   // Nový finišer → krátké zvýraznění řádku (slideFlash). Ref seedneme počáteční
   // množinou, ať se při načtení nerozblikají všichni.
@@ -149,10 +169,7 @@ export function VerejnaAkce({
   const nesklasifikovani = data.vysledky.celkova.radky.filter(
     (r) => r.stav === "DNF" || r.stav === "DNS" || r.stav === "DSQ",
   );
-  const razitko = a.uzavrenoAt ? new Date(a.uzavrenoAt) : null;
-  const razitkoText = razitko
-    ? `${razitko.getDate()}. ${razitko.getMonth() + 1}. ${razitko.getFullYear()} ${String(razitko.getHours()).padStart(2, "0")}:${String(razitko.getMinutes()).padStart(2, "0")}`
-    : "";
+  const razitkoText = a.uzavrenoAt ? datumCasKratky(a.uzavrenoAt) : "";
 
   return (
     <div

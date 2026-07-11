@@ -1,0 +1,1 @@
+ALTER TABLE "akce" ADD COLUMN "cas_zastaveni" timestamp with time zone;

@@ -48,6 +48,9 @@ export const akce = pgTable("akce", {
   // Oficiální výsledky — organizátor uzavřel závod (hodiny stojí, razítko rozhodčího).
   vysledkyUzavreny: boolean("vysledky_uzavreny").notNull().default(false),
   uzavrenoAt: timestamp("uzavreno_at", { withTimezone: true }),
+  // Ruční zastavení časomíry — okamžik zmrazení běžícího času (na tabuli i webu).
+  // NULL = běží. Start akce (cas_startu) zůstává, čisté časy jsou dál platné.
+  casZastaveni: timestamp("cas_zastaveni", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

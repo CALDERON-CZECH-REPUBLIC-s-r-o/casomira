@@ -13,7 +13,12 @@ import {
   smazVseProAkci,
   type OutboxPruchod,
 } from "@/lib/outbox";
-import { ulozitPruchody, nastavitStart, smazatPrubeh } from "@/server/mereni";
+import {
+  ulozitPruchody,
+  nastavitStart,
+  smazatPrubeh,
+  zastavitCasomiru,
+} from "@/server/mereni";
 import { spustSyncWorker } from "@/lib/mereni-sync";
 import { PoweredBy } from "@/app/[locale]/admin/_components/ui";
 import { ConfirmDialog, Dialog } from "@/app/[locale]/admin/_components/ui-client";
@@ -22,6 +27,7 @@ interface ZavodnikInfo {
   startovniCislo: number | null;
   jmeno: string;
   prijmeni: string;
+  stav: "prihlasen" | "nenastoupil_DNS" | "diskvalifikovan_DSQ";
 }
 
 /**
@@ -40,6 +46,7 @@ export function MereniScreen({
   akceId,
   nazev,
   casStartu: casStartuProp,
+  casZastaveni: casZastaveniProp,
   zavodnici,
   pocatecniZaznamy,
   body = [],
@@ -47,6 +54,7 @@ export function MereniScreen({
   akceId: string;
   nazev: string;
   casStartu: string | null;
+  casZastaveni: string | null;
   zavodnici: ZavodnikInfo[];
   pocatecniZaznamy: OutboxPruchod[];
   body?: BodInfo[];
@@ -65,6 +73,12 @@ export function MereniScreen({
   const [casStartu, setCasStartu] = useState<string | null>(casStartuProp);
   // Organizátor ručně odemkl měření po doběhu všech (přepis auto-zastavení).
   const [odemceno, setOdemceno] = useState(false);
+  // Ruční zastavení času (organizátor). Uloží okamžik zmrazení; start akce
+  // zůstává (na rozdíl od „zrušit start"), takže čisté časy jsou dál platné.
+  // Persistuje se na akci → zastaví se i tabule a veřejný web; přežije reload.
+  const [zastavenoMs, setZastavenoMs] = useState<number | null>(
+    casZastaveniProp ? new Date(casZastaveniProp).getTime() : null,
+  );
   const zamknutoRef = useRef(false);
   const [online, setOnline] = useState(true);
   const [nowMs, setNowMs] = useState<number | null>(null);
@@ -75,6 +89,12 @@ export function MereniScreen({
   const poradiRef = useRef(
     Math.max(0, ...pocatecniZaznamy.map((z) => z.poradiDoteku)),
   );
+  // Aktuální snímek záznamů pro úpravy (setState updater běží odloženě, proto
+  // nový záznam počítáme z refu, ne z návratové hodnoty updateru).
+  const zaznamyRef = useRef(zaznamy);
+  useEffect(() => {
+    zaznamyRef.current = zaznamy;
+  }, [zaznamy]);
   const { drzi: wakeDrzi, podporovano: wakePodporovano } = useWakeLock(true);
 
   const zavodniciMap = useMemo(() => {
@@ -257,22 +277,18 @@ export function MereniScreen({
 
   const upravZaznam = useCallback(
     async (clientId: string, zmena: Partial<OutboxPruchod>) => {
-      let novy: OutboxPruchod | null = null;
+      const soucasny = zaznamyRef.current.find((z) => z.clientId === clientId);
+      if (!soucasny) return;
+      const novy: OutboxPruchod = { ...soucasny, ...zmena, dirty: true };
       setZaznamy((prev) =>
-        prev.map((z) => {
-          if (z.clientId !== clientId) return z;
-          novy = { ...z, ...zmena, dirty: true };
-          return novy;
-        }),
+        prev.map((z) => (z.clientId === clientId ? novy : z)),
       );
-      if (novy) {
-        try {
-          await ulozPruchod(novy);
-        } catch {
-          /* ignore */
-        }
-        sync();
+      try {
+        await ulozPruchod(novy); // pojistka do outboxu (přežije reload)
+      } catch {
+        /* i bez IndexedDB záznam půjde na server přes stav */
       }
+      sync(); // okamžitá synchronizace úpravy na server
     },
     [sync],
   );
@@ -298,6 +314,17 @@ export function MereniScreen({
   async function zrusitStart() {
     setCasStartu(null);
     await nastavitStart(akceId, null);
+  }
+  // Ruční zastavení / pokračování času (start akce zůstává zachován).
+  // Persistuje se na akci, aby se čas zmrazil i na tabuli a veřejném webu.
+  function zastavitCas() {
+    const now = Date.now();
+    setZastavenoMs(now);
+    void zastavitCasomiru(akceId, new Date(now).toISOString());
+  }
+  function pokracovatCas() {
+    setZastavenoMs(null);
+    void zastavitCasomiru(akceId, null);
   }
 
   // Vymazání dosavadního průběhu — server + lokální outbox + stav obrazovky.
@@ -358,11 +385,15 @@ export function MereniScreen({
     return m;
   }, [zaznamy]);
 
-  // Všechna startovní čísla (vzestupně) — pro počty.
+  // Všechna startovní čísla (vzestupně) — pro počty. DNS (nenastoupil) se
+  // v měřicí mřížce nezobrazuje — nestartuje, není co odklikávat.
   const vsechnaCisla = useMemo(
     () =>
       zavodnici
-        .filter((z) => z.startovniCislo !== null)
+        .filter(
+          (z) =>
+            z.startovniCislo !== null && z.stav !== "nenastoupil_DNS",
+        )
         .sort((a, b) => (a.startovniCislo ?? 0) - (b.startovniCislo ?? 0)),
     [zavodnici],
   );
@@ -386,19 +417,24 @@ export function MereniScreen({
     for (const i of cislaInfo.values()) if (i.posledniMs > max) max = i.posledniMs;
     return max;
   }, [cislaInfo]);
-  // Zamčeno = dokončeno a organizátor to ručně neodemkl. Časomíra stojí, měření neběží.
-  const zamknuto = zavodDokoncen && !odemceno;
+  // Zamčeno = ručně zastaveno NEBO dokončeno a organizátor to ručně neodemkl.
+  // Časomíra stojí, měření neběží.
+  const zamknuto = zastavenoMs !== null || (zavodDokoncen && !odemceno);
   // Zrcadli do ref pro guard v pridejPruchod (čte se až v event handleru, ne při renderu).
   useEffect(() => {
     zamknutoRef.current = zamknuto;
   }, [zamknuto]);
 
   const clock =
-    startMs !== null && zamknuto && posledniDobehMs > 0
-      ? uplynulyCas(posledniDobehMs - startMs) // zmrazeno na posledním doběhu
-      : nowMs !== null && startMs !== null
-        ? uplynulyCas(nowMs - startMs)
-        : "00:00.0";
+    startMs === null
+      ? "00:00.0"
+      : zastavenoMs !== null
+        ? uplynulyCas(zastavenoMs - startMs) // ručně zastaveno
+        : zamknuto && posledniDobehMs > 0
+          ? uplynulyCas(posledniDobehMs - startMs) // zmrazeno na posledním doběhu
+          : nowMs !== null
+            ? uplynulyCas(nowMs - startMs)
+            : "00:00.0";
 
   return (
     <div
@@ -549,7 +585,7 @@ export function MereniScreen({
         </div>
       </header>
 
-      {/* ---------- Závod dokončen — časomíra zastavena ---------- */}
+      {/* ---------- Časomíra zastavena (ručně / dokončením) ---------- */}
       {zamknuto && (
         <div
           className="flex flex-none flex-wrap items-center gap-3 px-4 sm:px-6"
@@ -566,7 +602,9 @@ export function MereniScreen({
               color: "var(--success)",
             }}
           >
-            ✓ Závod dokončen — časomíra zastavena
+            {zastavenoMs !== null
+              ? "⏸ Čas zastaven — měření pozastaveno"
+              : "✓ Závod dokončen — časomíra zastavena"}
           </span>
           <span
             style={{
@@ -574,10 +612,12 @@ export function MereniScreen({
               color: "var(--ink-500)",
             }}
           >
-            všech {vsechnaCisla.length} startovních čísel má průchod
+            {zastavenoMs !== null
+              ? "start akce zůstává, čisté časy jsou platné"
+              : `všech ${vsechnaCisla.length} startovních čísel má průchod`}
           </span>
           <button
-            onClick={() => setOdemceno(true)}
+            onClick={zastavenoMs !== null ? pokracovatCas : () => setOdemceno(true)}
             className="cal-press ml-auto"
             style={{
               background: "#fff",
@@ -588,7 +628,7 @@ export function MereniScreen({
               color: "var(--ink-700)",
             }}
           >
-            Odemknout měření
+            {zastavenoMs !== null ? "▶ Pokračovat" : "Odemknout měření"}
           </button>
         </div>
       )}
@@ -665,6 +705,25 @@ export function MereniScreen({
                 }}
               >
                 ▶ START (hromadný)
+              </button>
+            )}
+
+            {/* Zastavit / pokračovat čas (start zůstává, na rozdíl od „zrušit") */}
+            {casStartu && (
+              <button
+                onClick={zastavenoMs !== null ? pokracovatCas : zastavitCas}
+                className="cal-press mt-[13px] w-full"
+                style={{
+                  background: zastavenoMs !== null ? "var(--teal-500)" : "#fff",
+                  color: zastavenoMs !== null ? "#fff" : "var(--ink-700)",
+                  border:
+                    zastavenoMs !== null ? "none" : "1px solid var(--ink-200)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "10px 0",
+                  font: "600 13px var(--cal-font-sans)",
+                }}
+              >
+                {zastavenoMs !== null ? "▶ Pokračovat v čase" : "⏸ Zastavit čas"}
               </button>
             )}
 

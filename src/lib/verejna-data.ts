@@ -54,6 +54,7 @@ export interface VerejnaData {
     slug: string;
     bezi: boolean; // start nastaven
     casStartu: string | null; // ISO čas startu (pro běžící čas na tabuli)
+    zastavenoAt: string | null; // ISO okamžik ručního zastavení časomíry (NULL = běží)
     aktualizovano: string; // ISO
     uzavreno: boolean; // oficiální výsledky (uzavřeno organizátorem)
     uzavrenoAt: string | null; // ISO čas uzavření (pro razítko)
@@ -142,6 +143,7 @@ export async function nactiVerejnaData(
       slug: data.akce.slug,
       bezi: data.akce.casStartu !== null,
       casStartu: data.akce.casStartu ? data.akce.casStartu.toISOString() : null,
+      zastavenoAt: akce.casZastaveni ? akce.casZastaveni.toISOString() : null,
       aktualizovano: new Date().toISOString(),
       uzavreno: akce.vysledkyUzavreny,
       uzavrenoAt: akce.uzavrenoAt ? akce.uzavrenoAt.toISOString() : null,

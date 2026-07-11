@@ -25,7 +25,7 @@ export default async function MereniPage({
 
   const zavodnici = await db.query.zavodnik.findMany({
     where: eq(zavT.akceId, id),
-    columns: { startovniCislo: true, jmeno: true, prijmeni: true },
+    columns: { startovniCislo: true, jmeno: true, prijmeni: true, stav: true },
   });
 
   const zaznamy = await db.query.cilovyZaznam.findMany({
@@ -45,10 +45,12 @@ export default async function MereniPage({
         akceId={id}
         nazev={akce.nazev}
         casStartu={akce.casStartu ? akce.casStartu.toISOString() : null}
+        casZastaveni={akce.casZastaveni ? akce.casZastaveni.toISOString() : null}
         zavodnici={zavodnici.map((z) => ({
           startovniCislo: z.startovniCislo,
           jmeno: z.jmeno,
           prijmeni: z.prijmeni,
+          stav: z.stav,
         }))}
         pocatecniZaznamy={zaznamy.map((z) => ({
           clientId: z.clientId,

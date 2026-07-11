@@ -101,6 +101,19 @@ export async function nastavitStart(akceId: string, casISO: string | null) {
 }
 
 /**
+ * Ruční zastavení / obnovení běžící časomíry. `casISO` = okamžik zmrazení
+ * (běžící čas se zastaví i na tabuli a veřejném webu), `null` = pokračovat.
+ * Start akce zůstává, čisté časy jsou dál platné.
+ */
+export async function zastavitCasomiru(akceId: string, casISO: string | null) {
+  await vyzadujPrihlaseni();
+  await db
+    .update(akceT)
+    .set({ casZastaveni: casISO ? new Date(casISO) : null })
+    .where(eq(akceT.id, akceId));
+}
+
+/**
  * Nevratně smaže dosavadní průběh závodu — všechny cílové záznamy (průchody)
  * akce. Závodníci, kategorie a čas startu zůstávají. Používá se k vyčištění
  * měření (např. testovací průchody před ostrým startem). Vrací počet smazaných.

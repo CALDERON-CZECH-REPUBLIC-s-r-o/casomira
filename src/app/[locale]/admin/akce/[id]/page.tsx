@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
 function formatStart(d: Date | null): string {
   if (!d) return "—";
   return new Intl.DateTimeFormat("cs-CZ", {
+    timeZone: "Europe/Prague",
     day: "numeric",
     month: "numeric",
     hour: "2-digit",

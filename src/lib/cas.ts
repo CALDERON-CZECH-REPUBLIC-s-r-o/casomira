@@ -2,19 +2,31 @@ import { DateTime, Duration } from "luxon";
 
 /**
  * Formátování času pro měření. Wall-clock razítka (ms) z notebooku operátora.
- * Vše ukládáme v UTC, zobrazujeme v lokální zóně.
+ * Vše ukládáme v UTC, zobrazujeme v PEVNÉ zóně (Europe/Prague) — jinak by se čas
+ * lišil mezi serverem (UTC) a prohlížečem (lokální) o offset zóny.
  */
+const ZONA = "Europe/Prague";
+
+/** Luxon DateTime v pevné zóně akce z Date nebo ISO stringu. */
+function vZone(d: Date | string): DateTime {
+  return typeof d === "string"
+    ? DateTime.fromISO(d, { zone: ZONA })
+    : DateTime.fromJSDate(d, { zone: ZONA });
+}
 
 /** Čas dne s milisekundami: "14:03:27.480". */
 export function casDne(d: Date | string): string {
-  const dt = typeof d === "string" ? DateTime.fromISO(d) : DateTime.fromJSDate(d);
-  return dt.toFormat("HH:mm:ss.SSS");
+  return vZone(d).toFormat("HH:mm:ss.SSS");
 }
 
 /** Čas dne bez ms: "14:03:27". */
 export function casDneKratky(d: Date | string): string {
-  const dt = typeof d === "string" ? DateTime.fromISO(d) : DateTime.fromJSDate(d);
-  return dt.toFormat("HH:mm:ss");
+  return vZone(d).toFormat("HH:mm:ss");
+}
+
+/** Datum a čas bez sekund: "5. 7. 2026 14:03" (zóna akce). */
+export function datumCasKratky(d: Date | string): string {
+  return vZone(d).toFormat("d. M. yyyy HH:mm");
 }
 
 /**
@@ -68,15 +80,14 @@ export function cistyCasNaMs(str: string): number | null {
   return ((hodiny * 60 + minuty) * 60 + sekundy) * 1000 + ms;
 }
 
-/** Čas dne pro editační input: "HH:mm:ss.SSS" (lokální). */
+/** Čas dne pro editační input: "HH:mm:ss.SSS" (zóna akce). */
 export function casNaInput(d: Date | string): string {
-  const dt = typeof d === "string" ? DateTime.fromISO(d) : DateTime.fromJSDate(d);
-  return dt.toFormat("HH:mm:ss.SSS");
+  return vZone(d).toFormat("HH:mm:ss.SSS");
 }
 
 /**
  * Sestaví nové razítko z editovaného času dne ("HH:mm:ss(.SSS)"), zachová datum
- * původního razítka (lokální zóna). null = neplatný formát.
+ * původního razítka (zóna Europe/Prague). null = neplatný formát.
  */
 export function inputNaCas(
   original: Date | string,
@@ -87,10 +98,7 @@ export function inputNaCas(
   const [, h, min, s, frac] = m;
   const ms = frac ? Number((frac + "000").slice(0, 3)) : 0;
   if (Number(h) > 23 || Number(min) > 59 || Number(s) > 59) return null;
-  const base =
-    typeof original === "string"
-      ? DateTime.fromISO(original)
-      : DateTime.fromJSDate(original);
+  const base = vZone(original);
   const novy = base.set({
     hour: Number(h),
     minute: Number(min),
