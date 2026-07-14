@@ -1,10 +1,10 @@
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujSchvaleneho } from "@/auth/guard";
 import { vytvoritAkci } from "@/server/akce";
 import { AkceFormFields } from "../../_components/akce-form";
 import { Btn, Card, PageHeader, PoweredBy } from "../../_components/ui";
 
 export default async function NovaAkcePage() {
-  await vyzadujPrihlaseni();
+  await vyzadujSchvaleneho();
 
   return (
     <main className="mx-auto max-w-2xl p-6">

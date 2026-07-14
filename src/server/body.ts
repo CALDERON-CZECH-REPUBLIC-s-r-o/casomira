@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { mericiBod } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 
 const cisloNeboNull = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
@@ -39,7 +39,7 @@ function revalidovat(akceId: string) {
 }
 
 export async function vytvoritBod(akceId: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const d = parseForm(formData);
   await db.insert(mericiBod).values({
     akceId,
@@ -57,7 +57,7 @@ export async function upravitBod(
   akceId: string,
   formData: FormData,
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const d = parseForm(formData);
   await db
     .update(mericiBod)
@@ -73,7 +73,7 @@ export async function upravitBod(
 }
 
 export async function smazatBod(bodId: string, akceId: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   // FK na cilovy_zaznam.bod_id je set null → průchody přežijí bez bodu.
   await db.delete(mericiBod).where(eq(mericiBod.id, bodId));
   revalidovat(akceId);
@@ -84,7 +84,7 @@ export async function smazatBod(bodId: string, akceId: string) {
  * akce, pak ho zapne (a nastaví typ 'cilova') vybranému bodu.
  */
 export async function nastavitCilovyBod(bodId: string, akceId: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   await db
     .update(mericiBod)
     .set({ jeCil: false })

@@ -11,7 +11,7 @@ import {
   zavodnik as zavT,
   upravaLog,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 import { inputNaCas, casDne, casDneKratky, cistyCasNaMs } from "@/lib/cas";
 
 async function zapisLog(akceId: string, popis: string, zaznamId?: string) {
@@ -46,7 +46,7 @@ async function zavodnikDleCisla(akceId: string, cislo: number | null) {
  *    nastavený čas startu akce.
  */
 export async function vlozitRucniPruchod(akceId: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const casStr = String(formData.get("cas") ?? "").trim();
   const cisloRaw = String(formData.get("cislo") ?? "").trim();
   const datum = String(formData.get("datum") ?? "").trim(); // YYYY-MM-DD akce
@@ -106,7 +106,7 @@ export async function vlozitRucniPruchod(akceId: string, formData: FormData) {
  * se odvozují z `casCile − casStartu`, takže se změnou startu přepočítají samy.
  */
 export async function nastavitStartRucne(akceId: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const casStr = String(formData.get("cas") ?? "").trim();
   const ak = await db.query.akce.findFirst({
     where: eq(akceT.id, akceId),
@@ -140,7 +140,7 @@ export async function upravitCasZaznamu(
   akceId: string,
   formData: FormData,
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const casStr = String(formData.get("cas") ?? "").trim();
   const z = await db.query.cilovyZaznam.findFirst({
     where: eq(cilovyZaznam.id, zaznamId),
@@ -169,7 +169,7 @@ export async function upravitCisloZaznamu(
   akceId: string,
   formData: FormData,
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const cisloRaw = String(formData.get("cislo") ?? "").trim();
   const cislo = cisloRaw ? parseInt(cisloRaw.replace(/\D/g, ""), 10) : null;
   const platneCislo = cislo !== null && Number.isFinite(cislo) ? cislo : null;
@@ -201,7 +201,7 @@ export async function zmenitStavZaznamu(
   akceId: string,
   stav: "platny" | "neprirazeno" | "smazany" | "DNF",
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   await db
     .update(cilovyZaznam)
     .set({ stav, editedAt: new Date() })
@@ -216,7 +216,7 @@ export async function nastavitStavZavodnika(
   akceId: string,
   stav: "prihlasen" | "nenastoupil_DNS" | "diskvalifikovan_DSQ",
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const z = await db.query.zavodnik.findFirst({
     where: eq(zavT.id, zavodnikId),
     columns: { prijmeni: true, jmeno: true },

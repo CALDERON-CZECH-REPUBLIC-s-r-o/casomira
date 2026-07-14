@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { vyzadujAkci } from "@/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function ZkratkyPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await vyzadujAkci(id);
   return (
     <main className="cal-dots-dark flex flex-1 flex-col items-center bg-ink-950 px-6 py-12 font-brand text-white">
       <div className="w-full max-w-lg">

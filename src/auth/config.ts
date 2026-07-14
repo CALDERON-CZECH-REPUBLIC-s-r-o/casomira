@@ -23,11 +23,23 @@ export const authConfig = {
       return true;
     },
     async jwt({ token, user }) {
-      if (user) token.sub = user.id;
+      if (user) {
+        token.sub = user.id;
+        token.role = user.role;
+        token.stav = user.stav;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.sub) session.user.id = token.sub;
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+        session.user.role =
+          (token.role as "organizator" | "superadmin" | undefined) ??
+          "organizator";
+        session.user.stav =
+          (token.stav as "ceka" | "schvalen" | "zamitnut" | undefined) ??
+          "ceka";
+      }
       return session;
     },
   },

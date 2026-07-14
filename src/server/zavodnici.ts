@@ -5,7 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { akce as akceT, kategorie as katT, zavodnik as zavT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 import { zaradit } from "@/domain/zarazeni";
 import { odhadniPohlaviZeJmena, type Pohlavi } from "@/lib/pohlavi";
 import { prepocitatZarazeni } from "./kategorie";
@@ -76,7 +76,7 @@ async function cisloVolne(
 }
 
 export async function vytvoritZavodnika(akceId: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const d = parseForm(formData);
   if (d.startovniCislo != null && !(await cisloVolne(akceId, d.startovniCislo))) {
     throw new Error(`Startovní číslo ${d.startovniCislo} už v akci existuje.`);
@@ -105,7 +105,7 @@ export async function upravitZavodnika(
   akceId: string,
   formData: FormData,
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const d = parseForm(formData);
   if (
     d.startovniCislo != null &&
@@ -136,7 +136,7 @@ export async function upravitZavodnika(
 
 /** Nevratně smaže všechny závodníky akce (kategorie a měření zůstávají). */
 export async function smazatVsechnyZavodniky(akceId: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   await db.delete(zavT).where(eq(zavT.akceId, akceId));
   revalidatePath(`/admin/akce/${akceId}/zavodnici`);
   revalidatePath(`/admin/akce/${akceId}`);
@@ -148,7 +148,7 @@ export async function nastavitPohlavi(
   akceId: string,
   pohlavi: Pohlavi,
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const z = await db.query.zavodnik.findFirst({
     where: eq(zavT.id, zavodnikId),
     columns: { rokNarozeni: true },
@@ -172,7 +172,7 @@ export async function nastavitPohlavi(
 export async function doplnitPohlaviDleJmen(
   akceId: string,
 ): Promise<{ doplneno: number }> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const bezPohlavi = await db.query.zavodnik.findMany({
     where: and(eq(zavT.akceId, akceId), isNull(zavT.pohlavi)),
     columns: { id: true, jmeno: true, prijmeni: true },

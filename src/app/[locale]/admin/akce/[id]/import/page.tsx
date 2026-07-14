@@ -1,8 +1,4 @@
-import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { akce as akceT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { BtnLink, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
 import { ImportWizard } from "./import-wizard";
@@ -14,10 +10,8 @@ export default async function ImportPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   return (
     <SpravaShell akceId={id} nazev={akce.nazev}>

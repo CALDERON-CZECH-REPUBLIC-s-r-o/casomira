@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { Users } from "lucide-react";
 import { db } from "@/db/client";
-import { akce as akceT, zavodnik as zavT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { zavodnik as zavT } from "@/db/schema";
+import { vyzadujAkci } from "@/auth/guard";
 import { vekVRoce } from "@/domain/zarazeni";
 import { nastavitStavZavodnika } from "@/server/opravy";
 import {
@@ -32,11 +31,9 @@ export default async function ZavodniciPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const zavodnici = await db.query.zavodnik.findMany({
     where: eq(zavT.akceId, id),

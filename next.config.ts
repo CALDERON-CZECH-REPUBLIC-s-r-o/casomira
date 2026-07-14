@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     "postgres",
     "@react-pdf/renderer",
     "exceljs",
+    "nodemailer",
   ],
 };
 

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { nactiDataAkce } from "@/lib/listiny-data";
 import { serazeneVysledky } from "@/domain/vysledky";
 import { TiskToolbar } from "../_components/tisk-toolbar";
@@ -19,9 +19,9 @@ export default async function VysledkovaListinaPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ rozsah?: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
   const sp = await searchParams;
+  await vyzadujAkci(id);
   const rozsah = sp.rozsah === "celkova" ? "celkova" : "kategorie";
 
   const data = await nactiDataAkce(id);

@@ -27,10 +27,14 @@
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",
-      "error": "Wrong email or password."
+      "error": "Wrong email or password.",
+      "noAccount": "No account?",
+      "register": "Register as an organizer"
     },
     "dash": {
       "yourRaces": "Your races",
+      "zakaznici": "Customers",
+      "email": "Email",
       "vyvoj": "Time trends",
       "historie": "History",
       "obsah": "Website content",

@@ -1,9 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { verify } from "@node-rs/argon2";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { uzivatel } from "@/db/schema";
+import { overHeslo } from "@/lib/hesla";
 import { authConfig } from "./config";
 
 /**
@@ -29,11 +29,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: eq(uzivatel.email, email),
         });
         if (!u) return null;
+        // Zamítnutý účet se nepustí; „ceka"/„schvalen" ano (omezení řeší guardy).
+        if (u.stav === "zamitnut") return null;
 
-        const ok = await verify(u.heshHesla, heslo);
+        const ok = await overHeslo(u.heshHesla, heslo);
         if (!ok) return null;
 
-        return { id: u.id, email: u.email, name: u.jmeno ?? u.email };
+        return {
+          id: u.id,
+          email: u.email,
+          name: u.jmeno ?? u.email,
+          role: u.role,
+          stav: u.stav,
+        };
       },
     }),
   ],

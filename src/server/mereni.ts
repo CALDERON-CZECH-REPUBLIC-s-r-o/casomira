@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { akce as akceT, cilovyZaznam, zavodnik as zavT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 
 const pruchodSchema = z.object({
   clientId: z.string().uuid(),
@@ -31,7 +31,7 @@ export async function ulozitPruchody(
   akceId: string,
   vstup: unknown,
 ): Promise<VysledekUlozeni[]> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
 
   const parsed = z.array(pruchodSchema).safeParse(vstup);
   if (!parsed.success) return [];
@@ -93,7 +93,7 @@ export async function ulozitPruchody(
 
 /** Nastaví/posune čas hromadného startu akce (z měřicí obrazovky). */
 export async function nastavitStart(akceId: string, casISO: string | null) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   await db
     .update(akceT)
     .set({ casStartu: casISO ? new Date(casISO) : null })
@@ -106,7 +106,7 @@ export async function nastavitStart(akceId: string, casISO: string | null) {
  * Start akce zůstává, čisté časy jsou dál platné.
  */
 export async function zastavitCasomiru(akceId: string, casISO: string | null) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   await db
     .update(akceT)
     .set({ casZastaveni: casISO ? new Date(casISO) : null })
@@ -119,7 +119,7 @@ export async function zastavitCasomiru(akceId: string, casISO: string | null) {
  * měření (např. testovací průchody před ostrým startem). Vrací počet smazaných.
  */
 export async function smazatPrubeh(akceId: string): Promise<number> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const smazane = await db
     .delete(cilovyZaznam)
     .where(eq(cilovyZaznam.akceId, akceId))

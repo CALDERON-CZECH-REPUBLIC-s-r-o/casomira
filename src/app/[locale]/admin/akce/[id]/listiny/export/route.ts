@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { auth } from "@/auth/nextauth";
+import { smiNaAkci } from "@/auth/guard";
 import { nactiDataAkce } from "@/lib/listiny-data";
 import { serazeneVysledky, startovniRadky } from "@/domain/vysledky";
 import {
@@ -33,6 +34,8 @@ export async function GET(
   if (!session?.user) return new Response("Neautorizováno", { status: 401 });
 
   const { id } = await params;
+  if (!(await smiNaAkci(session.user.id, id)))
+    return new Response("Nenalezeno", { status: 404 });
   const sp = req.nextUrl.searchParams;
   const typ = sp.get("typ") === "vysledkova" ? "vysledkova" : "startovni";
   const format = sp.get("format") === "xlsx" ? "xlsx" : "pdf";

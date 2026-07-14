@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  akce as akceT,
   cilovyZaznam,
   kategorie as kategorieT,
   mericiBod,
   zavodnik as zavT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { cistyCas } from "@/lib/cas";
 import {
   splityZavodnika,
@@ -79,11 +77,9 @@ export default async function ModeratorPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const [zavodnici, kategorie, body, zaznamy] = await Promise.all([
     db.query.zavodnik.findMany({

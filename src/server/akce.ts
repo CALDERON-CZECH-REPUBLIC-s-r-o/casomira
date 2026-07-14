@@ -6,7 +6,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { akce } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujSchvaleneho, overitVlastnictviAkce } from "@/auth/guard";
 import { slugify } from "@/lib/slug";
 
 const akceSchema = z.object({
@@ -36,7 +36,7 @@ async function unikatniSlug(zaklad: string, ignorujId?: string): Promise<string>
 }
 
 export async function vytvoritAkci(formData: FormData) {
-  await vyzadujPrihlaseni();
+  const { uzivatel } = await vyzadujSchvaleneho();
   const data = akceSchema.parse({
     nazev: formData.get("nazev"),
     datum: formData.get("datum"),
@@ -51,6 +51,7 @@ export async function vytvoritAkci(formData: FormData) {
   const [nova] = await db
     .insert(akce)
     .values({
+      uzivatelId: uzivatel.id,
       nazev: data.nazev,
       datum: data.datum,
       misto: data.misto,
@@ -65,7 +66,7 @@ export async function vytvoritAkci(formData: FormData) {
 }
 
 export async function upravitAkci(id: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   const data = akceSchema.parse({
     nazev: formData.get("nazev"),
     datum: formData.get("datum"),
@@ -93,7 +94,7 @@ export async function upravitAkci(id: string, formData: FormData) {
 }
 
 export async function smazatAkci(id: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   await db.delete(akce).where(eq(akce.id, id));
   revalidatePath("/admin/akce");
   redirect("/admin/akce");
@@ -112,7 +113,7 @@ const nastaveniSchema = z.object({
 
 /** Uloží nastavení akce (10a) — odkaz (slug), viditelnost, auto-publikace, přesnost, délka. */
 export async function ulozitNastaveni(id: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   const d = nastaveniSchema.parse({
     slug: formData.get("slug"),
     verejna: formData.get("verejna") === "on",
@@ -162,7 +163,7 @@ const prihlaskySchema = z.object({
 
 /** Uloží nastavení veřejných přihlášek a plateb (toggly, bankovní účet, startovné). */
 export async function ulozitPrihlasky(id: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   const d = prihlaskySchema.parse({
     registraceOtevrena: formData.get("registraceOtevrena") === "on",
     registraceSchvalovani: formData.get("registraceSchvalovani") === "on",
@@ -192,7 +193,7 @@ export async function ulozitPrihlasky(id: string, formData: FormData) {
 
 /** Uzavře výsledky akce (oficiální stav) — zastavené hodiny + razítko rozhodčího. */
 export async function uzavritVysledky(id: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   const stara = await db.query.akce.findFirst({
     where: eq(akce.id, id),
     columns: { slug: true },
@@ -208,7 +209,7 @@ export async function uzavritVysledky(id: string) {
 
 /** Znovu otevře výsledky (zpět na živé). */
 export async function otevritVysledky(id: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   const stara = await db.query.akce.findFirst({
     where: eq(akce.id, id),
     columns: { slug: true },
@@ -224,7 +225,7 @@ export async function otevritVysledky(id: string) {
 
 /** Nastaví/posune čas hromadného startu akce (měřicí obrazovka i ruční úprava). */
 export async function nastavitStartAkce(id: string, casISO: string | null) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(id);
   await db
     .update(akce)
     .set({ casStartu: casISO ? new Date(casISO) : null })

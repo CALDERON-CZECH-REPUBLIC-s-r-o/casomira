@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { nactiDataAkce } from "@/lib/listiny-data";
 import { startovniRadky } from "@/domain/vysledky";
 import { TiskToolbar } from "../_components/tisk-toolbar";
@@ -19,9 +19,9 @@ export default async function StartovniListinaPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ rozsah?: string; sort?: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
   const sp = await searchParams;
+  await vyzadujAkci(id);
   const rozsah = sp.rozsah === "kategorie" ? "kategorie" : "celkova";
   const sort = sp.sort === "abeceda" ? "abeceda" : "cislo";
 

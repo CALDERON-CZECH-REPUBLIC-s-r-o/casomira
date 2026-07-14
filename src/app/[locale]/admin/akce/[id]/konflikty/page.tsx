@@ -1,14 +1,12 @@
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { CheckCircle2 } from "lucide-react";
 import { db } from "@/db/client";
 import {
-  akce as akceT,
   cilovyZaznam,
   mericiBod,
   zavodnik as zavT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { casDneKratky } from "@/lib/cas";
 import { najdiKonflikty } from "@/domain/konflikty";
 import { zmenitStavZaznamu } from "@/server/opravy";
@@ -22,11 +20,9 @@ export default async function KonfliktyPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const [zaznamy, zavodnici, body] = await Promise.all([
     db.query.cilovyZaznam.findMany({

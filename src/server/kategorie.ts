@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { akce, kategorie, zavodnik } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 import { zaradit } from "@/domain/zarazeni";
 
 const cisloNeboNull = z.preprocess(
@@ -41,7 +41,7 @@ function parseForm(formData: FormData) {
 }
 
 export async function vytvoritKategorii(akceId: string, formData: FormData) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const d = parseForm(formData);
   await db.insert(kategorie).values({
     akceId,
@@ -77,7 +77,7 @@ export async function vytvoritKategorieHromadne(
   akceId: string,
   vstup: unknown,
 ): Promise<{ vytvoreno: number }> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const parsed = hromadneSchema.safeParse(vstup);
   if (!parsed.success || parsed.data.length === 0) return { vytvoreno: 0 };
 
@@ -112,7 +112,7 @@ export async function upravitKategorii(
   akceId: string,
   formData: FormData,
 ) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const d = parseForm(formData);
   await db
     .update(kategorie)
@@ -131,7 +131,7 @@ export async function upravitKategorii(
 }
 
 export async function smazatKategorii(id: string, akceId: string) {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   // FK má onDelete: set null → závodníci zůstanou bez kategorie (k řešení).
   await db.delete(kategorie).where(eq(kategorie.id, id));
   revalidatePath(`/admin/akce/${akceId}/kategorie`);
@@ -144,7 +144,7 @@ export async function smazatKategorii(id: string, akceId: string) {
 export async function prepocitatZarazeni(
   akceId: string,
 ): Promise<{ zmeneno: number; nezarazeno: number }> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
 
   const ak = await db.query.akce.findFirst({
     where: eq(akce.id, akceId),

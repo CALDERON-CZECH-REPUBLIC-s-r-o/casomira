@@ -1,21 +1,26 @@
 import { Calendar } from "lucide-react";
+import { eq } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { signOut } from "@/auth/nextauth";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujSchvaleneho } from "@/auth/guard";
 import { db } from "@/db/client";
+import { akce as akceT } from "@/db/schema";
 import { BtnLink, Card, EmptyState, Pill, PoweredBy } from "./_components/ui";
 import { LangToggle } from "@/components/lang-toggle";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Rozcestník administrace — seznam akcí + založení nové.
+ * Rozcestník administrace — seznam akcí + založení nové. Pořadatel vidí jen své
+ * akce; globální admin vidí všechny + odkaz na panel zákazníků.
  */
 export default async function AdminPage() {
-  await vyzadujPrihlaseni();
+  const { uzivatel } = await vyzadujSchvaleneho();
+  const jeSuperadmin = uzivatel.role === "superadmin";
   const t = await getTranslations("admin");
   const akce = await db.query.akce.findMany({
+    where: jeSuperadmin ? undefined : eq(akceT.uzivatelId, uzivatel.id),
     orderBy: (a, { desc }) => [desc(a.datum)],
   });
   // Server komponenta (force-dynamic) — čas se čte jednou za request.
@@ -35,6 +40,22 @@ export default async function AdminPage() {
             </h1>
           </div>
           <div className="flex flex-none items-center gap-4">
+            {jeSuperadmin && (
+              <>
+                <Link
+                  href="/admin/zakaznici"
+                  className="font-technical text-[11px] uppercase tracking-[.08em] text-teal-600 transition-colors hover:text-teal-800"
+                >
+                  {t("dash.zakaznici")}
+                </Link>
+                <Link
+                  href="/admin/email"
+                  className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"
+                >
+                  {t("dash.email")}
+                </Link>
+              </>
+            )}
             <Link
               href="/admin/vyvoj"
               className="font-technical text-[11px] uppercase tracking-[.08em] text-ink-500 transition-colors hover:text-ink-800"

@@ -5,6 +5,7 @@ import { AuthError } from "next-auth";
 import { auth, signIn } from "@/auth/nextauth";
 import { Btn, PoweredBy } from "../admin/_components/ui";
 import { LangToggle } from "@/components/lang-toggle";
+import { Link } from "@/i18n/navigation";
 
 /**
  * Přihlášení organizátora (Credentials). Po úspěchu redirect na callbackUrl nebo /admin.
@@ -91,6 +92,15 @@ export default async function PrihlaseniPage({
               {t("submit")}
             </Btn>
           </form>
+          <p className="mt-5 text-center text-[13px] text-ink-500">
+            {t("noAccount")}{" "}
+            <Link
+              href="/registrace"
+              className="font-semibold text-teal-600 hover:text-teal-700"
+            >
+              {t("register")}
+            </Link>
+          </p>
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-4">

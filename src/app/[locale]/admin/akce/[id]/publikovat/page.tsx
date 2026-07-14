@@ -1,10 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { akce as akceT } from "@/db/schema";
 import { env } from "@/lib/env";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { qrSvgDataUri } from "@/lib/qr";
 import { uzavritVysledky, otevritVysledky } from "@/server/akce";
 import { Btn, BtnLink, Card, PageHeader, Pill } from "../../../_components/ui";
@@ -20,10 +16,8 @@ export default async function PublikovatPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const nakonfigurovano = !!(env.CLOUD_SYNC_URL && env.SYNC_TOKEN);
   const cloudUrl = env.CLOUD_SYNC_URL

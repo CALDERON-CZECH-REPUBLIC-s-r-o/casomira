@@ -1,8 +1,7 @@
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { akce as akceT, zavodnik as zavT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { zavodnik as zavT } from "@/db/schema";
+import { vyzadujAkci } from "@/auth/guard";
 import { BtnLink, Card, PageHeader } from "../../../_components/ui";
 import { SpravaShell } from "@/app/[locale]/admin/_components/sprava-shell";
 
@@ -13,11 +12,9 @@ export default async function ListinyHubPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
   const pocet = await db.$count(zavT, eq(zavT.akceId, id));
 
   const base = `/admin/akce/${id}/listiny`;

@@ -1,7 +1,7 @@
 "use server";
 
 import { env } from "@/lib/env";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 import { sestavSnapshot, ulozSnapshot, snapshotSchema } from "@/lib/snapshot";
 
 export interface VysledekPublikovani {
@@ -16,7 +16,7 @@ export interface VysledekPublikovani {
  * měření tím není dotčeno. Idempotentní (cloud full-replace dle id/client_id).
  */
 export async function publikovat(akceId: string): Promise<VysledekPublikovani> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   if (!env.CLOUD_SYNC_URL || !env.SYNC_TOKEN) {
     return {
       ok: false,
@@ -51,10 +51,10 @@ export async function publikovat(akceId: string): Promise<VysledekPublikovani> {
 
 /** Obnova akce ze zálohy (JSON snapshot) — nahraje do lokální DB. */
 export async function obnovitZeZalohy(
-  _akceId: string,
+  akceId: string,
   formData: FormData,
 ): Promise<VysledekPublikovani> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   const file = formData.get("zaloha");
   if (!(file instanceof File)) return { ok: false, chyba: "Chybí soubor." };
   let body: unknown;

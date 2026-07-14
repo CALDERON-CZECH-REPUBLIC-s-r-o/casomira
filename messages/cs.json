@@ -27,10 +27,14 @@
       "email": "E-mail",
       "password": "Heslo",
       "submit": "Přihlásit se",
-      "error": "Nesprávný e-mail nebo heslo."
+      "error": "Nesprávný e-mail nebo heslo.",
+      "noAccount": "Nemáte účet?",
+      "register": "Registrovat se jako pořadatel"
     },
     "dash": {
       "yourRaces": "Vaše závody",
+      "zakaznici": "Zákazníci",
+      "email": "E-mail",
       "vyvoj": "Vývoj časů",
       "historie": "Historie",
       "obsah": "Obsah webu",

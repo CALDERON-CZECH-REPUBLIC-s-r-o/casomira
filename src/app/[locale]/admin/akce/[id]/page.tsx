@@ -1,14 +1,12 @@
-import { notFound } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  akce as akceT,
   kategorie as katT,
   zavodnik as zavT,
   cilovyZaznam as czT,
   prihlaska as prihT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { verejnyOdkaz } from "@/lib/verejna-url";
 import { qrSvgDataUri } from "@/lib/qr";
 import { BtnLink, Card, MetricCard } from "../../_components/ui";
@@ -32,11 +30,9 @@ export default async function AkceDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const kategorie = await db.$count(katT, eq(katT.akceId, id));
   const zavodnici = await db.$count(zavT, eq(zavT.akceId, id));

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { akce as akceT, kategorie as katT, zavodnik as zavT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 import { zaradit } from "@/domain/zarazeni";
 
 const importZavodnikSchema = z.object({
@@ -37,7 +37,7 @@ export async function importovatZavodniky(
   akceId: string,
   vstup: unknown,
 ): Promise<VysledekImportu> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
 
   const parsed = z.array(importZavodnikSchema).safeParse(vstup);
   if (!parsed.success) {

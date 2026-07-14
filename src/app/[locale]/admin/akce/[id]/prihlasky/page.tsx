@@ -1,9 +1,8 @@
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { ClipboardList, Check, Phone, Mail } from "lucide-react";
 import { db } from "@/db/client";
-import { akce as akceT, prihlaska as prihT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { prihlaska as prihT } from "@/db/schema";
+import { vyzadujAkci } from "@/auth/guard";
 import { ucetNaIban, spayd } from "@/lib/platba";
 import { qrSvgDataUri } from "@/lib/qr";
 import {
@@ -30,11 +29,9 @@ export default async function PrihlaskyPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const prihlasky = await db.query.prihlaska.findMany({
     where: eq(prihT.akceId, id),

@@ -1,9 +1,8 @@
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { MapPin } from "lucide-react";
 import { db } from "@/db/client";
-import { akce as akceT, mericiBod as bodT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { mericiBod as bodT } from "@/db/schema";
+import { vyzadujAkci } from "@/auth/guard";
 import { nastavitCilovyBod, smazatBod } from "@/server/body";
 import { Card, EmptyState, PageHeader, Pill } from "@/app/[locale]/admin/_components/ui";
 import { ConfirmDialog } from "@/app/[locale]/admin/_components/ui-client";
@@ -23,11 +22,9 @@ export default async function BranyPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const body = await db.query.mericiBod.findMany({
     where: eq(bodT.akceId, id),

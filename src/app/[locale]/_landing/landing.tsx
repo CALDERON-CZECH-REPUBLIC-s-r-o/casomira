@@ -162,7 +162,7 @@ export function Landing({
               {obsah.nav.prihlasit}
             </Link>
             <LangToggle />
-            <Cta href="/prihlaseni" glow={false}>
+            <Cta href="/registrace" glow={false}>
               {obsah.nav.cta}
             </Cta>
           </nav>
@@ -197,7 +197,7 @@ export function Landing({
               >
                 {obsah.nav.prihlasit}
               </Link>
-              <Cta href="/prihlaseni">{obsah.nav.cta}</Cta>
+              <Cta href="/registrace">{obsah.nav.cta}</Cta>
             </nav>
           </div>
         )}
@@ -231,7 +231,7 @@ export function Landing({
               className="cal-rise mt-8 flex flex-wrap gap-3"
               style={{ animationDelay: "220ms" }}
             >
-              <Cta href="/prihlaseni">{obsah.hero.ctaPrimary}</Cta>
+              <Cta href="/registrace">{obsah.hero.ctaPrimary}</Cta>
               <a
                 href={ukazkaHref}
                 className="cal-press inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
@@ -481,7 +481,7 @@ export function Landing({
                     ))}
                   </ul>
                   <Link
-                    href="/prihlaseni"
+                    href="/registrace"
                     className={`cal-press mt-6 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
                       zvyraznit
                         ? "bg-teal-500 text-white shadow-[var(--shadow-primary)] hover:bg-teal-600"
@@ -613,7 +613,7 @@ export function Landing({
             {obsah.ctaFinal.popis}
           </p>
           <div className="mt-8 flex justify-center">
-            <Cta href="/prihlaseni">{obsah.ctaFinal.cta}</Cta>
+            <Cta href="/registrace">{obsah.ctaFinal.cta}</Cta>
           </div>
         </div>
       </section>

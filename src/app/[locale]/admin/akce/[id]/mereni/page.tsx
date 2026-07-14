@@ -1,13 +1,11 @@
-import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  akce as akceT,
   cilovyZaznam,
   mericiBod,
   zavodnik as zavT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { MereniScreen } from "./mereni-screen";
 
 export const dynamic = "force-dynamic";
@@ -17,11 +15,9 @@ export default async function MereniPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const zavodnici = await db.query.zavodnik.findMany({
     where: eq(zavT.akceId, id),

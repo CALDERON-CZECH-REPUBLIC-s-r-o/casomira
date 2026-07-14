@@ -1,12 +1,10 @@
-import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  akce as akceT,
   cilovyZaznam,
   upravaLog,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { casNaInput, casDneKratky } from "@/lib/cas";
 import {
   upravitCasZaznamu,
@@ -45,12 +43,10 @@ export default async function OpravyPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ chyba?: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
   const sp = await searchParams;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const zaznamy = await db.query.cilovyZaznam.findMany({
     where: eq(cilovyZaznam.akceId, id),

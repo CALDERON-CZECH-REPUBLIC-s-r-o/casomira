@@ -1,8 +1,8 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { akce as akceT, kategorie as katT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { kategorie as katT } from "@/db/schema";
+import { vyzadujAkci } from "@/auth/guard";
 import {
   vytvoritKategorii,
   upravitKategorii,
@@ -27,12 +27,10 @@ export default async function KategoriePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ z?: string; n?: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id } = await params;
   const sp = await searchParams;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const kategorie = await db.query.kategorie.findMany({
     where: eq(katT.akceId, id),

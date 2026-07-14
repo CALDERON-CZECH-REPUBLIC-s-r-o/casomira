@@ -31,3 +31,16 @@ export const prihlaskaStavEnum = pgEnum("prihlaska_stav", [
   "schvalena",
   "zamitnuta",
 ]);
+
+/** Role účtu: běžný pořadatel vs globální administrátor (fakturace, schvalování). */
+export const uzivatelRoleEnum = pgEnum("uzivatel_role", [
+  "organizator",
+  "superadmin",
+]);
+
+/** Stav pořadatelského účtu (veřejná registrace čeká na schválení). */
+export const uzivatelStavEnum = pgEnum("uzivatel_stav", [
+  "ceka",
+  "schvalen",
+  "zamitnut",
+]);

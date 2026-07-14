@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { akce as akceT } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import { nactiDataAkce } from "@/lib/listiny-data";
 import { serazeneVysledky } from "@/domain/vysledky";
 import { cistyCas, ztrata } from "@/lib/cas";
@@ -28,12 +25,10 @@ export default async function KategorieZebricekPage({
 }: {
   params: Promise<{ id: string; kod: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id, kod } = await params;
   const kodDekod = decodeURIComponent(kod);
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const data = await nactiDataAkce(id);
   if (!data) notFound();

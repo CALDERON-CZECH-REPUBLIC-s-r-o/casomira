@@ -2,13 +2,12 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  akce as akceT,
   zavodnik as zavT,
   kategorie as katT,
   cilovyZaznam,
   mericiBod as bodT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujAkci } from "@/auth/guard";
 import {
   serazeneVysledky,
   type ZavodnikVysledek,
@@ -52,11 +51,9 @@ export default async function ZavodnikDetailPage({
 }: {
   params: Promise<{ id: string; cislo: string }>;
 }) {
-  await vyzadujPrihlaseni();
   const { id, cislo } = await params;
 
-  const akce = await db.query.akce.findFirst({ where: eq(akceT.id, id) });
-  if (!akce) notFound();
+  const { akce } = await vyzadujAkci(id);
 
   const cisloNum = Number.parseInt(cislo, 10);
   if (!Number.isFinite(cisloNum)) notFound();

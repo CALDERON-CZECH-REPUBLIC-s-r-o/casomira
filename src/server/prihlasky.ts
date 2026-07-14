@@ -10,7 +10,7 @@ import {
   zavodnik as zavT,
   prihlaska as prihT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { overitVlastnictviAkce } from "@/auth/guard";
 import { zaradit } from "@/domain/zarazeni";
 import { odhadniPohlaviZeJmena, type Pohlavi } from "@/lib/pohlavi";
 import { ucetNaIban, spayd } from "@/lib/platba";
@@ -256,9 +256,9 @@ function revalidatePrihlasky(akceId: string, slug?: string) {
 
 /** Schválí přihlášku → založí (pokud ještě není) závodníka ve startovce. */
 export async function schvalitPrihlasku(id: string) {
-  await vyzadujPrihlaseni();
   const nacteno = await nactiPrihlasku(id);
   if (!nacteno) return;
+  await overitVlastnictviAkce(nacteno.p.akceId);
   const { p, slug } = nacteno;
 
   let zavodnikId = p.zavodnikId;
@@ -281,27 +281,27 @@ export async function schvalitPrihlasku(id: string) {
 
 /** Zamítne přihlášku (do startovky se nedostane). */
 export async function zamitnoutPrihlasku(id: string) {
-  await vyzadujPrihlaseni();
   const nacteno = await nactiPrihlasku(id);
   if (!nacteno) return;
+  await overitVlastnictviAkce(nacteno.p.akceId);
   await db.update(prihT).set({ stav: "zamitnuta" }).where(eq(prihT.id, id));
   revalidatePrihlasky(nacteno.p.akceId, nacteno.slug);
 }
 
 /** Přepne stav úhrady startovného. */
 export async function oznacitZaplaceno(id: string, zaplaceno: boolean) {
-  await vyzadujPrihlaseni();
   const nacteno = await nactiPrihlasku(id);
   if (!nacteno) return;
+  await overitVlastnictviAkce(nacteno.p.akceId);
   await db.update(prihT).set({ zaplaceno }).where(eq(prihT.id, id));
   revalidatePrihlasky(nacteno.p.akceId, nacteno.slug);
 }
 
 /** Smaže přihlášku (navázaného závodníka ponechá; odpojí se přes set null). */
 export async function smazatPrihlasku(id: string) {
-  await vyzadujPrihlaseni();
   const nacteno = await nactiPrihlasku(id);
   if (!nacteno) return;
+  await overitVlastnictviAkce(nacteno.p.akceId);
   await db.delete(prihT).where(eq(prihT.id, id));
   revalidatePrihlasky(nacteno.p.akceId, nacteno.slug);
 }
@@ -311,7 +311,7 @@ export async function smazatPrihlasku(id: string) {
  * i zaplacené zůstávají. Vrací počet smazaných.
  */
 export async function smazatSpamPrihlasky(akceId: string): Promise<void> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
   await db
     .delete(prihT)
     .where(

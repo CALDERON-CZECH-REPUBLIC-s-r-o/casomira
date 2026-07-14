@@ -9,7 +9,7 @@ import {
   zavodnik as zavT,
   historickyVysledek as histT,
 } from "@/db/schema";
-import { vyzadujPrihlaseni } from "@/auth/guard";
+import { vyzadujSchvaleneho, overitVlastnictviAkce } from "@/auth/guard";
 import { odhadniPohlaviZeJmena } from "@/lib/pohlavi";
 
 const radekSchema = z.object({
@@ -33,7 +33,7 @@ export async function importovatHistorii(
   akceNazev: string,
   vstup: unknown,
 ): Promise<{ ok: boolean; vlozeno: number; chyba?: string }> {
-  await vyzadujPrihlaseni();
+  await vyzadujSchvaleneho();
 
   const nazev = (akceNazev ?? "").trim();
   if (!Number.isInteger(rok) || rok < 1900 || rok > 2100) {
@@ -81,7 +81,7 @@ export async function smazatHistoriiRocnik(
   akceNazev: string,
   rok: number,
 ): Promise<void> {
-  await vyzadujPrihlaseni();
+  await vyzadujSchvaleneho();
   await db
     .delete(histT)
     .where(and(eq(histT.akceNazev, akceNazev), eq(histT.rok, rok)));
@@ -97,7 +97,7 @@ export async function smazatHistoriiRocnik(
 export async function migrovatHistoriiZeZavodniku(
   akceId: string,
 ): Promise<{ ok: boolean; presunuto: number; chyba?: string }> {
-  await vyzadujPrihlaseni();
+  await overitVlastnictviAkce(akceId);
 
   const ak = await db.query.akce.findFirst({
     where: eq(akceT.id, akceId),

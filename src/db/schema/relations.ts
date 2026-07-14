@@ -4,10 +4,19 @@ import { kategorie } from "./kategorie";
 import { zavodnik } from "./zavodnik";
 import { cilovyZaznam } from "./cilovy-zaznam";
 import { mericiBod } from "./merici-bod";
+import { uzivatel } from "./identity";
 
 /** Relace pro Drizzle relational queries (`db.query … with`). */
 
-export const akceRelations = relations(akce, ({ many }) => ({
+export const uzivatelRelations = relations(uzivatel, ({ many }) => ({
+  akce: many(akce),
+}));
+
+export const akceRelations = relations(akce, ({ one, many }) => ({
+  uzivatel: one(uzivatel, {
+    fields: [akce.uzivatelId],
+    references: [uzivatel.id],
+  }),
   kategorie: many(kategorie),
   zavodnici: many(zavodnik),
   zaznamy: many(cilovyZaznam),

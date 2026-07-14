@@ -7,6 +7,7 @@ import {
   timestamp,
   boolean,
 } from "drizzle-orm/pg-core";
+import { uzivatel } from "./identity";
 
 /**
  * Akce = jeden závod. Hromadný start na úrovni akce (cas_startu),
@@ -14,6 +15,10 @@ import {
  */
 export const akce = pgTable("akce", {
   id: uuid("id").primaryKey().defaultRandom(),
+  // Vlastník (pořadatel). NULL jen u historických dat před zavedením účtů.
+  uzivatelId: uuid("uzivatel_id").references(() => uzivatel.id, {
+    onDelete: "set null",
+  }),
   nazev: text("nazev").notNull(),
   datum: date("datum").notNull(),
   misto: text("misto"),
@@ -51,6 +56,8 @@ export const akce = pgTable("akce", {
   // Ruční zastavení časomíry — okamžik zmrazení běžícího času (na tabuli i webu).
   // NULL = běží. Start akce (cas_startu) zůstává, čisté časy jsou dál platné.
   casZastaveni: timestamp("cas_zastaveni", { withTimezone: true }),
+  // Fakturace pořadateli — akce je uhrazená (cena za akci). Řídí globální admin.
+  fakturaceUhrazeno: boolean("fakturace_uhrazeno").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
