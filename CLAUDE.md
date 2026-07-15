@@ -9,6 +9,30 @@ historie, návrat do menu, **background sync worker** (`src/lib/mereni-sync.work
 `/api/mereni/sync`) běžící dál po odchodu z obrazovky, **lokální záloha à 30 s** do
 IndexedDB (`/api/mereni/snapshot` + `src/lib/zalohy.ts`).
 
+## Nově hotovo — SaaS / business vrstva (multi-tenant)
+
+Aplikace je **multi-tenant** (viz `docs/multi-tenant.md`):
+
+- **Veřejná registrace pořadatele** `/registrace` (podléhá schválení; honeypot +
+  time-trap + rate-limit + Turnstile). Neschválený vidí jen `/admin/ceka`.
+- **Role** `uzivatel.role` (organizator/superadmin) + **stav** (ceka/schvalen/zamitnut);
+  guardy v `src/auth/guard.ts` čtou DB (schválení platí bez re-loginu).
+- **Tvrdá izolace**: `akce.uzivatelId` (vlastník); `vyzadujAkci` na všech event
+  stránkách, `overitVlastnictviAkce` na všech event server akcích, `smiNaAkci` v route
+  handlerech → cizí akce = 404. Dashboard scoping (superadmin vidí vše).
+- **Panel globálního admina** `/admin/zakaznici`: schvalování, přehled zákazníků,
+  **fakturace** (cena za akci → `akce.fakturaceUhrazeno`; QR podklad SPAYD).
+- **Mailer** (Office 365 SMTP, nodemailer, best-effort) `/admin/email` — notifikace
+  o registraci a schválení.
+- Migrace `0013` (role/stav/vlastník/fakturace); `0011` historie, `0012` zastavení času.
+- **Provoz**: po nasazení jednou `EMAIL=… npm run promote-superadmin` (superadmin +
+  převzetí osiřelých akcí), pak nastavit fakturaci a mailer v adminu.
+
+Další nedávné: samostatná statistika **historických výsledků** (`historicky_vysledek`,
+párování dle jména+roku; projekce „Historie vítězů"), **tabule** (QR akce, fit-to-screen,
+rotace obrazovek), měření **„Zastavit čas"** (zmrazí i tabuli/web), skrytí **DNS** v mřížce,
+sjednocení časové zóny na **Europe/Prague** (`src/lib/cas.ts`).
+
 ## Provozní model: AUTORITATIVNÍ server (zvoleno)
 
 Server (cloud nebo LAN krabice) drží data; měřicí zařízení jsou prohlížečoví klienti
@@ -63,4 +87,6 @@ Postgres; to je pro distribuci zákazníkům friction).
 - **Tier A — self-hosted standalone** (laptop, embedded DB, bez internetu): prodej jako
   stažitelná aplikace; pro akce bez konektivity. Staví na iniciativě 1.
 - **Tier B — SaaS cloud + iPad PWA**: nižší friction, předplatné, výsledky živě na
-  veřejném webu. Staví na iniciativě 2 + existující cloud instanci.
+  veřejném webu. Staví na iniciativě 2 + existující cloud instanci. **Základ hotov**:
+  multi-tenant registrace/schvalování/izolace + fakturace + mailer (`docs/multi-tenant.md`);
+  zbývá PWA (iniciativa 2) a případně automatizace plateb/předplatného.
